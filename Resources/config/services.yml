@@ -1,0 +1,7 @@
+parameters:
+#    maci_admin.example.class: Maci\AdminBundle\Example
+
+services:
+#    maci_admin.example:
+#        class: %maci_admin.example.class%
+#        arguments: [@service_id, "plain_value", %parameter%]

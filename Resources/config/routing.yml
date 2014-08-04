@@ -1,0 +1,36 @@
+
+maci_admin_entity_form_file_upload:
+    pattern:  /{_locale}/adm/{entity}/form/fileUpload/{id}
+    defaults: { _controller: MaciAdminBundle:Default:fileUpload, id: 0 }
+
+maci_admin_entity_form_remove:
+    pattern:  /{_locale}/adm/{entity}/form/remove/{id}
+    defaults: { _controller: MaciAdminBundle:Default:remove }
+
+maci_admin_entity_form_create:
+    pattern:  /{_locale}/adm/{entity}/form/create
+    defaults: { _controller: MaciAdminBundle:Default:create }
+
+maci_admin_entity_form_reorder:
+    pattern:  /{_locale}/adm/{entity}/form/reorder
+    defaults: { _controller: MaciAdminBundle:Default:reorder }
+
+maci_admin_entity_form:
+    pattern:  /{_locale}/adm/{entity}/form/{id}
+    defaults: { _controller: MaciAdminBundle:Default:form, id: 0 }
+
+maci_admin_entity_item:
+    pattern:  /{_locale}/adm/{entity}/item/{id}
+    defaults: { _controller: MaciAdminBundle:Default:item }
+
+maci_admin_entity_list:
+    pattern:  /{_locale}/adm/{entity}/list
+    defaults: { _controller: MaciAdminBundle:Default:list }
+
+maci_admin_entity:
+    pattern:  /{_locale}/adm/{entity}
+    defaults: { _controller: MaciAdminBundle:Default:entity }
+
+maci_admin_homepage:
+    pattern:  /{_locale}/adm
+    defaults: { _controller: MaciAdminBundle:Default:index }

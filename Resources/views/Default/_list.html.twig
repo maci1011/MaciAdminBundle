@@ -1,0 +1,18 @@
+
+<div class="maci-list{% if list[0].position is defined %} maci-sortable{% endif %}">
+
+{% for item in list %}
+
+	{% include "MaciAdminBundle:Default:_item.html.twig" with { 'admin': admin, 'item': item } %}
+
+{% else %}
+
+<div class="nocontent">
+
+	<p>No Items.</p>
+
+</div>
+
+{% endfor %}
+
+</div>

@@ -1,0 +1,26 @@
+
+
+<nav>
+	<ul>
+
+		<li>Entities:</li>
+
+{% for key, item in list if item.menu is defined and item.menu %}
+
+		<li>
+
+			<a href="{{ path('maci_admin_entity', { 'entity': key }) }}">
+				{{ item.label }}
+			</a>
+			-
+			<a href="{{ path('maci_admin_entity_form', {'entity': key}) }}">
+				New
+			</a>
+
+		</li>
+
+{% endfor %}
+
+	</ul>
+</nav>
+
