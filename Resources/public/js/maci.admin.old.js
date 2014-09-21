@@ -1,436 +1,273 @@
 
-modal = function(title, html) {
-	var modal = $(html);
-	modal.find('.modal-title').text(title);
-	return modal.clone();
-},
+(function($){
 
-form = function(base_form) {
+var maci = function (base) {
 
-	var _mf = this,
-	_form = false,
+	var _admin = new Array(),
 
-	input = function(base_input) {
-
-		var _input = false,
-		parent = false,
-		options = false,
-
-		getSelectList = function(id, dat) {
-			var div = $('<div/>').appendTo('body');
-			div.html( modal(('List: ' + _actions[id].entity), dat) );
-			_actions[id].modal = div.children();
-
-			div.find('input[type=checkbox]').each(function(i,el) {
-				$(el).attr('type', 'radio');
-			});
-
-			div.find('input[value=' + _input.val() + ']').click();
-
-			if (!div.find('.row').length) {
-				div.find('.modal-submit').last().remove();
-			} else {
-				div.find('.modal-submit').last().click(function(e) {
-					e.preventDefault();
-					var c = div.find('input[type=radio]:checked')
-					_actions[id].input.val( c.val() );
-					addElement(c.parents('.row').first());
-					_actions[id].modal.modal('hide');
-				});
+	callSimpeAjax = function(url, callback) {
+		$.ajax({
+			type: 'GET',
+			data: { 'modal': true },
+			url: url,
+			success: function (dat,sts,jqx) {
+				callback(dat);
 			}
+		});
+	},
 
-			_actions[id].newItem = function(e) {
-				if (e.action_id != id && _actions[e.action_id].entity == _actions[id].entity) {
-					var row = $(e.data);
-					row.find('input').attr('type','radio');
-					row.appendTo( div.find('.modal-body .row').parent() );
-				}
+	callPostAjax = function(data, url, callback) {
+		$.ajax({
+			type: 'POST',
+			data: data,
+			url: url,
+			success: function (dat,sts,jqx) {
+				callback(dat);
 			}
+		});
+	},
 
-			_actions[id].modal.modal();
-		},
-
-		getMultipleList = function(id, dat) {
-			var div = $('<div/>').appendTo('body');
-			div.html( modal(('List: ' + _actions[id].entity), dat) );
-			_actions[id].modal = div.children();
-
-			// _input.children().each(function(j,fl) {
-			// 	div.find('input[value=' + $(fl).find('input').first().val() + ']').click();
-			// });
-
-			if (!div.find('.row').length) {
-				div.find('.modal-submit').last().remove();
-			} else {
-				div.find('.modal-submit').last().click(function(e) {
-					e.preventDefault();
-					div.find('input[type=checkbox]:checked').each(function(j,fl) {
-						if (_input.attr('sync') && _actions[id].entity != _input.attr('entity')) {
-							var data = {};
-							data['fields'] = {};
-							data['fields'][_actions[id].entity] = parseInt($(fl).val());
-							createNewElement(data);
-						} else {
-							addElement($(fl).parents('.row').first());
-						}
-					});
-					_actions[id].modal.modal('hide');
-				});
+	sendFile = function(data, entity, id) {
+		$.ajax({
+			type: 'POST',
+			data: data,
+			url: '/app_dev.php/it/admin/' + entity + '/fileUpload/' + id,
+			cache: false,
+			dataType: 'json',
+			processData: false, // Don't process the files
+			contentType: false,
+			success: function (dat,sts,jqx) {
+				console.log('File Uploaded!');
 			}
+		});
+	},
 
-			_actions[id].newItem = function(e) {
-				if (e.action_id != id && _actions[e.action_id].entity == _actions[id].entity) {
-					var row = $(e.data);
-					row.appendTo( div.find('.modal-body .row').parent() );
-				}
-			}
+	modal = function(title, html) {
+		var modal = $(html);
+		modal.find('.modal-title').text(title);
+		return modal.clone();
+	},
 
-			_actions[id].modal.modal();
-		},
+	setModal = function(title, data) {
+		var div = $('<div/>').appendTo('body');
+		div.html($(data).clone()).find('.modal-title').text(title);
+		return div.children();
+	},
 
-		setModalForm = function(id, dat) {
-			var div = $('<div/>').appendTo('body');
-			div.html( modal(('Form: ' + _actions[id].entity), dat) );
-			div.find('.modal-submit').remove();
-			_actions[id].modal = div.children();
+	getForm = function(dat, callback) {
+		var _entity = $(dat).find('input[role=entity]').val(),
+			modal = setModal(('Form: ' + _entity), dat),
+			form = modal.find('form').first();
+		modal.find('.modal-submit').remove();
+		setForm(form, callback, modal);
+		return modal;
+	},
 
-			_actions[id].files = [];
-			_actions[id].modal.find('.modal-body input[type=file]').each(function(j,fl) {
+	setForm = function(form, callback, modal) {
+		var data = {}, files = {};
+		form.find('.modal-body input[name], .modal-body select[name], .modal-body button[name]').each(function(j,fl) {
+			if ($(fl).attr('type') == 'file') {
 				$(fl).on('change', function(e) {
-					_actions[id].files[j] = {
+					files[j] = {
 						'input': $(fl),
 						'data': e.target.files
 					}
 				});
-			});
+			} else {
+				data[$(fl).attr('name')] = $(fl).val();
+			}
+		});
+		form.find('.modal-body input[type=submit], .modal-body button[type=submit]').last().click(function(e) {
+			e.preventDefault();
+			submitForm(form, callback, data, files);
+			if (modal) {
+				modal.modal('hide');
+			}
+		});
+	},
 
-			_actions[id].modal.find('.modal-body input[type=submit], .modal-body button[type=submit]').last().click(function(e) {
-				e.preventDefault();
-				submitForm(id);
-				_actions[id].modal.modal('hide');
-			});
+	submitForm = function(form, callback, data, files) {
+		$.ajax({
+			type: 'POST',
+			data: data,
+			url: form.attr('action'),
+			success: function (dat,sts,jqx) {
+				callback(dat);
+				if (files.length) {
+					uploadFiles(dat, files);
+				}
+			}
+		});
+	},
 
-			_actions[id].modal.modal();
-		},
-
-		editElement = function(_eid, el) {
-			var id = _actions.length;
-			_actions[id] = {
-				'action': 'edit',
-				'el': $(el),
-				'entity': _input.attr('entity'),
-				'input': _input,
-				'use_modal': true,
-				'modal': false
-			};
-			$(el).click(function(e) {
-				e.preventDefault();
-				$.ajax({
-					type: 'GET',
-					data: { 'modal': _actions[id].use_modal },
-					url: '/app_dev.php/it/admin/' + _input.attr('entity') + '/form/' + _eid,
-					success: function (dat,sts,jqx) {
-						setModalForm(id, dat);
-					}
+	uploadFiles = function(row, files) {
+		var _id = $(row).find('input[role=id]').val(),
+			_entity = $(row).find('input[role=entity]').val();
+		$.each(files, function(k, map) {
+			if (map) {
+				var data = new FormData();
+				$.each(map.data, function(key, value) {
+					data.append(key, value);
 				});
-			});
-		},
-
-		submitForm = function(id) {
-			var data = {};
-			_actions[id].modal.find('.modal-body input[name], .modal-body select[name], .modal-body button[name]').each(function(j,fl) {
-				if ($(fl).attr('type') != 'file') {
-					data[$(fl).attr('name')] = $(fl).val();
-				}
-			});
-			$.ajax({
-				type: 'POST',
-				data: data,
-				url: _actions[id].url,
-				success: function (dat,sts,jqx) {
-					if (_actions[id].action == 'new') {
-						if (_input.attr('sync') && _actions[id].entity != _input.attr('entity')) {
-							var data = {};
-							data['fields'] = {};
-							data['fields'][_actions[id].entity] = parseInt($(dat).find('input').first().val());
-							createNewElement(data);
-						} else {
-							addElement($(fl).parents('.row').first());
-						}
-					} else {
-						addElement(dat, _actions[id].el)
-					}
-					if (_actions[id].files.length) {
-						uploadFiles(id, dat);
-					}
-					callEvent({
-						'action_id': id,
-						'call': 'newItem',
-						'data': dat
-					});
-				}
-			});
-		},
-
-		uploadFiles = function(id, dat) {
-			var _eid = $(dat).find('input').first().val();
-			$.each(_actions[id].files, function(k, map) {
-				if (map) {
-					var data = new FormData();
-					$.each(map.data, function(key, value) {
-						data.append(key, value);
-					});
-					$.ajax({
-						type: 'POST',
-						data: data,
-						url: '/app_dev.php/it/admin/' + _actions[id].entity + '/fileUpload/' + _eid,
-						cache: false,
-						dataType: 'json',
-						processData: false, // Don't process the files
-						contentType: false,
-						success: function (dat,sts,jqx) {
-							console.log('File Uploaded!');
-							_actions[id].files[k] = false;
-						}
-					});
-				}
-			});
-		},
-
-		removeElement = function(id) {
-			_input.find('input[value=' + id +']').parents('.row').first().remove();
-			if (_input.attr('sync')) {
-				$.ajax({
-					type: 'GET',
-					data: {},
-					url: '/app_dev.php/it/admin/' + _input.attr('entity') + '/remove/' + id,
-					success: function (dat,sts,jqx) {
-						console.log('Element Removed!');
-					}
-				});
+				sendFile(data, _entity, _id);
 			}
-		},
+		});
+	},
 
-		reorderList = function() {
-	        _input.sortable({
-	            stop: function(e, ui) {
-	                var list = _input.find('.row');
-	                var ids = [];
-	                list.each(function () {
-	                    ids.push( $(this).find('input').first().val() );
-	                });
-	                $.ajax({
-	                    type: 'POST',
-	                    data: { ids: ids },
-	                    url: '/app_dev.php/it/admin/' + _input.attr('entity') + '/reorder',
-	                    success: function () {
-							console.log('List Reordered!');
-	                    }
-	                });
-	            }
-	        });
-		},
+	addElement = function(list, row) {
+		var add = $(row).clone(),
+			last = list.find('.row').last();
+		add.insertAfter(last);
+	},
 
-		addElement = function(el, edit) {
-			if (!( _input.attr('admin') == 'multiple' )) {
-				_input.html('');
+	removeElement = function(row) {
+		var _id = $(row).find('input[role=id]').val(),
+			_entity = $(row).find('input[role=entity]').val();
+		callSimpeAjax(
+			( '/app_dev.php/it/admin/' + _entity + '/remove/' + _id ),
+			function() {
+				console.log('Element Removed!');
 			}
-			var add = $(el).clone(),
-				input = add.find('input'),
-				id = input.val(),
-				after = ( edit ? edit : input),
-				btt = $('<button/>', { 'class': 'btn btn-success'}).insertAfter(after);
-			input.attr('type','hidden');
-			btt.text('Edit');
-			editElement(id, btt);
-			$('<button/>', { 'class': 'btn btn-danger'}).insertAfter(after).click(function(e){
-				e.preventDefault();
-				if (confirm('Remove Item?')) {
-					removeElement(id);
-				}
-			}).text('Remove');
-			if (edit) {
-				edit.remove();
+		)
+	},
+
+	setFormButton = function(btt, entity, id, callback) {
+		var modal = false, smf = -1,
+			url = ( '/app_dev.php/it/admin/' + entity + '/form' + ( id ? ('/' + id) : '' ) );
+		var buttonCallback = function(dat) {
+			smf = 1;
+			modal = getForm(dat, callback);
+			modal.modal();
+		};
+		btt.click(function(e) {
+			e.preventDefault();
+			if (smf == 1) {
+				modal.modal();
+			} else if (smf == -1) {
+				smf = 0;
+				callSimpeAjax(url, buttonCallback);
 			}
-			add.appendTo(_input);
-		},
+		});
+	},
 
-		createNewElement = function(data) {
-			data.entity = data.entity ? data.entity : _input.attr('entity');
-			data.fields[getFormEntity()] = parseInt(_form.attr('item-id'));
-			$.ajax({
-				type: 'POST',
-				data: data,
-				url: '/app_dev.php/it/admin/' + data.entity + '/create',
-				success: function (dat,sts,jqx) {
-					addElement(dat);
-				}
-			});
-		},
-
-		getPreview = function(id) {
-			var entity = _input.attr('entity');
-			if (entity != '#' && $.isNumeric(id)) {
-				$.ajax({
-					type: 'GET',
-					data: {},
-					url: '/app_dev.php/it/admin/' + entity + '/item/' + id,
-					success: function (dat,sts,jqx) {
-						addElement(dat);
-					}
-				});
+	sync = function(list, row) {
+		var data = {};
+		data['fields'] = {};
+		data['fields'][$(row).find('input[role=entity]').val()] = parseInt( $(row).find('input[role=id]').val() );
+		callPostAjax(
+			data,
+			( '/app_dev.php/it/admin/' + list.attr('entity') + '/object' ),
+			function(dat) {
+				addElement(list, dat);
 			}
-		},
+		);
+	},
 
-		callEvent = function(e) {
-			$.each(_actions, function(i, action) {
-				if ($.isFunction(action[e.call])) {
-					var f = action[e.call]; f(e);
-				}
+	addActions = function(row, entity) {
+		var _id = $(row).find('input[role=id]').val(),
+			actions = $(row).find('.maci-actions'),
+			edit = $('<button/>', {'class':'btn btn'}).text('Edit').appendTo(actions),
+			remove = $('<button/>', {'class':'btn btn-danger'}).text('Remove').appendTo(actions);
+		setFormButton(edit, entity, _id, function(dat) {
+			console.log('Element Edited!');
+		});
+		remove.click(function(e) {
+			removeElement(row);
+		});
+	},
+
+	list = function(base_list) {
+
+		var _ml = this,
+		_list = false,
+
+		set = function(_el) {
+			_list = $(_el);
+			var entity = _list.attr('entity');
+			_list.find('.row').each(function() {
+				addActions(this, entity);
 			});
-		},
-
-		getAjax = function(id) {
-			$.ajax({
-				type: 'GET',
-				data: { 'modal': _actions[id].use_modal },
-				url: _actions[id].url,
-				success: function (dat,sts,jqx) {
-					_actions[id].handler(id, dat);
-				}
-			});
-		},
-
-		setModal = function(id) {
-			_actions[id].el.click(function(e) {
-				e.preventDefault();
-				if(_actions[id].modal) {
-					_actions[id].modal.modal();
-				} else {
-					getAjax(id);
-				}
-			});
-		},
-
-		setActions = function() {
-			var entity = _input.attr('entity');
-			parent.find('button[maciaction]').each(function(j,fl) {
-				var attr = $(fl).attr('maciaction'),
-					btt_entity = $(fl).attr('entity'),
-					id = _actions.length;
-				_actions[id] = {
-					'action': attr,
-					'el': $(fl),
-					'entity': (btt_entity ? btt_entity : entity),
-					'input': _input,
-					'use_modal': true,
-					'modal': false
-				};
-				if (attr == 'select') {
-					_actions[id].url = '/app_dev.php/it/admin/' + _actions[id].entity + '/list';
-					_actions[id].handler = getSelectList;
-				} else if (attr == 'add') {
-					_actions[id].url = '/app_dev.php/it/admin/' + _actions[id].entity + '/list';
-					_actions[id].handler = getMultipleList;
-				} else if (attr == 'new') {
-					_actions[id].url = '/app_dev.php/it/admin/' + _actions[id].entity + '/form';
-					_actions[id].handler = setModalForm;
-				}
-				if (_actions[id].use_modal) {
-					setModal(id);
-				}
-			});
-		},
-
-		setSelect = function(el) {
-			_input = $('<div/>', {
-				'admin': $(el).attr('maciadmin'),
-				'name': $(el).attr('name'),
-				'entity': $(el).attr('entity'),
-				'sync': $(el).attr('sync')
-			}).insertAfter(el);
-			if ($(el).val()) {
-				getPreview($(el).val());
-			}
-			$(el).remove();
-			parent = _input.parent();
-			getPreview(_input.val());
-			setActions();
-		},
-
-		setMultiple = function(el) {
-			_input = $('<div/>', {
-				'admin': $(el).attr('maciadmin'),
-				'name': $(el).attr('name'),
-				'entity': $(el).attr('entity'),
-				'sync': $(el).attr('sync')
-			}).insertAfter(el);
-			var filters = {};
-			filters[getFormEntity()] = parseInt(_form.attr('item-id'));
-			$.ajax({
-				type: 'POST',
-				data: { 'filters': filters },
-				url: '/app_dev.php/it/admin/' + _input.attr('entity') + '/list',
-				success: function (dat,sts,jqx) {
-					_input.html(dat);
-					if (_input.find('.row').length) {
-						_input.find('.row').each(function(j,fl) {
-							addElement(fl);
-							$(fl).remove();
-						});
-						var div = _input.children().first();
-						if (div.hasClass('maci-sortable') || div.find('.maci-sortable').length) {
-							div.remove();
-							reorderList();
-						} else if (!div.hasClass('row')) {
-							div.remove();
-						}
-					} else {
-						_input.find('p').remove();
-					}
-				}
-			});
-			$(el).remove();
-			parent = _input.parent();
-			setActions();
-		},
-
-		set = function(el) {
-			if ($(el).attr('maciadmin') == 'select') {
-				setSelect(el);
-			} else if ($(el).attr('maciadmin') == 'multiple') {
-				setMultiple(el);
-			}
+			// var newbtt = _list.parent('form').find('.maci-new');
+			// setFormButton(newbtt, entity, false, function(dat) {
+			// 	addElement(_list, dat);
+			// });
 		};
 
-		set(base_input);
+		set(base_list);
 
 		return {
+			'list': _list
+		}
+
+	},
+
+	input = function(base_input) {
+
+		var _input = false;
+
+	},
+
+	form = function(base_form) {
+
+		var _form = false,
+
+		set = function(el) {
+
+			_form = $(el);
+
+		};
+
+		set(base_form);
+
+		return {
+			'entity': getFormEntity(),
+			'form': _form,
 			'input': _input
 		}
-		
+
+	},
+
+	admin = function(base_admin) {
+
+		var _form = new Array(),
+			_list = new Array(),
+
+		set = function(_el) {
+    		$(_el).find('.maci-list').each(function(i,el) {
+				_list[i] = list(el);
+			});
+    		$(_el).find('.maci-form').each(function(i,el) {
+				_form[i] = form(el);
+			});
+		};
+
+		set(base_admin);
+
+		return {
+			'form': _form,
+			'list': _list
+		}
+
 	},
 
 	set = function(el) {
-
-		_form = $(el);
-
-		$(el).find('select[maciadmin]').each(function(i,el) {
-			_input[i] = input(el);
+		$(el).find('.maci-admin').each(function(i,el) {
+			_admin[i] = admin(el);
 		});
-
-	},
-
-	getFormEntity = function() {
-		return _form.attr('entity');	
 	};
 
-	set(base_form);
+	set(base);
 
 	return {
-		'entity': getFormEntity(),
-		'form': _form,
-		'input': _input
-	}
+		'admin': _admin
+	};
 
-},
+}
+
+$(document).ready(function(e) {
+
+	var cima = maci('body');
+
+});
+
+})(jQuery);

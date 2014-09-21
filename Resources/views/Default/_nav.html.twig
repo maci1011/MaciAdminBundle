@@ -1,9 +1,8 @@
 
 
 <nav>
+	<span class="leftMenuTitle">Administration</span>
 	<ul>
-
-		<li>Entities:</li>
 
 {% for key, item in list if item.menu is defined and item.menu %}
 
@@ -11,10 +10,6 @@
 
 			<a href="{{ path('maci_admin_entity', { 'entity': key }) }}">
 				{{ item.label }}
-			</a>
-			-
-			<a href="{{ path('maci_admin_entity_form', {'entity': key}) }}">
-				New
 			</a>
 
 		</li>

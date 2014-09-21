@@ -1,42 +1,9 @@
 
 {% extends "MaciHelloBundle::layout.html.twig" %}
 
-{% block stylesheets %}
 
-{{ parent() }}
+{% block leftMenu %}
 
-<link rel="stylesheet" type="text/css" href="{{ asset('/bundles/maciadmin/css/maci.admin.css') }}" />
-
-{% endblock %}
-
-
-{% block javascripts %}
-
-{{ parent() }}
-
-<script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/jquery-ui.min.js') }}" ></script>
-<script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/maci.admin.js') }}" ></script>
-
-{% endblock %}
-
-
-{% block container %}
-
-<div id="row">
-	<div class="col-md-2">
-
-		{% block leftMenu %}
-
-			{{ render(controller('MaciAdminBundle:Default:nav')) }}
-
-		{% endblock %}
-
-	</div>
-	<div class="col-md-10 maci-admin">
-
-		{% block content %}{% endblock %}
-
-	</div>
-</div>
+	{{ render(controller('MaciAdminBundle:Default:nav')) }}
 
 {% endblock %}

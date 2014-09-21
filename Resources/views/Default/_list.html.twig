@@ -1,9 +1,15 @@
 
-<div class="maci-list{% if list[0].position is defined %} maci-sortable{% endif %}" entity="{{ admin.name }}">
+{% if list|length %}
+
+<div class="ma-list">
 
 {% for item in list %}
 
 	{% include "MaciAdminBundle:Default:_item.html.twig" with { 'admin': admin, 'item': item } %}
+
+{% endfor %}
+
+</div>
 
 {% else %}
 
@@ -13,6 +19,4 @@
 
 </div>
 
-{% endfor %}
-
-</div>
+{% endif %}

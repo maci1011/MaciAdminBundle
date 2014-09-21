@@ -1,4 +1,12 @@
 
+#maciadmin {
+	padding: 0 80px 20px;
+}
+
 .maci_admin_form {
     padding: 0 20px;
+}
+
+.maciUploader div {
+	padding: 12px;
 }

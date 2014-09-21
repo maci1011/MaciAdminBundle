@@ -12,14 +12,14 @@ maci_admin_entity_item:
     pattern:  /{_locale}/admin/{entity}/item/{id}
     defaults: { _controller: MaciAdminBundle:Default:item }
 
+maci_admin_entity_object:
+    pattern:  /{_locale}/admin/{entity}/object/{id}
+    defaults: { _controller: MaciAdminBundle:Default:object, id: 0 }
+
 maci_admin_entity_remove:
     pattern:  /{_locale}/admin/{entity}/remove/{id}
     defaults: { _controller: MaciAdminBundle:Default:remove }
 
-
-maci_admin_entity_create:
-    pattern:  /{_locale}/admin/{entity}/create
-    defaults: { _controller: MaciAdminBundle:Default:create }
 
 maci_admin_entity_list:
     pattern:  /{_locale}/admin/{entity}/list
