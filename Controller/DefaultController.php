@@ -7,6 +7,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
+use A2lix\I18nDoctrineBundle\Annotation\I18nDoctrine;
+
 class DefaultController extends Controller
 {
     public function indexAction()
@@ -36,6 +38,9 @@ class DefaultController extends Controller
         ));
     }
 
+    /**
+     * @I18nDoctrine
+     */
     public function formAction(Request $request, $entity, $id)
     {
         $admin = $this->getAdmin($entity);
