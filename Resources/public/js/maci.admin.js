@@ -224,6 +224,26 @@ var maciAdmin = function () {
 		});
 	},
 
+	setReorderList = function(el) {
+        $(el).sortable({
+            stop: function(e, ui) {
+                var list = $(el).children(), ids = [];
+                list.each(function () {
+                    ids.push( parseInt( $(this).find('[name=id]').first().val() ) );
+                });
+                $.ajax({
+                    type: 'POST',
+                    data: {ids: ids},
+                    url: $(el).attr('reorder'),
+                    success: function () {
+                    	console.log('List reordered!');
+                    }
+                });
+            }
+        });
+
+	},
+
 	setRemoveButton = function(el) {
 		$(el).click(function(e) {
 			e.preventDefault();
@@ -303,6 +323,9 @@ var maciAdmin = function () {
 	return {
 		set: function(el) {
 			setAdmin(el);
+		},
+		setReorder: function(el) {
+			setReorderList(el);
 		}
 	};
 
@@ -313,6 +336,11 @@ $(document).ready(function(e) {
 	var admin = maciAdmin();
 
 	admin.set('body');
+
+	var mc = $('.mediaContainer').first();
+	if (mc.attr('reorder')) {
+		admin.setReorder(mc);
+	}
 
 });
 
