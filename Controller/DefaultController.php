@@ -108,41 +108,42 @@ class DefaultController extends Controller
 
         $save = false;
 
-        $fields = $request->get('fields');
+        $setfields = $request->get('setfields');
 
-        if (is_array($fields) && count($fields)) {
-            foreach ($fields as $key => $value) {
-                $mth = ( method_exists($item, $key) ?  $key : false );
-                if ($mth) {
-					call_user_method($mth, $item, $value);
-					$save = true;
-                }
-            }
-        }
-
-        $relations = $request->get('relations');
-
-        if (is_array($relations) && count($relations)) {
-            foreach ($relations as $key => $value) {
-                $mth = (
-                    method_exists($item, ('set' . ucfirst($key))) || method_exists($item, ('add' . ucfirst($key))) ? (
-                        method_exists($item, ('set' . ucfirst($key))) ?
-                        'set' . ucfirst($key) :
-                        'add' . ucfirst($key)
-                    ) : false
-                );
-                if ($mth && $rel = $this->getAdmin($key)) {
-					$rob = $em->getRepository($rel['repository'])->findOneById($value);
-					if ($rob) {
-					    call_user_method($mth, $item, $rob);
-					    $save = true;
-					}
+        if (is_array($setfields) && count($setfields)) {
+            foreach ($setfields as $set) {
+                if ($set) {
+                    $key = $set['set'];
+                    $type = $set['type'];
+                    $value = $set['val'];
+                    if (!$type || $type == 'default') {
+                        $mth = ( method_exists($item, $key) ?  $key : false );
+                        if ($mth) {
+                            call_user_method($mth, $item, $value);
+                            $save = true;
+                        }
+                    } else if ($rel = $this->getAdmin($type)) {
+                        $mth = (
+                            method_exists($item, ('set' . ucfirst($key))) || method_exists($item, ('add' . ucfirst($key))) ? (
+                                method_exists($item, ('set' . ucfirst($key))) ?
+                                'set' . ucfirst($key) :
+                                'add' . ucfirst($key)
+                            ) : false
+                        );
+                        if ($mth) {
+                            $rob = $em->getRepository($rel['repository'])->findOneById(intval($value));
+                            if ($rob) {
+                                call_user_method($mth, $item, $rob);
+                                $save = true;
+                            }
+                        }
+                    }
                 }
             }
         }
 
         if ($save) {
-			if (method_exists($item, 'getTranslations')) {
+			if (!$item->getId() && method_exists($item, 'getTranslations')) {
 			    $locs = $this->container->getParameter('a2lix_translation_form.locales');
 			    foreach ($locs as $loc) {
 			        $clnm = $admin['new'].'Translation';
@@ -152,16 +153,17 @@ class DefaultController extends Controller
 			        $em->persist($tran);
 			    }
 			}
+
             $em->persist($item);
             $em->flush();
-        } else {
-            return new JsonResponse(array('error' => 'error.nosave'), 501);
+
+            return $this->renderTemplate($request, $admin, 'item', array(
+                'admin' => $admin,
+                'item' => $item
+            ));
         }
 
-        return $this->renderTemplate($request, $admin, 'item', array(
-            'admin' => $admin,
-            'item' => $item
-        ));
+        return new JsonResponse(array('error' => 'error.nothingdone'), 501);
     }
 
     public function itemAction(Request $request, $entity, $id)
@@ -382,12 +384,36 @@ class DefaultController extends Controller
                 'label' => 'Album',
                 'repository' => 'MaciMediaBundle:Album',
                 'new' => '\Maci\MediaBundle\Entity\Album',
-                'form' => 'media_album',
+                'form' => 'album',
                 'menu' => true,
                 'templates' => array(
                     'list' => 'MaciMediaBundle:Default:_list.html.twig',
                     'item' => 'MaciMediaBundle:Default:_item.html.twig'
                 )
+            ),
+            'blog_post' => array(
+                'label' => 'Post',
+                'repository' => 'MaciBlogBundle:Post',
+                'new' => '\Maci\BlogBundle\Entity\Post',
+                'form' => 'blog_post'
+            ),
+            'blog_media_item' => array(
+                'label' => 'Media Item',
+                'repository' => 'MaciBlogBundle:MediaItem',
+                'new' => '\Maci\BlogBundle\Entity\MediaItem',
+                'form' => 'blog_media_item'
+            ),
+            'blog_tag' => array(
+                'label' => 'Tag',
+                'repository' => 'MaciBlogBundle:Tag',
+                'new' => '\Maci\BlogBundle\Entity\Tag',
+                'form' => 'blog_tag'
+            ),
+            'blog_tag_item' => array(
+                'label' => 'Tag Item',
+                'repository' => 'MaciBlogBundle:TagItem',
+                'new' => '\Maci\BlogBundle\Entity\TagItem',
+                'form' => 'blog_tag_item'
             ),
             'media' => array(
                 'label' => 'Media',
@@ -409,6 +435,48 @@ class DefaultController extends Controller
                     'list' => 'MaciMediaBundle:Default:_list.html.twig',
                     'item' => 'MaciMediaBundle:Default:_item.html.twig'
                 )
+            ),
+            'category' => array(
+                'label' => 'Cateogry',
+                'repository' => 'MaciProductBundle:Category',
+                'new' => '\Maci\ProductBundle\Entity\Category',
+                'form' => 'category'
+            ),
+            'category_item' => array(
+                'label' => 'Cateogry Item',
+                'repository' => 'MaciProductBundle:CategoryItem',
+                'new' => '\Maci\ProductBundle\Entity\CategoryItem',
+                'form' => 'category_item'
+            ),
+            'product' => array(
+                'label' => 'Product',
+                'repository' => 'MaciProductBundle:Product',
+                'new' => '\Maci\ProductBundle\Entity\Product',
+                'form' => 'product'
+            ),
+            'product_media_item' => array(
+                'label' => 'Product Media Item',
+                'repository' => 'MaciProductBundle:MediaItem',
+                'new' => '\Maci\ProductBundle\Entity\MediaItem',
+                'form' => 'product_media_item'
+            ),
+            'product_variant' => array(
+                'label' => 'Product Variant',
+                'repository' => 'MaciProductBundle:Variant',
+                'new' => '\Maci\ProductBundle\Entity\Variant',
+                'form' => 'product_variant'
+            ),
+            'product_variant_item' => array(
+                'label' => 'Product VariantItem',
+                'repository' => 'MaciProductBundle:VariantItem',
+                'new' => '\Maci\ProductBundle\Entity\VariantItem',
+                'form' => 'product_variant_item'
+            ),
+            'language' => array(
+                'label' => 'Language',
+                'repository' => 'MaciTranslatorBundle:Language',
+                'new' => '\Maci\TranslatorBundle\Entity\Language',
+                'form' => 'language'
             )
         );
     }
