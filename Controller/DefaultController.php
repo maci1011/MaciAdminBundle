@@ -385,7 +385,26 @@ class DefaultController extends Controller
                 'repository' => 'MaciMediaBundle:Album',
                 'new' => '\Maci\MediaBundle\Entity\Album',
                 'form' => 'album',
-                'menu' => true,
+                'templates' => array(
+                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
+                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
+                )
+            ),
+            'media' => array(
+                'label' => 'Media',
+                'repository' => 'MaciMediaBundle:Media',
+                'new' => '\Maci\MediaBundle\Entity\Media',
+                'form' => 'media',
+                'templates' => array(
+                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
+                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
+                )
+            ),
+            'media_item' => array(
+                'label' => 'Album Item',
+                'repository' => 'MaciMediaBundle:Item',
+                'new' => '\Maci\MediaBundle\Entity\Item',
+                'form' => 'media_item',
                 'templates' => array(
                     'list' => 'MaciMediaBundle:Default:_list.html.twig',
                     'item' => 'MaciMediaBundle:Default:_item.html.twig'
@@ -414,27 +433,6 @@ class DefaultController extends Controller
                 'repository' => 'MaciBlogBundle:TagItem',
                 'new' => '\Maci\BlogBundle\Entity\TagItem',
                 'form' => 'blog_tag_item'
-            ),
-            'media' => array(
-                'label' => 'Media',
-                'repository' => 'MaciMediaBundle:Media',
-                'new' => '\Maci\MediaBundle\Entity\Media',
-                'form' => 'media',
-                'menu' => true,
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media_item' => array(
-                'label' => 'Album Item',
-                'repository' => 'MaciMediaBundle:Item',
-                'new' => '\Maci\MediaBundle\Entity\Item',
-                'form' => 'media_item',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
             ),
             'category' => array(
                 'label' => 'Cateogry',
@@ -474,6 +472,7 @@ class DefaultController extends Controller
             ),
             'language' => array(
                 'label' => 'Language',
+                'menu' => true,
                 'repository' => 'MaciTranslatorBundle:Language',
                 'new' => '\Maci\TranslatorBundle\Entity\Language',
                 'form' => 'language'

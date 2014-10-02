@@ -1,39 +1,39 @@
 
 
 maci_admin_entity_file_upload:
-    pattern:  /{_locale}/admin/{entity}/fileUpload/{id}
+    pattern:  /admin/{entity}/fileUpload/{id}
     defaults: { _controller: MaciAdminBundle:Default:fileUpload, id: 0 }
 
 maci_admin_entity_form:
-    pattern:  /{_locale}/admin/{entity}/form/{id}
+    pattern:  /admin/{entity}/form/{id}
     defaults: { _controller: MaciAdminBundle:Default:form, id: 0 }
 
 maci_admin_entity_item:
-    pattern:  /{_locale}/admin/{entity}/item/{id}
+    pattern:  /admin/{entity}/item/{id}
     defaults: { _controller: MaciAdminBundle:Default:item }
 
 maci_admin_entity_object:
-    pattern:  /{_locale}/admin/{entity}/object/{id}
+    pattern:  /admin/{entity}/object/{id}
     defaults: { _controller: MaciAdminBundle:Default:object, id: 0 }
 
 maci_admin_entity_remove:
-    pattern:  /{_locale}/admin/{entity}/remove/{id}
+    pattern:  /admin/{entity}/remove/{id}
     defaults: { _controller: MaciAdminBundle:Default:remove }
 
 
 maci_admin_entity_list:
-    pattern:  /{_locale}/admin/{entity}/list
+    pattern:  /admin/{entity}/list
     defaults: { _controller: MaciAdminBundle:Default:list }
 
 maci_admin_entity_reorder:
-    pattern:  /{_locale}/admin/{entity}/reorder
+    pattern:  /admin/{entity}/reorder
     defaults: { _controller: MaciAdminBundle:Default:reorder }
 
 
 maci_admin_entity:
-    pattern:  /{_locale}/admin/{entity}
+    pattern:  /admin/{entity}
     defaults: { _controller: MaciAdminBundle:Default:entity }
 
 maci_admin_homepage:
-    pattern:  /{_locale}/admin
+    pattern:  /admin
     defaults: { _controller: MaciAdminBundle:Default:index }
