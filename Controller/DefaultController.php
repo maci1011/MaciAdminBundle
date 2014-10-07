@@ -255,8 +255,10 @@ class DefaultController extends Controller
         $admin = $this->getAdmin($entity);
 
         if (!count($_FILES)) {
+
             return $this->renderTemplate($request, $admin, 'uploader', array());
         }
+
         if (!$admin) {
             return new JsonResponse(array('result' => 'false', 'error' => 'error.noadmin'), 501);
         }
@@ -291,7 +293,7 @@ class DefaultController extends Controller
                         $clnm = $admin['new'].'Translation';
                         $tran = new $clnm;
                         $tran->setLocale($loc);
-                        $traname = 'Media [' . $loc . '] ' . $date;
+                        $traname = $admin['label'].' [' . $loc . '] ' . $date;
                         $tran->setName($traname);
                         $item->addTranslation($tran);
                         $em->persist($tran);
@@ -303,6 +305,7 @@ class DefaultController extends Controller
                 return new JsonResponse(array('result' => 'false', 'error' => 'error.upload'), 501);
             }
         }
+
         $em->flush();
 
         return $this->renderTemplate($request, $admin, 'item', array(

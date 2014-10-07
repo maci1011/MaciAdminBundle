@@ -8,7 +8,7 @@ var maciUploader = function (input, options) {
 			'selectButton': true
 		},
 		_options,
-		_files,
+		_files = [],
 		_div,
 		_select_btt,
 		_upload_btt,
@@ -46,6 +46,10 @@ var maciUploader = function (input, options) {
 		$.each(_files, function(k, map) {
 			_obj.sendFile(url, map, name, callback);
 		});
+	},
+
+	getLength: function() {
+		return _files ? _files.length : 0;
 	},
 
 	isMultiple: function() {
@@ -118,7 +122,15 @@ var maciAdmin = function () {
 	getFormData = function(form) {
 		var data = {};
 		form.find('[name]').not('[type=file], [type=reset], [type=submit]').each(function(j,fl) {
-			data[$(fl).attr('name')] = $(fl).val();
+			if ($(fl).attr('type') == 'checkbox') {
+				data[$(fl).attr('name')] = $(fl).is(':checked');
+			} else if ($(fl).attr('type') == 'radio') {
+				if ($(fl).is(':checked')) {
+					data[$(fl).attr('name')] = $(fl).val();
+				}
+			} else {
+				data[$(fl).attr('name')] = $(fl).val();
+			}
 		});
 		return data;
 	},
@@ -141,30 +153,40 @@ var maciAdmin = function () {
 			data: data,
 			url: form.attr('action'),
 			success: function (dat,sts,jqx) {
-				if (dat.id) {
-					uploader.upload(
-						('/app_dev.php/it/admin/' + dat['entity'] + '/fileUpload/' + dat['id']),
-						false,
-						function() {
-							$(form).find('[type=reset]').click();
-							if ($.isFunction(callback)) {
-								callback(dat);
+				if (dat['success']) {
+					if (uploader && uploader.getLength()) {
+						uploader.upload(
+							('/app_dev.php/admin/' + dat['entity'] + '/fileUpload/' + dat['id']),
+							false,
+							function() {
+								$(form).find('[type=reset]').click();
+								if ($.isFunction(callback)) {
+									callback(dat);
+								}
 							}
-						}
-					);
+						);
+					} else {
+						callback(dat);
+					}
 				}
 			}
 		});
 	},
 
-	async = function(el, row, callback) {
+	async = function(el,row,callback) {
 		var relations = {};
-		relations[$(el).attr('from')] = $(row).find('[name=id]').first().val();
-		relations[$(el).attr('to')] = $(el).attr('toid');
+		relations[0] = {};
+		relations[0]['set'] = $(el).attr('from');
+		relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
+		relations[0]['val'] = $(row).find('[name=id]').first().val();
+		relations[1] = {};
+		relations[1]['set'] = $(el).attr('to');
+		relations[1]['type'] = $(el).attr('totype') ? $(el).attr('totype') : $(el).attr('to');
+		relations[1]['val'] = $(el).attr('toid');
 		$.ajax({
 			type: 'POST',
 			data: {
-				'relations': relations
+				'setfields': relations
 			},
 			url: $(el).attr('sync'),
 			success: function (dat,sts,jqx) {
@@ -179,7 +201,18 @@ var maciAdmin = function () {
 
 	appendItem = function(dat) {
 		if (dat['id']) {
-			setAdmin($(dat['template']).clone().prependTo('.mediaContainer'));
+			$('#_pageContainer').find('.noitems').parent().remove();
+			var item = $(dat['template']).clone(),
+				id = item.find('[name=id]').first().val(),
+				row = $('#_pageContainer').find('[name=id]').filter('[value=' + id +']');
+			if (row.length) {
+				row = row.parents('.row').first().parent();
+				item.insertAfter(row);
+				row.remove();
+			} else {
+				item.prependTo('#_pageContainer');
+			}
+			setAdmin(item);
 		}
 	},
 
@@ -189,9 +222,11 @@ var maciAdmin = function () {
 		return div.children();
 	},
 
-	appendResp = function(el, dat) {
+	appendResp = function(el, dat, row) {
+		console.log(dat);
+		row = ( row ? row : $(dat['template']) );
 		if ($(el).attr('sync')) {
-			async(el,$(dat['template']),appendItem);
+			async(el,row,appendItem);
 		} else { appendItem(dat); }
 	},
 
@@ -224,26 +259,6 @@ var maciAdmin = function () {
 		});
 	},
 
-	setReorderList = function(el) {
-        $(el).sortable({
-            stop: function(e, ui) {
-                var list = $(el).children(), ids = [];
-                list.each(function () {
-                    ids.push( parseInt( $(this).find('[name=id]').first().val() ) );
-                });
-                $.ajax({
-                    type: 'POST',
-                    data: {ids: ids},
-                    url: $(el).attr('reorder'),
-                    success: function () {
-                    	console.log('List reordered!');
-                    }
-                });
-            }
-        });
-
-	},
-
 	setRemoveButton = function(el) {
 		$(el).click(function(e) {
 			e.preventDefault();
@@ -253,16 +268,52 @@ var maciAdmin = function () {
 		});
 	},
 
+	setField = function(el) {
+		$(el).click(function(e) {
+			e.preventDefault();
+			$.ajax({
+				type: 'POST',
+				data: {
+					'setfields': {
+						0: {
+							'set': $(el).attr('set'),
+							'type': $(el).attr('type'),
+							'val': $(el).attr('val')
+						}
+					}
+				},
+				url: $(el).attr('href'),
+				success: function (dat,sts,jqx) {
+					if (dat.success) {
+						alert('Set!');
+					}
+				}
+			});
+		});
+	},
+
 	setModalList = function(el) {
 		setModal(el, function(modal, dat) {
-			var container = $(modal).find('.modal-body').children().first();
+			var container = $(modal).find('.modal-body').first().addClass('row');
 			container.find('.row').each(function(j,rw) {
-				var btt = $('<button/>', {'class': 'btn btn-success'}).text('Select').appendTo(rw);
-				$(rw).find('.ma-form').hide();
+				$(rw).find('.ma-form, .ma-remove').hide();
+				var btt = $('<a/>', {'href': '#'}).text('Select');
+				if ($(rw).find('.maci-actions').length) {
+					btt.appendTo($(rw).find('.maci-actions').first());
+				} else {
+					btt.addClass('btn btn-success').appendTo(rw);
+				}
 				btt.click(function(e) {
 					e.preventDefault();
 					$(rw).toggleClass('selected');
-					btt.toggleClass('btn-success btn-warning');
+					if ($(rw).hasClass('selected')) {
+						btt.text('Deselect');
+					} else {
+						btt.text('Select');
+					}
+					if (!$(rw).find('.maci-actions').length) {
+						btt.toggleClass('btn-success btn-warning');
+					}
 				});
 			});
 			modal.find('.modal-submit').last().text('Add').click(function(e) {
@@ -275,10 +326,52 @@ var maciAdmin = function () {
 		});
 	},
 
+	setMatra = function(el) {
+		setModal(el, function(modal, dat) {
+			var form = modal.find('form').first();
+			var isnew = ( form.attr('item-id').trim() == 'new' );
+			if (isnew) {
+				form.find('#language_label').val($(el).attr('alt'));
+			}
+			$(modal).find('.modal-body').find('[type=submit]').click(function(e) {
+				e.preventDefault();
+				submitForm(form,false,function(dat) {
+					text = $(dat['template']).find('a').eq(1).text();
+					if (text.length) {
+						$(el).prev().text(text);
+					}
+					if (isnew) {
+						var nel = $(el).clone().attr('href', ( $(el).attr('href') + '/' + dat['id'] ) ).insertAfter(el);
+						$(el).remove();
+						setMatra(nel);
+					}
+				});
+				modal.modal('hide');
+			});
+			removeSubmitButton(modal);
+		});
+	},
+
 	setModalForm = function(el) {
 		setModal(el, function(modal, dat) {
-			var form = modal.find('form').first(),
-				uploader = maciUploader(form.find('[type=file]').first());
+			var form = modal.find('form').first(), uploader = false;
+			if (form.find('[type=file]').length) {
+				var first = form.find('[type=file]').first();
+				uploader = maciUploader(first);
+				form.find('[type=file]').not(first).parent().hide();
+			}
+			if ($(el).attr('parent')) {
+				if ($(el).attr('parentval')) {
+					var sel = form.find($(el).attr('parent')),
+						inp = $('<input/>', {'type': 'hidden', 'name': sel.attr('name')}).val(
+							$(el).attr('parentval')
+						)
+					;
+					sel.parents('.form-group').first().html('').append(inp);
+				} else {
+					form.find($(el).attr('parent')).parents('.form-group').first().remove();
+				}
+			}
 			$(modal).find('.modal-body').find('[type=submit]').click(function(e) {
 				e.preventDefault();
 				submitForm(form,uploader,function(dat) {
@@ -309,6 +402,12 @@ var maciAdmin = function () {
 		$(base).find('.ma-remove').each(function(i,el) {
 			setRemoveButton(el);
 		});
+		$(base).find('.ma-set').each(function(i,el) {
+			setField(el);
+		});
+		$(base).find('.ma-tra').each(function(i,el) {
+			setMatra(el);
+		});
 		$(base).find('.ma-list').each(function(i,el) {
 			setModalList(el);
 		});
@@ -323,9 +422,6 @@ var maciAdmin = function () {
 	return {
 		set: function(el) {
 			setAdmin(el);
-		},
-		setReorder: function(el) {
-			setReorderList(el);
 		}
 	};
 
@@ -336,11 +432,6 @@ $(document).ready(function(e) {
 	var admin = maciAdmin();
 
 	admin.set('body');
-
-	var mc = $('.mediaContainer').first();
-	if (mc.attr('reorder')) {
-		admin.setReorder(mc);
-	}
 
 });
 
