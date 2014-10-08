@@ -479,6 +479,12 @@ class DefaultController extends Controller
                 'repository' => 'MaciTranslatorBundle:Language',
                 'new' => '\Maci\TranslatorBundle\Entity\Language',
                 'form' => 'language'
+            ),
+            'page' => array(
+                'label' => 'Page',
+                'repository' => 'MaciPageBundle:Page',
+                'new' => '\Maci\PageBundle\Entity\Page',
+                'form' => 'page'
             )
         );
     }
