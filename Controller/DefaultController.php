@@ -114,8 +114,11 @@ class DefaultController extends Controller
             foreach ($setfields as $set) {
                 if ($set) {
                     $key = $set['set'];
-                    $type = $set['type'];
+                    $type = false;
                     $value = $set['val'];
+                    if (array_key_exists('type', $set)) {
+                        $type = $set['type'];
+                    }
                     if (!$type || $type == 'default') {
                         $mth = ( method_exists($item, $key) ?  $key : false );
                         if ($mth) {
@@ -475,7 +478,6 @@ class DefaultController extends Controller
             ),
             'language' => array(
                 'label' => 'Language',
-                'menu' => true,
                 'repository' => 'MaciTranslatorBundle:Language',
                 'new' => '\Maci\TranslatorBundle\Entity\Language',
                 'form' => 'language'
@@ -484,6 +486,12 @@ class DefaultController extends Controller
                 'label' => 'Page',
                 'repository' => 'MaciPageBundle:Page',
                 'new' => '\Maci\PageBundle\Entity\Page',
+                'form' => 'page'
+            ),
+            'page_translation' => array(
+                'label' => 'Page Translation',
+                'repository' => 'MaciPageBundle:PageTranslation',
+                'new' => '\Maci\PageBundle\Entity\PageTranslation',
                 'form' => 'page'
             )
         );
