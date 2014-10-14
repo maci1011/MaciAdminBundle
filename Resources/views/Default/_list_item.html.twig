@@ -1,0 +1,27 @@
+
+<div class="row">
+
+	<div class="col-xs-1">
+		<input name="id" type="hidden" value="{{ item.id }}" />
+		<a href="{{ path('maci_admin_entity_form', { 'entity': admin.name, 'id': item.id }) }}">
+			{{ item.id }}
+		</a>
+	</div>
+
+	<div class="col-xs-8">
+		<a href="{{ path('maci_admin_entity_form', { 'entity': admin.name, 'id': item.id }) }}">
+			{{ item }}
+		</a>
+	</div>
+
+	<div class="col-xs-3 actions">
+		<a class="ma-form" href="{{ path('maci_admin_entity_form', {'entity': admin.name, 'id': item.id}) }}">
+			Edit
+		</a>
+		|
+		<a class="ma-remove" href="{{ path('maci_admin_entity_remove', {'entity': admin.name, 'id': item.id}) }}">
+			Remove
+		</a>
+	</div>
+
+</div>

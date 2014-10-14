@@ -5,7 +5,7 @@
 
 {% for item in list %}
 
-	{% include "MaciAdminBundle:Default:_item.html.twig" with { 'admin': admin, 'item': item } %}
+	{% include "MaciAdminBundle:Default:_list_item.html.twig" with { 'admin': admin, 'item': item } %}
 
 {% endfor %}
 
@@ -13,10 +13,8 @@
 
 {% else %}
 
-<div class="nocontent">
-
-	<p>No Items.</p>
-
+<div class="row">
+	<h3 class="noitems">No Items.</h3>
 </div>
 
 {% endif %}

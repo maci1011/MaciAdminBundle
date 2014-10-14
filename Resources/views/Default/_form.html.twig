@@ -3,7 +3,7 @@
 	{% if item.id %}
 		{{ path("maci_admin_entity_form", {'entity': admin.name, 'id': item.id}) }}
 	{% else %}
-		{{ path("maci_admin_entity_form", {'entity': admin.name}) }}
+		{{ path("maci_admin_entity_new", {'entity': admin.name}) }}
 	{% endif %}
 		" method="post" role="form" entity="{{ admin.name }}" item-id="
 		{% if item.id %}
