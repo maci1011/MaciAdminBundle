@@ -394,6 +394,12 @@ class DefaultController extends Controller
                     'item' => 'MaciMediaBundle:Default:_item.html.twig'
                 )
             ),
+            'media_tag' => array(
+                'label' => 'Media Tag',
+                'repository' => 'MaciMediaBundle:Tag',
+                'new' => '\Maci\MediaBundle\Entity\Tag',
+                'form' => 'media_tag'
+            ),
             'blog_post' => array(
                 'label' => 'Post',
                 'repository' => 'MaciBlogBundle:Post',
@@ -411,12 +417,6 @@ class DefaultController extends Controller
                 'repository' => 'MaciBlogBundle:Tag',
                 'new' => '\Maci\BlogBundle\Entity\Tag',
                 'form' => 'blog_tag'
-            ),
-            'blog_tag_item' => array(
-                'label' => 'Tag Item',
-                'repository' => 'MaciBlogBundle:TagItem',
-                'new' => '\Maci\BlogBundle\Entity\TagItem',
-                'form' => 'blog_tag_item'
             ),
             'category' => array(
                 'label' => 'Cateogry',
@@ -471,6 +471,18 @@ class DefaultController extends Controller
                 'repository' => 'MaciPageBundle:PageTranslation',
                 'new' => '\Maci\PageBundle\Entity\PageTranslation',
                 'form' => 'page'
+            ),
+            'panel' => array(
+                'label' => 'Panel',
+                'repository' => 'MaciListBundle:Panel',
+                'new' => '\Maci\ListBundle\Entity\Panel',
+                'form' => 'panel'
+            ),
+            'panel_item' => array(
+                'label' => 'Panel Item',
+                'repository' => 'MaciListBundle:Item',
+                'new' => '\Maci\ListBundle\Entity\Item',
+                'form' => 'panel_item'
             )
         );
     }

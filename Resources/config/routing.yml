@@ -3,8 +3,6 @@
 maci_admin_entity_file_upload:
     pattern:  /admin/{entity}/{id}/fileUpload
     defaults: { _controller: MaciAdminBundle:Default:fileUpload, id: 0 }
-    requirements:
-        id: \d
 
 maci_admin_entity_item:
     pattern:  /admin/{entity}/{id}/item
@@ -15,8 +13,6 @@ maci_admin_entity_item:
 maci_admin_entity_object:
     pattern:  /admin/{entity}/{id}/object
     defaults: { _controller: MaciAdminBundle:Default:object, id: 0 }
-    requirements:
-        id: \d
 
 maci_admin_entity_remove:
     pattern:  /admin/{entity}/{id}/remove

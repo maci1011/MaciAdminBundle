@@ -171,14 +171,32 @@ var maciAdmin = function () {
 	},
 
 	createObject: function(el,row,callback) {
-		var relations = { 0: {}, 1: {} };
+		var relations = { 0: {} };
 		relations[0]['set'] = $(el).attr('from');
 		relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
 		relations[0]['val'] = $(row).find('[name=id]').first().val();
-		relations[1]['set'] = $(el).attr('to');
-		relations[1]['type'] = $(el).attr('totype') ? $(el).attr('totype') : $(el).attr('to');
-		relations[1]['val'] = $(el).attr('toid');
+		if ($(el).attr('to')) {
+			relations[1] = {};
+			relations[1]['set'] = $(el).attr('to');
+			relations[1]['type'] = $(el).attr('totype') ? $(el).attr('totype') : $(el).attr('to');
+			relations[1]['val'] = $(el).attr('toid');
+		}
 		_obj.setObject($(el).attr('sync'), { 'setfields': relations }, callback);
+	},
+
+	setField: function(el, callback) {
+		var val = $(el).attr('val');
+		if (val[0] == '#') {
+			val = $(val).html();
+		}
+		var fields = {
+			0: {
+				'set': $(el).attr('set'),
+				'type': $(el).attr('type'),
+				'val': val
+			}
+		};
+		_obj.setObject($(el).attr('href'), { 'setfields': fields }, callback);
 	},
 
 	removeSubmitButton: function(modal) {
@@ -290,6 +308,13 @@ var maciAdmin = function () {
 		});
 	},
 
+	setFieldButton: function(el, callback) {
+		$(el).click(function(e) {
+			e.preventDefault();
+			_obj.setField(el, callback);
+		});
+	},
+
 	setFormButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setParentInput(el, modal);
@@ -322,6 +347,10 @@ var maciAdmin = function () {
 $(document).ready(function(e) {
 
 	var admin = maciAdmin();
+
+	$('.ma-set').each(function() {
+		admin.setFieldButton($(this))
+	});
 
 	$('.ma-form').each(function() {
 		admin.setFormButton($(this))
