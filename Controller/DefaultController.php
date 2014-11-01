@@ -206,7 +206,12 @@ class DefaultController extends Controller
             return new JsonResponse(array('error' => 'error.not-found'), 200);
         }
 
-        $em->remove($item);
+        if (method_exists($item, 'setRemoved')) {
+            $item->setRemoved(true);
+        } else {
+            $em->remove($item);
+        }
+
         $em->flush();
 
         return new JsonResponse(array('success' => true), 200);

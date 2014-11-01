@@ -133,6 +133,8 @@ var maciAdmin = function () {
 				if (dat['success']) {
 					if ($.isFunction(callback)) {
 						callback(dat);
+					} else {
+						alert('success!');
 					}
 					console.log('success');
 				} else {
