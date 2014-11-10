@@ -148,7 +148,7 @@ var maciAdmin = function () {
 		var data = {};
 		form.find('[name]').not('[type=file], [type=reset], [type=submit]').each(function(j,fl) {
 			if ($(fl).attr('type') == 'checkbox') {
-				data[$(fl).attr('name')] = $(fl).is(':checked');
+				data[$(fl).attr('name')] = $(fl).is(':checked') ? $(fl).val() : '' ;
 			} else if ($(fl).attr('type') == 'radio') {
 				if ($(fl).is(':checked')) {
 					data[$(fl).attr('name')] = $(fl).val();
