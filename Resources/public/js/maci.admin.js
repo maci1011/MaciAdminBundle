@@ -206,16 +206,7 @@ var maciAdmin = function () {
 	},
 
 	setRichTextEditor: function(el) {
-		var id = el.attr('id'),
-			toolbar = $('<div/>', {'id': ('toolbar_'+id), 'class': 'ad-tooeditor'}).insertAfter(el),
-			editor = $('<div/>', {'id': ('editor_'+id), 'class': 'ad-editor clear'}).insertAfter(toolbar);
-		editor.html( (el.val() ? el.val() : $('<span/>').text('Insert Text Here...')) );
-		editor.freshereditor({toolbar_selector: ("#"+toolbar.attr('id')), excludes: []});
-		editor.freshereditor("edit", true);
-		editor.on('change', function() {
-			el.val(editor.html());
-        });
-        el.hide();
+		CKEDITOR.replace( el.get(0) );
 	},
 
 	setParentInput: function(el, modal) {
