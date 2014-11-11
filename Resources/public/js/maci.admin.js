@@ -146,6 +146,11 @@ var maciAdmin = function () {
 
 	getFormData: function(form) {
 		var data = {};
+		if ( CKEDITOR ) {
+			for(var instanceName in CKEDITOR.instances) {
+				CKEDITOR.instances[instanceName].updateElement();
+			}
+		}
 		form.find('[name]').not('[type=file], [type=reset], [type=submit]').each(function(j,fl) {
 			if ($(fl).attr('type') == 'checkbox') {
 				data[$(fl).attr('name')] = $(fl).is(':checked') ? $(fl).val() : '' ;
@@ -206,6 +211,7 @@ var maciAdmin = function () {
 	},
 
 	setRichTextEditor: function(el) {
+		console.log(el);
 		CKEDITOR.replace( el.get(0) );
 	},
 
