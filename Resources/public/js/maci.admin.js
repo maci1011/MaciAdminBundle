@@ -211,8 +211,9 @@ var maciAdmin = function () {
 	},
 
 	setRichTextEditor: function(el) {
-		console.log(el);
-		CKEDITOR.replace( el.get(0) );
+		if (!el.hasClass('noeditor')) {
+			CKEDITOR.replace( el.get(0) );
+		}
 	},
 
 	setParentInput: function(el, modal) {
