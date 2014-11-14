@@ -303,6 +303,7 @@ var maciAdmin = function () {
 			if (confirm('Remove Item?')) {
 				_obj.getModal($(el).attr('href'), function(dat) {
 					if ($.isFunction(callback)) { callback(); }
+					else { alert('Removed!') }
 				});
 			}
 		});
@@ -347,6 +348,10 @@ var maciAdmin = function () {
 $(document).ready(function(e) {
 
 	var admin = maciAdmin();
+
+	$('.ma-remove').each(function() {
+		admin.setRemoveButton($(this));
+	});
 
 	$('.ma-set').each(function() {
 		admin.setFieldButton($(this))
