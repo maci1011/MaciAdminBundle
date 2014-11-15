@@ -138,8 +138,11 @@ var maciAdmin = function () {
 					}
 					console.log('success');
 				} else {
-					console.log(dat['error']);
+					alert('error!');
 				}
+			},
+			error: function(dat,sts,jqx) {
+				alert('error!');
 			}
 		});
 	},
