@@ -20,9 +20,27 @@ class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('maci_admin');
 
-        // Here you should define the parameters that are allowed to
-        // configure your bundle. See the documentation linked above for
-        // more information on that topic.
+        $rootNode
+            ->children()
+                ->arrayNode('entities')
+                    ->prototype('array')
+                        ->children()
+                            ->scalarNode('form')->end()
+                            ->scalarNode('label')->end()
+                            ->scalarNode('class')->isRequired()->end()
+                            ->arrayNode('templates')
+                                ->children()
+                                    ->scalarNode('form')->end()
+                                    ->scalarNode('list')->end()
+                                    ->scalarNode('list_item')->end()
+                                    ->scalarNode('show')->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end()
+        ;
 
         return $treeBuilder;
     }

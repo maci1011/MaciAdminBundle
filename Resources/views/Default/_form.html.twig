@@ -1,16 +1,11 @@
 
 <form class="maci-form" action="
 	{% if item.id %}
-		{{ path("maci_admin_entity_form", {'entity': admin.name, 'id': item.id}) }}
+		{{ path("maci_admin_entity_form", {'entity': entity.name, 'id': item.id}) }}
 	{% else %}
-		{{ path("maci_admin_entity_new", {'entity': admin.name}) }}
+		{{ path("maci_admin_entity_new", {'entity': entity.name}) }}
 	{% endif %}
-		" method="post" role="form" entity="{{ admin.name }}" item-id="
-		{% if item.id %}
-			{{ item.id }}
-		{% else %}
-			new
-		{% endif %}" {{ form_enctype(form) }}>
+		" method="post" role="form" {{ form_enctype(form) }}>
 
     {{ form_rest(form) }}
 

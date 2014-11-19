@@ -1,13 +1,17 @@
 
 {% if list|length %}
 
-<div class="ma-list">
+<div class="ma-admin-list">
 
 {% for item in list %}
 
-	{% include "MaciAdminBundle:Default:_list_item.html.twig" with { 'admin': admin, 'item': item } %}
+	{% include "MaciAdminBundle:Default:_list_item.html.twig" with { 'entity': entity, 'item': item } %}
 
 {% endfor %}
+
+	<a class="ma-form" href="{{ path('maci_admin_entity_new', {'entity': entity.name}) }}">
+		New Item
+	</a>
 
 </div>
 

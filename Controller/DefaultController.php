@@ -6,63 +6,47 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 use A2lix\I18nDoctrineBundle\Annotation\I18nDoctrine;
 
 class DefaultController extends Controller
 {
+    private $_entities;
+
     public function indexAction()
     {
-        $admin = $this->getConfig();
+        $entities = $this->getEntities();
 
         return $this->render('MaciAdminBundle:Default:index.html.twig', array(
-            'admin' => $admin
+            'entities' => $entities
         ));
     }
 
-    public function listAction(Request $request, $entity)
+    public function navAction()
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
-        }
-
-        $repo = $this->getDoctrine()->getManager()->getRepository($admin['repository']);
-
-        if ($filters = $request->get('filters')) {
-            $item = new $admin['new'];
-            $list = $repo->findBy($filters, (
-                method_exists($item, 'setPosition') ?
-                array('position' => 'ASC') :
-                false
-            ));
-        } else {
-            $list = $repo->findAll();
-        }
-
-        return $this->renderTemplate($request, $admin, 'list', array(
-            'admin' => $admin,
-            'list' => $list
+        return $this->render('MaciAdminBundle:Default:_nav.html.twig', array(
+            'entities' => $this->getEntities()
         ));
     }
 
-    public function itemAction(Request $request, $entity, $id)
+    public function showAction(Request $request, $entity, $id)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
         }
 
-        $item = $this->getDoctrine()->getManager()
-            ->getRepository($admin['repository'])->findOneById($id);
+        $item = $this->getEntityRepository($entity)->findOneById($id);
 
         if (!$item) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
         }
 
-        return $this->renderTemplate($request, $admin, 'item', array(
-            'admin' => $admin,
-            'item' => $item
+        return $this->renderTemplate($request, $entity, 'show', array(
+            'entity' => $entity,
+            'item' => $item,
+            'details' => $this->getItemDetails($entity, $item)
         ));
     }
 
@@ -71,23 +55,23 @@ class DefaultController extends Controller
      */
     public function formAction(Request $request, $entity, $id)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.entitynotfound')));
         }
 
-        $item = new $admin['new'];
+        $item = $this->getEntityNewObj($entity);
 
         if ($id) {
-            $item = $this->getDoctrine()->getManager()
-                ->getRepository($admin['repository'])->findOneById($id);
+            $item = $this->getEntityRepository($entity)->findOneById($id);
 
             if (!$item) {
-                return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+                return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
             }
         }
 
-        $form = $this->createForm($admin['form'], $item);
+        $form = $this->getEntityForm($entity, $item);
+
         $form->handleRequest($request);
 
         if ($form->isValid()) {
@@ -99,23 +83,40 @@ class DefaultController extends Controller
             }
             // else {
             //     return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
-            //         'entity' => $admin['name'],
+            //         'entity' => $entity['name'],
             //         'message' => 'form.add'
             //     )));
             // }
         }
 
-        return $this->renderTemplate($request, $admin, 'form', array(
-            'admin' => $admin,
+        return $this->renderTemplate($request, $entity, 'form', array(
+            'entity' => $entity,
             'item' => $item,
             'form' => $form->createView()
         ));
     }
 
+    public function listAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
+        }
+
+        $repo = $this->getEntityRepository($entity);
+
+        $list = $repo->findAll();
+
+        return $this->renderTemplate($request, $entity, 'list', array(
+            'entity' => $entity,
+            'list' => $list
+        ));
+    }
+
     public function objectAction(Request $request, $entity, $id)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin || !$request->isXmlHttpRequest()) {
+        $entity = $this->getEntity($entity);
+        if (!$entity || !$request->isXmlHttpRequest()) {
             return new JsonResponse(array('error' => 'error.noadmin'), 200);
         }
 
@@ -124,12 +125,12 @@ class DefaultController extends Controller
         $item = false;
 
         if ($id) {
-            $item = $em->getRepository($admin['repository'])->findOneById($id);
+            $item = $em->getRepository($entity['repository'])->findOneById($id);
             if (!$item) {
                 return new JsonResponse(array('error' => 'error.noitem'), 200);
             }
         } else {
-            $item = new $admin['new'];
+            $item = new $entity['new'];
         }
 
         $save = false;
@@ -151,7 +152,7 @@ class DefaultController extends Controller
                             call_user_method($mth, $item, $value);
                             $save = true;
                         }
-                    } else if ($rel = $this->getAdmin($type)) {
+                    } else if ($rel = $this->getEntity($type)) {
                         $mth = (
                             method_exists($item, ('set' . ucfirst($key))) || method_exists($item, ('add' . ucfirst($key))) ? (
                                 method_exists($item, ('set' . ucfirst($key))) ?
@@ -175,7 +176,7 @@ class DefaultController extends Controller
 			if (!$item->getId() && method_exists($item, 'getTranslations')) {
 			    $locs = $this->container->getParameter('a2lix_translation_form.locales');
 			    foreach ($locs as $loc) {
-			        $clnm = $admin['new'].'Translation';
+			        $clnm = $entity['new'].'Translation';
 			        $tran = new $clnm;
 			        $tran->setLocale($loc);
 			        $item->addTranslation($tran);
@@ -194,13 +195,13 @@ class DefaultController extends Controller
 
     public function removeAction(Request $request, $entity, $id)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin || !$request->isXmlHttpRequest()) {
+        $entity = $this->getEntity($entity);
+        if (!$entity || !$request->isXmlHttpRequest()) {
             return new JsonResponse(array('error' => 'error.noadmin'), 200);
         }
 
         $em = $this->getDoctrine()->getManager();
-        $item = $em->getRepository($admin['repository'])->findOneById($id);
+        $item = $em->getRepository($entity['repository'])->findOneById($id);
 
         if (!$item) {
             return new JsonResponse(array('error' => 'error.not-found'), 200);
@@ -219,14 +220,14 @@ class DefaultController extends Controller
 
     public function reorderAction(Request $request, $entity)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
         }
 
         $ids = $this->getRequest()->get('ids');
 
-        $this->getDoctrine()->getRepository($admin['repository'])->reorder($ids);
+        $this->getDoctrine()->getRepository($entity['repository'])->reorder($ids);
 
         return new JsonResponse(array('success' => true), 200);
     }
@@ -234,26 +235,26 @@ class DefaultController extends Controller
     public function fileUploadAction(Request $request, $entity, $id)
     {
         if (!$request->isXmlHttpRequest()) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.action_denied')));
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.action_denied')));
         }
 
-        $admin = $this->getAdmin($entity);
+        $entity = $this->getEntity($entity);
 
-        if (!$admin) {
+        if (!$entity) {
             return new JsonResponse(array('success' => false, 'error' => 'error.noadmin'), 200);
         }
 
         if (!count($request->files)) {
-            return $this->renderTemplate($request, $admin, 'uploader', array(
-                'admin' => $admin
+            return $this->renderTemplate($request, $entity, 'uploader', array(
+                'entity' => $entity
             ));
         }
 
         $em = $this->getDoctrine()->getManager();
 
-        $repo = $em->getRepository($admin['repository']);
+        $repo = $em->getRepository($entity['repository']);
 
-        $item = new $admin['new'];
+        $item = new $entity['new'];
 
         if ($id) {
             $item = $repo->findOneById($id);
@@ -276,10 +277,10 @@ class DefaultController extends Controller
                     $locs = $this->container->getParameter('a2lix_translation_form.locales');
                     $date = date('m/d/Y h:i:s');
                     foreach ($locs as $loc) {
-                        $clnm = $admin['new'].'Translation';
+                        $clnm = $entity['new'].'Translation';
                         $tran = new $clnm;
                         $tran->setLocale($loc);
-                        $traname = $admin['label'].' [' . $loc . '] ' . $date;
+                        $traname = $entity['label'].' [' . $loc . '] ' . $date;
                         $tran->setName($traname);
                         $item->addTranslation($tran);
                         $em->persist($tran);
@@ -294,30 +295,30 @@ class DefaultController extends Controller
 
         $em->flush();
 
-        return $this->renderTemplate($request, $admin, 'item', array(
-            'admin' => $admin,
+        return $this->renderTemplate($request, $entity, 'item', array(
+            'entity' => $entity,
             'item' => $item
         ));
     }
 /*
     public function pagerAction()
     {
-        $adminLimitPerPage = $this->getBlogConfig('admin_limit_per_page');
+        $entityLimitPerPage = $this->getBlogConfig('admin_limit_per_page');
         $repo = $this->getDoctrine()->getEntityManager()->getRepository('Eight\BlogBundle\Entity\Post');
         $page = $this->getRequest()->get('page', 1);
 
-        $pager = new PostPager($repo, $adminLimitPerPage, $page, 5);
+        $pager = new PostPager($repo, $entityLimitPerPage, $page, 5);
 
         return $this->render('EightBlogBundle:Admin:list.html.twig', array(
-            'posts' => $this->container->get('eight.posts')->getPaged($adminLimitPerPage, $page),
+            'posts' => $this->container->get('eight.posts')->getPaged($entityLimitPerPage, $page),
             'pager' => $pager
         ));
     }
 */
-    public function renderTemplate(Request $request, $admin, $action, $params)
+    public function renderTemplate(Request $request, $entity, $action, $params)
     {
-        if ( array_key_exists('templates', $admin) && array_key_exists($action, $admin['templates'])) {
-            $template = $admin['templates'][$action];
+        if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates'])) {
+            $template = $entity['templates'][$action];
         } else {
             $template = 'MaciAdminBundle:Default:_' . $action .'.html.twig';
         }
@@ -332,7 +333,7 @@ class DefaultController extends Controller
                 return new JsonResponse(array(
                     'success' => true,
                     'id' => $id,
-                    'entity' => $admin['name'],
+                    'entity' => $entity['name'],
                     'template' => $this->renderView('MaciAdminBundle:Default:async.html.twig', array(
                         'params' => $params,
                         'template' => $template
@@ -342,153 +343,169 @@ class DefaultController extends Controller
                 return new JsonResponse(array(
                     'success' => true,
                     'id' => $id,
-                    'entity' => $admin['name'],
+                    'entity' => $entity['name'],
                     'template' => $this->renderView($template, $params)
                 ), 200);
             }
         } else {
             return $this->render('MaciAdminBundle:Default:' . $action .'.html.twig', array(
-                'admin' => $admin,
+                'entity' => $entity,
                 'params' => $params,
                 'template' => $template
             ));
         }
     }
 
-    public function getAdmin($entity = false)
+    public function generateLabel($name)
     {
-        $config = $this->getConfig();
-        if ($entity && array_key_exists($entity, $config)) {
-            $admin = $config[$entity];
-            $admin['name'] = $entity;
-            return $admin;
+        $str = str_replace('_', ' ', $name);
+        return ucwords($str);
+    }
+
+    public function getEntities()
+    {
+        if ( !is_array($this->_entities) ) {
+            $this->_entities = $this->container->getParameter('maci.admin.entities');
+            foreach ($this->_entities as $name => $entity) {
+                if (!array_key_exists('label', $entity)) {
+                    $this->_entities[$name]['label'] = $this->generateLabel($name);
+                }
+                $this->_entities[$name]['name'] = $name;
+            }
+        }
+
+        return $this->_entities;
+    }
+
+    public function getEntity($name)
+    {
+        $entities = $this->getEntities();
+        if (array_key_exists($name, $entities)) {
+            return $entities[$name];
         }
         return false;
     }
 
-    public function getConfig()
+    public function getAdminBundle()
     {
-        return array(
-            'album' => array(
-                'label' => 'Album',
-                'repository' => 'MaciMediaBundle:Album',
-                'new' => '\Maci\MediaBundle\Entity\Album',
-                'form' => 'media_album',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media' => array(
-                'label' => 'Media',
-                'repository' => 'MaciMediaBundle:Media',
-                'new' => '\Maci\MediaBundle\Entity\Media',
-                'form' => 'media',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media_item' => array(
-                'label' => 'Album Item',
-                'repository' => 'MaciMediaBundle:Item',
-                'new' => '\Maci\MediaBundle\Entity\Item',
-                'form' => 'media_item',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media_tag' => array(
-                'label' => 'Media Tag',
-                'repository' => 'MaciMediaBundle:Tag',
-                'new' => '\Maci\MediaBundle\Entity\Tag',
-                'form' => 'media_tag'
-            ),
-            'blog_post' => array(
-                'label' => 'Post',
-                'repository' => 'MaciBlogBundle:Post',
-                'new' => '\Maci\BlogBundle\Entity\Post',
-                'form' => 'blog_post'
-            ),
-            'blog_media_item' => array(
-                'label' => 'Media Item',
-                'repository' => 'MaciBlogBundle:MediaItem',
-                'new' => '\Maci\BlogBundle\Entity\MediaItem',
-                'form' => 'blog_media_item'
-            ),
-            'blog_tag' => array(
-                'label' => 'Tag',
-                'repository' => 'MaciBlogBundle:Tag',
-                'new' => '\Maci\BlogBundle\Entity\Tag',
-                'form' => 'blog_tag'
-            ),
-            'category' => array(
-                'label' => 'Cateogry',
-                'repository' => 'MaciProductBundle:Category',
-                'new' => '\Maci\ProductBundle\Entity\Category',
-                'form' => 'category'
-            ),
-            'category_item' => array(
-                'label' => 'Cateogry Item',
-                'repository' => 'MaciProductBundle:CategoryItem',
-                'new' => '\Maci\ProductBundle\Entity\CategoryItem',
-                'form' => 'category_item'
-            ),
-            'product' => array(
-                'label' => 'Product',
-                'repository' => 'MaciProductBundle:Product',
-                'new' => '\Maci\ProductBundle\Entity\Product',
-                'form' => 'product'
-            ),
-            'product_media_item' => array(
-                'label' => 'Product Media Item',
-                'repository' => 'MaciProductBundle:MediaItem',
-                'new' => '\Maci\ProductBundle\Entity\MediaItem',
-                'form' => 'product_media_item'
-            ),
-            'product_variant' => array(
-                'label' => 'Product Variant',
-                'repository' => 'MaciProductBundle:Variant',
-                'new' => '\Maci\ProductBundle\Entity\Variant',
-                'form' => 'product_variant'
-            ),
-            'product_variant_item' => array(
-                'label' => 'Product VariantItem',
-                'repository' => 'MaciProductBundle:VariantItem',
-                'new' => '\Maci\ProductBundle\Entity\VariantItem',
-                'form' => 'product_variant_item'
-            ),
-            'language' => array(
-                'label' => 'Language',
-                'repository' => 'MaciTranslatorBundle:Language',
-                'new' => '\Maci\TranslatorBundle\Entity\Language',
-                'form' => 'language'
-            ),
-            'page' => array(
-                'label' => 'Page',
-                'repository' => 'MaciPageBundle:Page',
-                'new' => '\Maci\PageBundle\Entity\Page',
-                'form' => 'page'
-            ),
-            'page_translation' => array(
-                'label' => 'Page Translation',
-                'repository' => 'MaciPageBundle:PageTranslation',
-                'new' => '\Maci\PageBundle\Entity\PageTranslation',
-                'form' => 'page'
-            ),
-            'panel' => array(
-                'label' => 'Panel',
-                'repository' => 'MaciListBundle:Panel',
-                'new' => '\Maci\ListBundle\Entity\Panel',
-                'form' => 'panel'
-            ),
-            'panel_item' => array(
-                'label' => 'Panel Item',
-                'repository' => 'MaciListBundle:Item',
-                'new' => '\Maci\ListBundle\Entity\Item',
-                'form' => 'panel_item'
-            )
-        );
+        return $this->get('kernel')->getBundle('MaciAdminBundle');
+    }
+
+    public function getEntityBundle($entity)
+    {
+        return $this->get('kernel')->getBundle(split(':', $entity['class'])[0]);
+    }
+
+    public function getEntityRepository($entity)
+    {
+        return $this->getDoctrine()->getRepository($entity['class']);
+    }
+
+    public function getEntityClass($entity)
+    {
+        $repo = $this->getEntityRepository($entity);
+        return $repo->getClassName();
+    }
+
+    public function getEntityMetadata($entity)
+    {
+        return $this->getDoctrine()->getManager()
+            ->getClassMetadata( $this->getEntityClass($entity) );
+    }
+
+    public function getEntityFields($entity)
+    {
+        $metadata = $this->getEntityMetadata($entity);
+
+        $fields = (array) $metadata->fieldNames;
+
+        // Remove the primary key field if it's not managed manually
+        if (!$metadata->isIdentifierNatural()) {
+            $fields = array_diff($fields, $metadata->identifier);
+        }
+
+        foreach ($metadata->associationMappings as $fieldName => $relation) {
+            if ($relation['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
+                $fields[] = $fieldName;
+            }
+        }
+
+        return $fields;
+    }
+
+    public function getEntityNewObj($entity)
+    {
+        $class = $this->getEntityClass($entity);
+        return new $class;
+    }
+
+    public function getItemDetails($entity, $object)
+    {
+        $fields = $this->getEntityFields($entity);
+
+        $details = array();
+
+        foreach ($fields as $field) {
+
+            $value = null;
+
+            $uf = ucfirst($field);
+
+            if (method_exists($object, ('is'.$uf))) {
+                $value = ( call_user_method(('is'.$uf), $object) ? 'True' : 'False' );
+            } else if (method_exists($object, ('get'.$uf))) {
+                $value = call_user_method(('get'.$uf), $object);
+                if (is_object($value) && get_class($value) === 'DateTime') {
+                    $value = $value->format("Y-m-d H:i:s");
+                }
+            } else if (method_exists($object, $field)) {
+                $value = call_user_method($field, $object);
+            }
+
+            array_push($details, array(
+                'label' => $this->generateLabel($field),
+                'value' => $value
+            ));
+
+        }
+
+        return $details;
+    }
+
+    public function generateEntityForm($entity, $object)
+    {
+        $fields = $this->getEntityFields($entity);
+
+        $form = $this->createFormBuilder($object);
+
+        foreach ($fields as $field) {
+
+            $form->add($field);
+
+        }
+
+        $form
+            ->add('reset', 'reset')
+            ->add('save', 'submit')
+        ;
+
+        return $form->getForm();
+    }
+
+    public function getEntityForm($entity, $object = false)
+    {
+        $form = $entity['name'];
+        if (!$object) {
+            $object = $this->getEntityNewObj($entity);
+        }
+        if (array_key_exists('form', $entity)) {
+            $form = $entity['form'];
+        }
+        if (strpos('\\', $form) && class_exists($form)) {
+            return $this->createForm(new $form, $object);
+        } else if ($this->container->get('form.registry')->hasType($form)) {
+            return $this->createForm($form, $object);
+        }
+        return $this->generateEntityForm($entity, $object);
     }
 }

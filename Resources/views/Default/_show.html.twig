@@ -1,0 +1,46 @@
+
+<section class="maci-entity-show">
+
+	<div class="row entity-id">
+		<div class="col-xs-4">
+			<span class="item-label">Id</span>
+		</div>
+		<div class="col-xs-8">
+			<span class="item-value">{{ item.id }}</span>
+		</div>
+	</div>
+
+	{% for item in details %}
+
+	<div class="row">
+		<div class="col-xs-4">
+			<span class="item-label">{{ item.label }}</span>
+		</div>
+		<div class="col-xs-8">
+			{% if item.value is iterable %}
+			{% for child in item.value %}
+			<span class="item-child">{{ child }}</span>
+			{% endfor %}
+			{% else %}
+			<span class="item-value">{{ item.value }}</span>
+			{% endif %}
+		</div>
+	</div>
+
+	{% endfor %}
+
+	<div class="row entity-actions">
+		<div class="col-xs-4">
+			<span class="item-label">Actions</span>
+		</div>
+		<div class="col-xs-8">
+			<a class="ma-form" href="{{ path('maci_admin_entity_form', {'entity': entity.name, 'id': item.id}) }}">
+				Edit
+			</a>
+			<a class="ma-remove" href="{{ path('maci_admin_entity_remove', {'entity': entity.name, 'id': item.id}) }}">
+				Remove
+			</a>
+		</div>
+	</div>
+
+</section>
