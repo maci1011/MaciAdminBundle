@@ -1,0 +1,11 @@
+
+<form class="maci-form form-remove" action="{{ path("maci_admin_entity_remove", {'entity': entity.name, 'id': item.id}) }}" method="post">
+
+	<p>
+		Are you sure to delete this item?
+	</p>
+	<br/>
+
+    {{ form_rest(form) }}
+
+</form>

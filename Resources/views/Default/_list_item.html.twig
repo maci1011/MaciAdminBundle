@@ -15,11 +15,11 @@
 	</div>
 
 	<div class="col-xs-3 actions">
-		<a class="ma-form" href="{{ path('maci_admin_entity_form', {'entity': entity.name, 'id': item.id}) }}">
+		<a href="{{ path('maci_admin_entity_form', {'entity': entity.name, 'id': item.id}) }}">
 			Edit
 		</a>
 		|
-		<a class="ma-remove" href="{{ path('maci_admin_entity_remove', {'entity': entity.name, 'id': item.id}) }}">
+		<a href="{{ path('maci_admin_entity_remove', {'entity': entity.name, 'id': item.id}) }}">
 			Remove
 		</a>
 	</div>

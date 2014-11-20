@@ -34,13 +34,13 @@ class DefaultController extends Controller
     {
         $entity = $this->getEntity($entity);
         if (!$entity) {
-            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
+            return $this->returnError($request, 'entity-not-found');
         }
 
         $item = $this->getEntityRepository($entity)->findOneById($id);
 
         if (!$item) {
-            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
+            return $this->returnError($request, 'item-not-found');
         }
 
         return $this->renderTemplate($request, $entity, 'show', array(
@@ -57,7 +57,7 @@ class DefaultController extends Controller
     {
         $entity = $this->getEntity($entity);
         if (!$entity) {
-            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.entitynotfound')));
+            return $this->returnError($request, 'entity-not-found');
         }
 
         $item = $this->getEntityNewObj($entity);
@@ -66,7 +66,7 @@ class DefaultController extends Controller
             $item = $this->getEntityRepository($entity)->findOneById($id);
 
             if (!$item) {
-                return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
+                return $this->returnError($request, 'item-not-found');
             }
         }
 
@@ -81,12 +81,12 @@ class DefaultController extends Controller
             if ($request->isXmlHttpRequest()) {
                 return new JsonResponse(array('success' => true, 'id' => $item->getId()), 200);
             }
-            // else {
-            //     return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
-            //         'entity' => $entity['name'],
-            //         'message' => 'form.add'
-            //     )));
-            // }
+            else {
+                return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
+                    'entity' => $entity['name'],
+                    'message' => 'form.add'
+                )));
+            }
         }
 
         return $this->renderTemplate($request, $entity, 'form', array(
@@ -100,7 +100,7 @@ class DefaultController extends Controller
     {
         $entity = $this->getEntity($entity);
         if (!$entity) {
-            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
+            return $this->returnError($request, 'entity-not-found');
         }
 
         $repo = $this->getEntityRepository($entity);
@@ -116,21 +116,17 @@ class DefaultController extends Controller
     public function objectAction(Request $request, $entity, $id)
     {
         $entity = $this->getEntity($entity);
-        if (!$entity || !$request->isXmlHttpRequest()) {
-            return new JsonResponse(array('error' => 'error.noadmin'), 200);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
         }
 
-        $em = $this->getDoctrine()->getManager();
-
-        $item = false;
+        $item = $this->getEntityNewObj($entity);
 
         if ($id) {
-            $item = $em->getRepository($entity['repository'])->findOneById($id);
+            $item = $this->getEntityRepository($entity)->findOneById($id);
             if (!$item) {
-                return new JsonResponse(array('error' => 'error.noitem'), 200);
+                return $this->returnError($request, 'item-not-found');
             }
-        } else {
-            $item = new $entity['new'];
         }
 
         $save = false;
@@ -173,6 +169,8 @@ class DefaultController extends Controller
         }
 
         if ($save) {
+            $em = $this->getDoctrine()->getManager();
+
 			if (!$item->getId() && method_exists($item, 'getTranslations')) {
 			    $locs = $this->container->getParameter('a2lix_translation_form.locales');
 			    foreach ($locs as $loc) {
@@ -190,44 +188,74 @@ class DefaultController extends Controller
             return new JsonResponse(array('success' => true, 'id' => $item->getId()), 200);
         }
 
-        return new JsonResponse(array('error' => 'error.nothingdone'), 200);
+        return $this->returnError($request, 'nothing-done');
     }
 
     public function removeAction(Request $request, $entity, $id)
     {
         $entity = $this->getEntity($entity);
-        if (!$entity || !$request->isXmlHttpRequest()) {
-            return new JsonResponse(array('error' => 'error.noadmin'), 200);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
         }
 
-        $em = $this->getDoctrine()->getManager();
-        $item = $em->getRepository($entity['repository'])->findOneById($id);
+        $item = $this->getEntityRepository($entity)->findOneById($id);
 
         if (!$item) {
-            return new JsonResponse(array('error' => 'error.not-found'), 200);
+            return $this->returnError($request, 'item-not-found');
         }
 
-        if (method_exists($item, 'setRemoved')) {
-            $item->setRemoved(true);
-        } else {
-            $em->remove($item);
+        $form = $this->createFormBuilder($item)
+            ->add('Delete', 'submit', array(
+                'attr' => array(
+                    'class' => 'btn-danger'
+                )
+            ))
+            ->getForm()
+        ;
+
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+
+            $em = $this->getDoctrine()->getManager();
+
+            if (method_exists($item, 'setRemoved')) {
+                $item->setRemoved(true);
+            } else {
+                $em->remove($item);
+            }
+
+            $em->flush();
+
+            if ($request->isXmlHttpRequest()) {
+                return new JsonResponse(array('success' => true), 200);
+            }
+            else {
+                return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
+                    'entity' => $entity['name'],
+                    'message' => 'form.removed'
+                )));
+            }
+
         }
 
-        $em->flush();
-
-        return new JsonResponse(array('success' => true), 200);
+        return $this->renderTemplate($request, $entity, 'remove', array(
+            'entity' => $entity,
+            'item' => $item,
+            'form' => $form->createView()
+        ));
     }
 
     public function reorderAction(Request $request, $entity)
     {
         $entity = $this->getEntity($entity);
         if (!$entity) {
-            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.notfound')));
+            return $this->returnError($request, 'entity-not-found');
         }
 
         $ids = $this->getRequest()->get('ids');
 
-        $this->getDoctrine()->getRepository($entity['repository'])->reorder($ids);
+        $this->getEntityRepository($entity)->reorder($ids);
 
         return new JsonResponse(array('success' => true), 200);
     }
@@ -235,13 +263,13 @@ class DefaultController extends Controller
     public function fileUploadAction(Request $request, $entity, $id)
     {
         if (!$request->isXmlHttpRequest()) {
-            return $this->redirect($this->generateUrl('maci_admin', array('error' => 'error.action_denied')));
+            return $this->returnError($request, 'action-denied');
         }
 
         $entity = $this->getEntity($entity);
 
         if (!$entity) {
-            return new JsonResponse(array('success' => false, 'error' => 'error.noadmin'), 200);
+            return $this->returnError($request, 'entity-not-found');
         }
 
         if (!count($request->files)) {
@@ -252,14 +280,14 @@ class DefaultController extends Controller
 
         $em = $this->getDoctrine()->getManager();
 
-        $repo = $em->getRepository($entity['repository']);
+        $repo = $this->getEntityRepository($entity);
 
-        $item = new $entity['new'];
+        $item = $this->getEntityNewObj($entity);
 
         if ($id) {
             $item = $repo->findOneById($id);
             if (!$item) {
-                return new JsonResponse(array('success' => false, 'error' => 'error.notfound'), 200);
+                return $this->returnError($request, 'item-not-found');
             }
             $name = $request->files->keys()[0];
             $file = $request->files->get($name);
@@ -267,7 +295,7 @@ class DefaultController extends Controller
 		        $item->setFile($file);
 		        $em->persist($item);
 		    } else {
-                return new JsonResponse(array('success' => false, 'error' => 'error.upload'), 200);
+                return $this->returnError($request, 'on-upload');
             }
         } else {
             $name = $request->files->keys()[0];
@@ -289,7 +317,7 @@ class DefaultController extends Controller
                 $item->setFile($file);
                 $em->persist($item);
             } else {
-                return new JsonResponse(array('success' => false, 'error' => 'error.upload'), 200);
+                return $this->returnError($request, 'on-upload');
             }
         }
 
@@ -353,6 +381,16 @@ class DefaultController extends Controller
                 'params' => $params,
                 'template' => $template
             ));
+        }
+    }
+
+    public function returnError($request, $error)
+    {
+        $message = ( 'error.' . $error );
+        if ($request->isXmlHttpRequest()) {
+            return new JsonResponse(array('success' => false, 'error' => $message), 200);
+        } else {
+            return $this->redirect($this->generateUrl('maci_admin', array('error' => $message)));
         }
     }
 

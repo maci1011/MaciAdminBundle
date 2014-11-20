@@ -177,7 +177,8 @@ var maciAdmin = function () {
 	},
 
 	submitForm: function(form, callback) {
-		_obj.ajax(form.attr('action'), 'POST', _obj.getFormData(form), callback);
+		var method = ( form.attr('method') ? form.attr('method') : 'POST' );
+		_obj.ajax(form.attr('action'), method, _obj.getFormData(form), callback);
 	},
 
 	createObject: function(el,row,callback) {
@@ -337,7 +338,9 @@ var maciAdmin = function () {
 	setUploaderButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalUploader(modal, function(dat) {
-				_obj.createObject(el,dat['template'],callback);
+				_obj.createObject(el,dat['template'],function() {
+					if ( $.isFunction(callback) ) { callback(); }
+				});
 			});
 		});
 	}
@@ -353,7 +356,7 @@ $(document).ready(function(e) {
 	var admin = maciAdmin();
 
 	$('.ma-remove').each(function() {
-		admin.setRemoveButton($(this));
+		admin.setFormButton($(this));
 	});
 
 	$('.ma-set').each(function() {
