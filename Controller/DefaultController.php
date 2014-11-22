@@ -374,6 +374,7 @@ class DefaultController extends Controller
             }
         } else {
             return $this->render('MaciAdminBundle:Default:' . $action .'.html.twig', array(
+                'entity_label' => $entity['label'],
                 'entity' => $entity['name'],
                 'params' => $params,
                 'template' => $template
