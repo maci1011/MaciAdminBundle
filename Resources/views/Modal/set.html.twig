@@ -1,0 +1,31 @@
+
+{% if label is not defined %}
+{% set label = 'Select' %}
+{% endif %}
+
+{% if btnxs is not defined %}
+{% set btnxs = false %}
+{% endif %}
+
+{% if _set is defined %}
+{% set _set = 'set="' ~ _set ~ '"' %}
+{% else %}
+{% set _set = '' %}
+{% endif %}
+
+{% if _type is defined %}
+{% set _type = 'type="' ~ _type ~ '"' %}
+{% else %}
+{% set _type = '' %}
+{% endif %}
+
+{% if _val is defined %}
+{% set _val = 'val="' ~ _val ~ '"' %}
+{% else %}
+{% set _val = '' %}
+{% endif %}
+
+<a class="btn btn-primary {% if btnxs %}btn-xs{% endif %} ma-set" href="{{ path('maci_admin_entity_object', {'entity': entity, 'id': item.id}) }}" {{ _set|raw }} {{ _type|raw }} {{ _val|raw }}>
+	<span class="glyphicon glyphicon-star" aria-hidden="true"></span>
+	{{ label }}
+</a>

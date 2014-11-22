@@ -1,0 +1,9 @@
+
+{% if label is not defined %}
+{% set label = 'Edit' %}
+{% endif %}
+
+<a class="btn btn-success" href="{{ path('maci_admin_entity_form', {'entity': entity, 'id': item.id}) }}">
+	<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+	{{ label }}
+</a>

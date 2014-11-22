@@ -34,12 +34,11 @@
 			<span class="item-label">Actions</span>
 		</div>
 		<div class="col-xs-8">
-			<a href="{{ path('maci_admin_entity_form', {'entity': entity.name, 'id': item.id}) }}">
-				Edit
-			</a>
-			<a href="{{ path('maci_admin_entity_remove', {'entity': entity.name, 'id': item.id}) }}">
-				Remove
-			</a>
+
+			{% include 'MaciAdminBundle:Link:edit.html.twig' with {'entity': entity, 'item': item} %}
+			|
+			{% include 'MaciAdminBundle:Link:remove.html.twig' with {'entity': entity, 'item': item} %}
+
 		</div>
 	</div>
 

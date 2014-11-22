@@ -1,0 +1,9 @@
+
+{% if label is not defined %}
+{% set label = 'New' %}
+{% endif %}
+
+<a class="btn btn-primary" href="{{ path('maci_admin_entity_new', {'entity': entity}) }}">
+	<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+	{{ label }}
+</a>

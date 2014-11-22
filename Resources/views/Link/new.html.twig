@@ -1,0 +1,8 @@
+
+{% if label is not defined %}
+{% set label = 'New' %}
+{% endif %}
+
+<a href="{{ path('maci_admin_entity_new', {'entity': entity}) }}">
+	{{ label }}
+</a>

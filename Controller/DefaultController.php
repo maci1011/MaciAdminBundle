@@ -44,7 +44,7 @@ class DefaultController extends Controller
         }
 
         return $this->renderTemplate($request, $entity, 'show', array(
-            'entity' => $entity,
+            'entity' => $entity['name'],
             'item' => $item,
             'details' => $this->getItemDetails($entity, $item)
         ));
@@ -90,7 +90,7 @@ class DefaultController extends Controller
         }
 
         return $this->renderTemplate($request, $entity, 'form', array(
-            'entity' => $entity,
+            'entity' => $entity['name'],
             'item' => $item,
             'form' => $form->createView()
         ));
@@ -108,7 +108,7 @@ class DefaultController extends Controller
         $list = $repo->findAll();
 
         return $this->renderTemplate($request, $entity, 'list', array(
-            'entity' => $entity,
+            'entity' => $entity['name'],
             'list' => $list
         ));
     }
@@ -149,15 +149,12 @@ class DefaultController extends Controller
                             $save = true;
                         }
                     } else if ($rel = $this->getEntity($type)) {
-                        $mth = (
-                            method_exists($item, ('set' . ucfirst($key))) || method_exists($item, ('add' . ucfirst($key))) ? (
-                                method_exists($item, ('set' . ucfirst($key))) ?
-                                'set' . ucfirst($key) :
-                                'add' . ucfirst($key)
-                            ) : false
-                        );
+                        $mth = false;
+                        if ( method_exists($item, $key) ) { $mth = $key };
+                        else if ( method_exists($item, ('set' . ucfirst($key))) ) { $mth = 'set' . ucfirst($key) };
+                        else if ( method_exists($item, ('add' . ucfirst($key))) ) { $mth = 'add' . ucfirst($key) };
                         if ($mth) {
-                            $rob = $em->getRepository($rel['repository'])->findOneById(intval($value));
+                            $rob = $this->getEntityRepository($rel)->findOneById(intval($value));
                             if ($rob) {
                                 call_user_method($mth, $item, $rob);
                                 $save = true;
@@ -174,7 +171,7 @@ class DefaultController extends Controller
 			if (!$item->getId() && method_exists($item, 'getTranslations')) {
 			    $locs = $this->container->getParameter('a2lix_translation_form.locales');
 			    foreach ($locs as $loc) {
-			        $clnm = $entity['new'].'Translation';
+			        $clnm = $this->getEntityClass($entity).'Translation';
 			        $tran = new $clnm;
 			        $tran->setLocale($loc);
 			        $item->addTranslation($tran);
@@ -240,7 +237,7 @@ class DefaultController extends Controller
         }
 
         return $this->renderTemplate($request, $entity, 'remove', array(
-            'entity' => $entity,
+            'entity' => $entity['name'],
             'item' => $item,
             'form' => $form->createView()
         ));
@@ -274,7 +271,7 @@ class DefaultController extends Controller
 
         if (!count($request->files)) {
             return $this->renderTemplate($request, $entity, 'uploader', array(
-                'entity' => $entity
+                'entity' => $entity['name']
             ));
         }
 
@@ -324,7 +321,7 @@ class DefaultController extends Controller
         $em->flush();
 
         return $this->renderTemplate($request, $entity, 'item', array(
-            'entity' => $entity,
+            'entity' => $entity['name'],
             'item' => $item
         ));
     }
@@ -377,7 +374,7 @@ class DefaultController extends Controller
             }
         } else {
             return $this->render('MaciAdminBundle:Default:' . $action .'.html.twig', array(
-                'entity' => $entity,
+                'entity' => $entity['name'],
                 'params' => $params,
                 'template' => $template
             ));

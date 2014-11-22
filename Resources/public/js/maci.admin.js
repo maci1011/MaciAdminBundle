@@ -338,7 +338,7 @@ var maciAdmin = function () {
 	setUploaderButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalUploader(modal, function(dat) {
-				_obj.createObject(el,dat['template'],function() {
+				_obj.createObject(el,dat['template'],function(dat) {
 					if ( $.isFunction(callback) ) { callback(); }
 				});
 			});
@@ -356,7 +356,9 @@ $(document).ready(function(e) {
 	var admin = maciAdmin();
 
 	$('.ma-remove').each(function() {
-		admin.setFormButton($(this));
+		admin.setFormButton($(this), function(dat) {
+			alert('Removed!');
+		});
 	});
 
 	$('.ma-set').each(function() {

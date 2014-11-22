@@ -1,9 +1,9 @@
 
 <form class="maci-form" action="
 	{% if item.id %}
-		{{ path("maci_admin_entity_form", {'entity': entity.name, 'id': item.id}) }}
+		{{ path("maci_admin_entity_form", {'entity': entity, 'id': item.id}) }}
 	{% else %}
-		{{ path("maci_admin_entity_new", {'entity': entity.name}) }}
+		{{ path("maci_admin_entity_new", {'entity': entity}) }}
 	{% endif %}
 		" method="post" role="form" {{ form_enctype(form) }}>
 
