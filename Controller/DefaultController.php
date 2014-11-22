@@ -150,9 +150,9 @@ class DefaultController extends Controller
                         }
                     } else if ($rel = $this->getEntity($type)) {
                         $mth = false;
-                        if ( method_exists($item, $key) ) { $mth = $key };
-                        else if ( method_exists($item, ('set' . ucfirst($key))) ) { $mth = 'set' . ucfirst($key) };
-                        else if ( method_exists($item, ('add' . ucfirst($key))) ) { $mth = 'add' . ucfirst($key) };
+                        if ( method_exists($item, $key) ) { $mth = $key; }
+                        else if ( method_exists($item, ('set' . ucfirst($key))) ) { $mth = 'set' . ucfirst($key); }
+                        else if ( method_exists($item, ('add' . ucfirst($key))) ) { $mth = 'add' . ucfirst($key); }
                         if ($mth) {
                             $rob = $this->getEntityRepository($rel)->findOneById(intval($value));
                             if ($rob) {
