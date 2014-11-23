@@ -302,7 +302,7 @@ class DefaultController extends Controller
                     $locs = $this->container->getParameter('a2lix_translation_form.locales');
                     $date = date('m/d/Y h:i:s');
                     foreach ($locs as $loc) {
-                        $clnm = $entity['new'].'Translation';
+                        $clnm = $this->getEntityClass($entity).'Translation';
                         $tran = new $clnm;
                         $tran->setLocale($loc);
                         $traname = $entity['label'].' [' . $loc . '] ' . $date;
@@ -320,7 +320,7 @@ class DefaultController extends Controller
 
         $em->flush();
 
-        return $this->renderTemplate($request, $entity, 'item', array(
+        return $this->renderTemplate($request, $entity, 'show', array(
             'entity' => $entity['name'],
             'item' => $item
         ));
