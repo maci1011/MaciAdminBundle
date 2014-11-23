@@ -387,7 +387,7 @@ $(document).ready(function(e) {
 
 		    stop: function(e, ui) {
 
-		        var list = $(el).find("> div > .sortable");
+		        var list = $(el).find(".sortable");
 
 		        var ids = [];
 
