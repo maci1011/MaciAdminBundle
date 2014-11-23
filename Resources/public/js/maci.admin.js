@@ -378,6 +378,38 @@ $(document).ready(function(e) {
 	});
 
 
+        
+    $( "div[sortable]" ).each(function(i,el) {
+
+    	$(el).sortable({
+
+			items: '.sortable',
+
+		    stop: function(e, ui) {
+
+		        var list = $(el).find("> div > .sortable");
+
+		        var ids = [];
+
+		        list.each(function(j,fl) {
+		            ids.push( parseInt( $(fl).find('input[type=hidden]').eq(0).val() ) );
+		        });
+
+		        $.ajax({
+		            type: 'POST',
+		            data: {ids: ids},
+		            url: $(el).attr('sortable'),
+		            success: function () {
+		                // alert('Reorded!');
+		            }
+		        });
+
+		    }
+
+		});
+
+    });
+
 });
 
 })(jQuery);

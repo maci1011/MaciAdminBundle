@@ -252,7 +252,27 @@ class DefaultController extends Controller
 
         $ids = $this->getRequest()->get('ids');
 
-        $this->getEntityRepository($entity)->reorder($ids);
+        if (count($ids) == 0) {
+            return $this->returnError($request, 'ids-not-found');
+        }
+
+        if ( !method_exists($this->getEntityNewObj($entity), 'setPosition') ) {
+            return $this->returnError($request, 'method-not-found');
+        }
+
+        $repo = $this->getEntityRepository($entity);
+
+        $counter = 0;
+
+        foreach ($ids as $id) {
+            $item = $repo->findOneById($id);
+            if ( $item ) {
+                $item->setPosition($counter);
+            }
+            $counter++;
+        }
+
+        $this->getDoctrine()->getManager()->flush();
 
         return new JsonResponse(array('success' => true), 200);
     }
