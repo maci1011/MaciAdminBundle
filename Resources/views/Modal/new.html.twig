@@ -7,6 +7,10 @@
 {% set btnxs = false %}
 {% endif %}
 
+{% if glyphicon is not defined %}
+{% set glyphicon = 'glyphicon glyphicon-plus' %}
+{% endif %}
+
 {% if sync is defined %}
 {% if sync is iterable %}
 {% set sync = 'sync="' ~ path('maci_admin_entity_object', {'entity': sync[0], 'id': sync[1].id }) ~ '"' %}
@@ -60,6 +64,6 @@
 {% endif %}
 
 <a class="btn btn-primary {% if btnxs %}btn-xs{% endif %} ma-form" href="{{ path('maci_admin_entity_new', {'entity': entity}) }}" {{ sync|raw }} {{ _from|raw }} {{ _fromtype|raw }} {{ _to|raw }} {{ _totype|raw }} {{ _toid|raw }} {{ _parent|raw }} {{ _parentval|raw }}>
-	<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+	<span class="{{ glyphicon }}" aria-hidden="true"></span>
 	{{ label }}
 </a>

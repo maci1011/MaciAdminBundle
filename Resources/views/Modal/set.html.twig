@@ -7,6 +7,10 @@
 {% set btnxs = false %}
 {% endif %}
 
+{% if glyphicon is not defined %}
+{% set glyphicon = 'glyphicon glyphicon-star' %}
+{% endif %}
+
 {% if _set is defined %}
 {% set _set = 'set="' ~ _set ~ '"' %}
 {% else %}
@@ -26,6 +30,6 @@
 {% endif %}
 
 <a class="btn btn-primary {% if btnxs %}btn-xs{% endif %} ma-set" href="{{ path('maci_admin_entity_object', {'entity': entity, 'id': item.id}) }}" {{ _set|raw }} {{ _type|raw }} {{ _val|raw }}>
-	<span class="glyphicon glyphicon-star" aria-hidden="true"></span>
+	<span class="{{ glyphicon }}" aria-hidden="true"></span>
 	{{ label }}
 </a>

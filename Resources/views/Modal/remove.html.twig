@@ -7,7 +7,11 @@
 {% set btnxs = false %}
 {% endif %}
 
+{% if glyphicon is not defined %}
+{% set glyphicon = 'glyphicon glyphicon-remove' %}
+{% endif %}
+
 <a class="btn btn-danger {% if btnxs %}btn-xs{% endif %} ma-remove" href="{{ path('maci_admin_entity_remove', {'entity': entity, 'id': item.id}) }}">
-	<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+	<span class="{{ glyphicon }}" aria-hidden="true"></span>
 	{{ label }}
 </a>
