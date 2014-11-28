@@ -134,15 +134,15 @@ var maciAdmin = function () {
 					if ($.isFunction(callback)) {
 						callback(dat);
 					} else {
-						alert('success!');
+						alert('Success!');
 					}
-					console.log('success');
+					console.log('Success!');
 				} else {
-					alert('error!');
+					alert('Error!');
 				}
 			},
 			error: function(dat,sts,jqx) {
-				alert('error!');
+				alert('Error!');
 			}
 		});
 	},
@@ -181,11 +181,11 @@ var maciAdmin = function () {
 		_obj.ajax(form.attr('action'), method, _obj.getFormData(form), callback);
 	},
 
-	createObject: function(el,row,callback) {
+	createObject: function(el,id,callback) {
 		var relations = { 0: {} };
 		relations[0]['set'] = $(el).attr('from');
 		relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
-		relations[0]['val'] = $(row).find('[name=id]').first().val();
+		relations[0]['val'] = id;
 		if ($(el).attr('to')) {
 			relations[1] = {};
 			relations[1]['set'] = $(el).attr('to');
@@ -316,21 +316,28 @@ var maciAdmin = function () {
 	setFieldButton: function(el, callback) {
 		$(el).click(function(e) {
 			e.preventDefault();
-			_obj.setField(el, callback);
+			_obj.setField(el,callback);
 		});
 	},
 
 	setFormButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setParentInput(el, modal);
-			_obj.setModalForm(modal, callback);
+			_obj.setModalForm(modal, function(dat) {
+				if ($(el).attr('sync')) {
+					_obj.createObject(el,dat['id'],callback);
+				} else {
+					if ( $.isFunction(callback) ) { callback(); }
+					else { alert('Success!') }
+				}
+			});
 		});
 	},
 
 	setListButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalList(modal, function(rw) {
-				_obj.createObject(el,rw,callback);
+				_obj.createObject(el,$(rw).find('[name=id]').first().val(),callback);
 			});
 		});
 	},
@@ -338,7 +345,7 @@ var maciAdmin = function () {
 	setUploaderButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalUploader(modal, function(dat) {
-				_obj.createObject(el,dat['template'],function(dat) {
+				_obj.createObject(el,dat['id'],function(dat) {
 					if ( $.isFunction(callback) ) { callback(); }
 				});
 			});

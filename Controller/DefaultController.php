@@ -79,11 +79,16 @@ class DefaultController extends Controller
             $em->persist($item);
             $em->flush();
             if ($request->isXmlHttpRequest()) {
-                return new JsonResponse(array('success' => true, 'id' => $item->getId()), 200);
+                return $this->renderTemplate($request, $entity, 'show', array(
+                    'entity' => $entity['name'],
+                    'item' => $item,
+                    'details' => $this->getItemDetails($entity, $item)
+                ));
             }
             else {
-                return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
+                return $this->redirect($this->generateUrl('maci_admin_entity_show', array(
                     'entity' => $entity['name'],
+                    'id' => $item->getId(),
                     'message' => 'form.add'
                 )));
             }
@@ -182,7 +187,11 @@ class DefaultController extends Controller
             $em->persist($item);
             $em->flush();
 
-            return new JsonResponse(array('success' => true, 'id' => $item->getId()), 200);
+            return $this->renderTemplate($request, $entity, 'show', array(
+                'entity' => $entity['name'],
+                'item' => $item,
+                'details' => $this->getItemDetails($entity, $item)
+            ));
         }
 
         return $this->returnError($request, 'nothing-done');
@@ -342,7 +351,8 @@ class DefaultController extends Controller
 
         return $this->renderTemplate($request, $entity, 'show', array(
             'entity' => $entity['name'],
-            'item' => $item
+            'item' => $item,
+            'details' => $this->getItemDetails($entity, $item)
         ));
     }
 /*
