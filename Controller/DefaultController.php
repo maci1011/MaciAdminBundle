@@ -110,7 +110,15 @@ class DefaultController extends Controller
 
         $repo = $this->getEntityRepository($entity);
 
-        $list = $repo->findAll();
+        $item = $this->getEntityNewObj($entity);
+
+        $filters = array();
+
+        if ( method_exists($item, 'getRemoved') ) {
+            $filters['removed'] = false;
+        }
+
+        $list = $repo->findBy($filters);
 
         return $this->renderTemplate($request, $entity, 'list', array(
             'entity' => $entity['name'],
