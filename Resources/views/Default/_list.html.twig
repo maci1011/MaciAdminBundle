@@ -1,15 +1,91 @@
 
+<div class="ma-admin-list">
+
+{% if form %}
+<div class="row">
+	<h4>Filters:</h4>
+	{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': form, 'entity': entity } %}
+</div>
+{% endif %}
+
+{% set list = pager.pageList %}
+
 {% if list|length %}
 
-<div class="ma-admin-list">
+<div class="row">
+	<h4>List:</h4>
+
+	{% if '_id' in fields %}
+	<div class="col-xs-1">
+		<span class="admin-list-ht">Id</span>
+	</div>
+	{% endif %}
+
+	{% set len = fields|length %}
+	{% set tot = 9 %}
+
+	{% if '_id' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if '_actions' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if 4 < len %}
+	{% set len = 1 %}
+	{% elseif len == 2 %}
+	{% set tot = 8 %}
+	{% endif %}
+
+	{% for field in fields %}
+
+	{% if not ( field in ['_id', '_actions'] ) %}
+
+	<div class="col-xs-{{ (tot / len)|number_format }}">
+		{% if field == '_string' %}
+		<span class="admin-list-ht">Name</span>
+		{% else %}
+		<span class="admin-list-ht">{{ field|capitalize }}</span>
+		{% endif %}
+	</div>
+
+	{% endif %}
+
+	{% endfor %}
+
+	{% if '_actions' in fields %}
+	<div class="col-xs-2">
+		<span class="admin-list-ht">Actions</span>
+	</div>
+	{% endif %}
+
+</div>
+
 
 {% for item in list %}
 
-	{% include "MaciAdminBundle:Default:_list_item.html.twig" with { 'entity': entity, 'item': item } %}
+	{% include "MaciAdminBundle:Default:_list_item.html.twig" with { 'fields': fields, 'entity': entity, 'item': item } %}
 
 {% endfor %}
 
+{% if pager.requiresPagination() %}
+<div class="row">
+<ul class="pagination">
+	<li {% if not pager.hasPrev() %}class="disabled"{% endif %}>
+		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.prev }) }}">«</a>
+	</li>
+	{% for page in pager.getPageRange() %}
+    	<li {% if pager.current(page) %}class="active"{% endif %}>
+    		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": page }) }}">{{ page }}</a>
+    	</li>
+	{% endfor %}
+	<li {% if not pager.hasNext() %}class="disabled"{% endif %}>
+		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.next() }) }}">»</a>
+	</li>
+</ul>
 </div>
+{% endif %}
 
 {% else %}
 
@@ -18,3 +94,6 @@
 </div>
 
 {% endif %}
+
+
+</div>

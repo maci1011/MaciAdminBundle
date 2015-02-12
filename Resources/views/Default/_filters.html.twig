@@ -1,0 +1,12 @@
+
+<form class="maci-form form-inline" action="{{ path("maci_admin_entity_set_filters", {'entity': entity}) }}" method="post" }}>
+
+    {{ form_rest(form) }}
+
+</form>
+
+{% if app.session.get(('admin_filters_' ~ entity), {})|length %}
+<a class="btn btn-danger" href="{{ path("maci_admin_entity_remove_filters", {'entity': entity}) }}">
+	Remove Filters
+</a>
+{% endif %}

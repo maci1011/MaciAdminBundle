@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 use A2lix\I18nDoctrineBundle\Annotation\I18nDoctrine;
+use Maci\CoreBundle\Entity\MaciPager;
 
 class DefaultController extends Controller
 {
@@ -46,7 +47,7 @@ class DefaultController extends Controller
         return $this->renderTemplate($request, $entity, 'show', array(
             'entity' => $entity['name'],
             'item' => $item,
-            'details' => $this->getItemDetails($entity, $item)
+            'details' => $this->getEntityDetails($entity, $item)
         ));
     }
 
@@ -82,7 +83,7 @@ class DefaultController extends Controller
                 return $this->renderTemplate($request, $entity, 'show', array(
                     'entity' => $entity['name'],
                     'item' => $item,
-                    'details' => $this->getItemDetails($entity, $item)
+                    'details' => $this->getEntityDetails($entity, $item)
                 ));
             }
             else {
@@ -108,22 +109,99 @@ class DefaultController extends Controller
             return $this->returnError($request, 'entity-not-found');
         }
 
-        $repo = $this->getEntityRepository($entity);
+        $filters_fields = $this->getEntityFilterFields($entity);
+        $form = false;
+        if ( count($filters_fields) ) {
+            $form = $this->getEntityFiltersForm($entity);
+        }
 
         $item = $this->getEntityNewObj($entity);
-
-        $filters = array();
-
+        $filters = $this->getEntityFilters($entity);
+        $repo = $this->getEntityRepository($entity);
         if ( method_exists($item, 'getRemoved') ) {
             $filters['removed'] = false;
         }
+        if ( $this->hasEntityFilters($entity) ) {
+            $query = $repo->createQueryBuilder('e');
+            foreach ($filters as $filter => $value) {
+                $query->orWhere('e.' . $filter . ' LIKE :' . $filter);
+                $query->setParameter(':' . $filter, "%$value%");
+            }
+            $query = $query->getQuery();
+            $list = $query->getResult();
+        } else {
+            $list = $repo->findBy($filters);
+        }
 
-        $list = $repo->findBy($filters);
+        $pageLimit = $this->container->getParameter('maci.admin.page_limit');
+        $pageRange = $this->container->getParameter('maci.admin.page_range');
+        $page = $this->getRequest()->get('page', 1);
+        $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
+
+        $fields = $this->getEntityListFields($entity);
 
         return $this->renderTemplate($request, $entity, 'list', array(
+            'fields' => $fields,
             'entity' => $entity['name'],
-            'list' => $list
+            'pager' => $pager,
+            'form' => $form->createView()
         ));
+    }
+
+    public function setFiltersAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $filters = array();
+        $filters_fields = $this->getEntityFilterFields($entity);
+
+        if ( !count($filters_fields) ) {
+            return $this->returnError($request, 'no-filters');
+        }
+
+        $form = $this->getEntityFiltersForm($entity);
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+            $new = $this->getEntityNewObj($entity);
+            foreach ($filters_fields as $filter) {
+                $value = $form[$filter]->getData();
+                $method = false;
+                if (method_exists($new, 'get'.ucfirst($filter))) {
+                    $method = 'get'.ucfirst($filter);
+                } else if (method_exists($new, 'get'.ucfirst($filter))) {
+                    $method = 'get'.ucfirst($filter);
+                }
+                if ($method) {
+                    $default = call_user_method($method, $new);
+                    if ( $value !== $default) {
+                        $filters[$filter] = $value;
+                    }
+                }
+            }
+            $this->setEntityFilters($entity, $filters);
+        }
+
+        return $this->redirect($this->generateUrl('maci_admin_entity', array(
+            'entity' => $entity['name']
+        )));
+    }
+
+    public function removeFiltersAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $this->removeEntityFilters($entity);
+
+        return $this->redirect($this->generateUrl('maci_admin_entity', array(
+            'entity' => $entity['name']
+        )));
     }
 
     public function objectAction(Request $request, $entity, $id)
@@ -198,7 +276,7 @@ class DefaultController extends Controller
             return $this->renderTemplate($request, $entity, 'show', array(
                 'entity' => $entity['name'],
                 'item' => $item,
-                'details' => $this->getItemDetails($entity, $item)
+                'details' => $this->getEntityDetails($entity, $item)
             ));
         }
 
@@ -245,7 +323,7 @@ class DefaultController extends Controller
                 return new JsonResponse(array('success' => true), 200);
             }
             else {
-                return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
+                return $this->redirect($this->generateUrl('maci_admin_entity', array(
                     'entity' => $entity['name'],
                     'message' => 'form.removed'
                 )));
@@ -360,24 +438,10 @@ class DefaultController extends Controller
         return $this->renderTemplate($request, $entity, 'show', array(
             'entity' => $entity['name'],
             'item' => $item,
-            'details' => $this->getItemDetails($entity, $item)
+            'details' => $this->getEntityDetails($entity, $item)
         ));
     }
-/*
-    public function pagerAction()
-    {
-        $entityLimitPerPage = $this->getBlogConfig('admin_limit_per_page');
-        $repo = $this->getDoctrine()->getEntityManager()->getRepository('Eight\BlogBundle\Entity\Post');
-        $page = $this->getRequest()->get('page', 1);
 
-        $pager = new PostPager($repo, $entityLimitPerPage, $page, 5);
-
-        return $this->render('EightBlogBundle:Admin:list.html.twig', array(
-            'posts' => $this->container->get('eight.posts')->getPaged($entityLimitPerPage, $page),
-            'pager' => $pager
-        ));
-    }
-*/
     public function renderTemplate(Request $request, $entity, $action, $params)
     {
         if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates'])) {
@@ -430,12 +494,6 @@ class DefaultController extends Controller
         }
     }
 
-    public function generateLabel($name)
-    {
-        $str = str_replace('_', ' ', $name);
-        return ucwords($str);
-    }
-
     public function getEntities()
     {
         if ( !is_array($this->_entities) ) {
@@ -470,21 +528,45 @@ class DefaultController extends Controller
         return $this->get('kernel')->getBundle(split(':', $entity['class'])[0]);
     }
 
-    public function getEntityRepository($entity)
-    {
-        return $this->getDoctrine()->getRepository($entity['class']);
-    }
-
     public function getEntityClass($entity)
     {
         $repo = $this->getEntityRepository($entity);
         return $repo->getClassName();
     }
 
-    public function getEntityMetadata($entity)
+    public function getEntityDetails($entity, $object)
     {
-        return $this->getDoctrine()->getManager()
-            ->getClassMetadata( $this->getEntityClass($entity) );
+        $fields = $this->getEntityFields($entity);
+
+        $details = array();
+
+        foreach ($fields as $field) {
+
+            $value = null;
+
+            $uf = ucfirst($field);
+
+            if (method_exists($object, ('is'.$uf))) {
+                $value = ( call_user_method(('is'.$uf), $object) ? 'True' : 'False' );
+            } else if (method_exists($object, ('get'.$uf.'Label'))) {
+                $value = call_user_method(('get'.$uf.'Label'), $object);
+            } else if (method_exists($object, ('get'.$uf))) {
+                $value = call_user_method(('get'.$uf), $object);
+                if (is_object($value) && get_class($value) === 'DateTime') {
+                    $value = $value->format("Y-m-d H:i:s");
+                }
+            } else if (method_exists($object, $field)) {
+                $value = call_user_method($field, $object);
+            }
+
+            array_push($details, array(
+                'label' => $this->generateLabel($field),
+                'value' => $value
+            ));
+
+        }
+
+        return $details;
     }
 
     public function getEntityFields($entity)
@@ -507,63 +589,50 @@ class DefaultController extends Controller
         return $fields;
     }
 
-    public function getEntityNewObj($entity)
+    public function getEntityFilters($entity)
     {
-        $class = $this->getEntityClass($entity);
-        return new $class;
+        $session = $this->get('session');
+        return $session->get('admin_filters_'.$entity['name'], array());
     }
 
-    public function getItemDetails($entity, $object)
+    public function hasEntityFilters($entity)
     {
-        $fields = $this->getEntityFields($entity);
+        return !!count($this->getEntityFilters($entity));
+    }
 
-        $details = array();
+    public function setEntityFilters($entity, $filters)
+    {
+        $session = $this->get('session');
+        $session->set('admin_filters_'.$entity['name'], $filters);
+    }
 
-        foreach ($fields as $field) {
+    public function removeEntityFilters($entity)
+    {
+        $session = $this->get('session');
+        $session->set('admin_filters_'.$entity['name'], array());
+    }
 
-            $value = null;
+    public function getEntityFilterFields($entity)
+    {
+        if (array_key_exists('filters', $entity) && count($entity['filters'])) {
+            return $entity['filters'];
+        }
+        return array();
+    }
 
-            $uf = ucfirst($field);
-
-            if (method_exists($object, ('is'.$uf))) {
-                $value = ( call_user_method(('is'.$uf), $object) ? 'True' : 'False' );
-            } else if (method_exists($object, ('get'.$uf))) {
-                $value = call_user_method(('get'.$uf), $object);
-                if (is_object($value) && get_class($value) === 'DateTime') {
-                    $value = $value->format("Y-m-d H:i:s");
-                }
-            } else if (method_exists($object, $field)) {
-                $value = call_user_method($field, $object);
+    public function getEntityFiltersForm($entity)
+    {
+        $form = $entity['name'];
+        $object = $this->getEntityNewObj($entity);
+        $filters = $this->getEntityFilters($entity);
+        foreach ($filters as $field => $filter) {
+            $method = ('set' . ucfirst($field));
+            if ( method_exists($object, $method) ) {
+                call_user_method_array($method, $object, array($filter));
             }
-
-            array_push($details, array(
-                'label' => $this->generateLabel($field),
-                'value' => $value
-            ));
-
         }
-
-        return $details;
-    }
-
-    public function generateEntityForm($entity, $object)
-    {
-        $fields = $this->getEntityFields($entity);
-
-        $form = $this->createFormBuilder($object);
-
-        foreach ($fields as $field) {
-
-            $form->add($field);
-
-        }
-
-        $form
-            ->add('reset', 'reset')
-            ->add('save', 'submit')
-        ;
-
-        return $form->getForm();
+        $fields = $this->getEntityFilterFields($entity);
+        return $this->generateEntityForm($fields, $entity, $object);
     }
 
     public function getEntityForm($entity, $object = false)
@@ -580,6 +649,62 @@ class DefaultController extends Controller
         } else if ($this->container->get('form.registry')->hasType($form)) {
             return $this->createForm($form, $object);
         }
-        return $this->generateEntityForm($entity, $object);
+        $fields = $this->getEntityFields($entity);
+        return $this->generateEntityForm($fields, $entity, $object);
+    }
+
+    public function getEntityListFields($entity)
+    {
+        if (array_key_exists('list', $entity) && count($entity['list'])) {
+            return array_merge(array('_id'), $entity['list'], array('_actions'));
+        }
+        return array('_id', '_string', '_actions');
+    }
+
+    public function getEntityMetadata($entity)
+    {
+        return $this->getDoctrine()->getManager()
+            ->getClassMetadata( $this->getEntityClass($entity) );
+    }
+
+    public function getEntityNewObj($entity)
+    {
+        $class = $this->getEntityClass($entity);
+        return new $class;
+    }
+
+    public function getEntityRepository($entity)
+    {
+        return $this->getDoctrine()->getRepository($entity['class']);
+    }
+
+    public function generateLabel($name)
+    {
+        $str = str_replace('_', ' ', $name);
+        return ucwords($str);
+    }
+
+    public function generateEntityForm($fields, $entity, $object)
+    {
+        $form = $this->createFormBuilder($object);
+
+        foreach ($fields as $field) {
+            $method = ('get' . ucfirst($field) . 'Array');
+            if ( method_exists($object, $method) ) {
+                $form->add($field, 'choice', array(
+                    'empty_value' => '',
+                    'choices' => call_user_method($method, $object)
+                ));
+            } else {
+                $form->add($field);
+            }
+        }
+
+        $form
+            ->add('reset', 'reset')
+            ->add('save', 'submit')
+        ;
+
+        return $form->getForm();
     }
 }

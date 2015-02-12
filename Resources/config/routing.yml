@@ -20,6 +20,16 @@ maci_admin_entity_remove:
     requirements:
         id: \d+
 
+maci_admin_entity_set_filters:
+    pattern:  /admin/{entity}/set_filters
+    defaults: { _controller: MaciAdminBundle:Default:setFilters }
+    requirements:
+        _method: POST
+
+maci_admin_entity_remove_filters:
+    pattern:  /admin/{entity}/remove_filters
+    defaults: { _controller: MaciAdminBundle:Default:removeFilters }
+
 maci_admin_entity_show:
     pattern:  /admin/{entity}/{id}
     defaults: { _controller: MaciAdminBundle:Default:show }

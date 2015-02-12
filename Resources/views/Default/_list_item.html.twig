@@ -1,25 +1,58 @@
 
 <div class="row">
 
+	{% if '_id' in fields %}
 	<div class="col-xs-1">
 		<input name="id" type="hidden" value="{{ item.id }}" />
 		<a href="{{ path('maci_admin_entity_show', { 'entity': entity, 'id': item.id }) }}">
 			{{ item.id }}
 		</a>
 	</div>
+	{% endif %}
 
-	<div class="col-xs-8">
-		<a href="{{ path('maci_admin_entity_show', { 'entity': entity, 'id': item.id }) }}">
-			{{ item }}
-		</a>
+	{% set len = fields|length %}
+	{% set tot = 9 %}
+
+	{% if '_id' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if '_actions' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if 4 < len %}
+	{% set len = 1 %}
+	{% elseif len == 2 %}
+	{% set tot = 8 %}
+	{% endif %}
+
+	{% for field in fields %}
+
+	{% if not ( field in ['_id', '_actions'] ) %}
+
+	<div class="col-xs-{{ (tot / len)|number_format }}">
+		{% if field == '_string' %}
+		<span class="admin-list-ht">{{ item }}</span>
+		{% elseif attribute(item, field ~ 'Label') %}
+		<span class="admin-list-ht">{{ attribute(item, field ~ 'Label') }}</span>
+		{% else %}
+		<span class="admin-list-ht">{{ attribute(item, field) }}</span>
+		{% endif %}
 	</div>
 
-	<div class="col-xs-3 actions">
+	{% endif %}
+
+	{% endfor %}
+
+	{% if '_actions' in fields %}
+	<div class="col-xs-2 admin-list-actions">
 
 		{% include 'MaciAdminBundle:Link:edit.html.twig' with {'entity': entity, 'item': item} %}
 		|
 		{% include 'MaciAdminBundle:Link:remove.html.twig' with {'entity': entity, 'item': item} %}
 
 	</div>
+	{% endif %}
 
 </div>

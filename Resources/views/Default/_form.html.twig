@@ -1,4 +1,11 @@
 
+<div class="row">
+	{% if item.id %}
+	<h4>Edit:</h4>
+	{% else %}
+	<h4>New:</h4>
+	{% endif %}
+
 <form class="maci-form" action="
 	{% if item.id %}
 		{{ path("maci_admin_entity_form", {'entity': entity, 'id': item.id}) }}
@@ -10,3 +17,5 @@
     {{ form_rest(form) }}
 
 </form>
+
+</div>
