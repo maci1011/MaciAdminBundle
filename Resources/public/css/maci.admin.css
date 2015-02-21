@@ -11,6 +11,17 @@
 	padding: 12px;
 }
 
+.modal-body .maci-form {
+    padding: 8px;
+}
+
+.a2lix_translations.tabbable {
+    padding: 8px;
+    background-color: #eee;
+    border: 1px solid #666;
+    border-radius: 4px;
+}
+
 .ad-editor {
 	margin: 20px 0 10px 0;
 	padding: 10px;

@@ -113,6 +113,7 @@ class DefaultController extends Controller
         $form = false;
         if ( count($filters_fields) ) {
             $form = $this->getEntityFiltersForm($entity);
+            $form = $form->createView();
         }
 
         $item = $this->getEntityNewObj($entity);
@@ -144,7 +145,7 @@ class DefaultController extends Controller
             'fields' => $fields,
             'entity' => $entity['name'],
             'pager' => $pager,
-            'form' => $form->createView()
+            'form' => $form
         ));
     }
 

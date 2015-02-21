@@ -417,6 +417,14 @@ $(document).ready(function(e) {
 
     });
 
+
+    $('#bodyAdministration .maci-form textarea').not('.noeditor').each(function() {
+    	admin.setRichTextEditor( $(this) );
+    });
+
+    console.log( $('#bodyAdministration .maci-form textarea').not('.noeditor').length );
+
+
 });
 
 })(jQuery);
