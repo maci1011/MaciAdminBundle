@@ -272,7 +272,7 @@ var maciAdmin = function () {
 	setModalList: function(modal, callback) {
 		var container = $(modal).find('.modal-body').first().addClass('row');
 		container.find('.row').each(function(j,rw) {
-			var acd = $(rw).find('.actions').first(),
+			var acd = $(rw).find('.admin-list-actions').first(),
 				btt = $('<a/>', {'href': '#'}).addClass('btn btn-success').text('Select');
 			acd.html('');
 			btt.appendTo(acd).click(function(e) {
