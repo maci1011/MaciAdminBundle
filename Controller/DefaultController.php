@@ -137,6 +137,9 @@ class DefaultController extends Controller
         $pageLimit = $this->container->getParameter('maci.admin.page_limit');
         $pageRange = $this->container->getParameter('maci.admin.page_range');
         $page = $this->getRequest()->get('page', 1);
+        if ($request->get('modal')) {
+            $pageLimit = 0;
+        }
         $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
 
         $fields = $this->getEntityListFields($entity);
