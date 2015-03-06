@@ -168,8 +168,12 @@ var maciAdmin = function () {
 		return data;
 	},
 
-	getModal: function(url, callback) {
-		_obj.ajax(url, 'GET', { 'modal': true }, callback);
+	getModal: function(el, callback) {
+		var data = { 'modal': true, 'optf': {} };
+		$(el).children('input').each(function(){
+			data['optf'][$(this).attr('name')] = $(this).val();
+		});
+		_obj.ajax($(el).attr('href'), 'GET', data, callback);
 	},
 
 	setObject: function(url, data, callback) {
@@ -242,7 +246,7 @@ var maciAdmin = function () {
 			if (modal) {
 				modal.modal();
 			} else {
-				_obj.getModal($(el).attr('href'), function(dat) {
+				_obj.getModal($(el), function(dat) {
 					var div = $('<div/>').appendTo('body');
 					div.html($(dat['template'])).find('.modal-title').text($(el).text());
 					modal = div.children();
@@ -305,7 +309,7 @@ var maciAdmin = function () {
 		$(el).click(function(e) {
 			e.preventDefault();
 			if (confirm('Remove Item?')) {
-				_obj.getModal($(el).attr('href'), function(dat) {
+				_obj.getModal($(el), function(dat) {
 					if ($.isFunction(callback)) { callback(); }
 					else { alert('Removed!') }
 				});

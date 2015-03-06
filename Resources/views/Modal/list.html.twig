@@ -51,7 +51,14 @@
 {% set _toid = '' %}
 {% endif %}
 
+{% if _filters is not defined %}
+{% set _filters = {} %}
+{% endif %}
+
 <a class="btn btn-primary {% if btnxs %}btn-xs{% endif %} ma-list" href="{{ path('maci_admin_entity', {'entity': entity}) }}" {{ sync|raw }} {{ _from|raw }} {{ _fromtype|raw }} {{ _to|raw }} {{ _totype|raw }} {{ _toid|raw }}>
+	{% for flt, val in _filters %}
+	<input type="hidden" name="{{ flt }}" value="{{ val }}" />
+	{% endfor %}
 	<span class="{{ glyphicon }}" aria-hidden="true"></span>
 	{{ label }}
 </a>

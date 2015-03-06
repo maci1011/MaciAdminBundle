@@ -122,6 +122,12 @@ class DefaultController extends Controller
         if ( method_exists($item, 'getRemoved') ) {
             $filters['removed'] = false;
         }
+        $optf = $request->get('optf', array());
+        foreach ($optf as $key => $value) {
+            if (method_exists($item, ('get'.ucfirst($key)))) {
+                $filters[$key] = ( strlen($value) ? $value : null );
+            }
+        }
         if ( $this->hasEntityFilters($entity) ) {
             $query = $repo->createQueryBuilder('e');
             foreach ($filters as $filter => $value) {
@@ -136,7 +142,7 @@ class DefaultController extends Controller
 
         $pageLimit = $this->container->getParameter('maci.admin.page_limit');
         $pageRange = $this->container->getParameter('maci.admin.page_range');
-        $page = $this->getRequest()->get('page', 1);
+        $page = $request->get('page', 1);
         if ($request->get('modal')) {
             $pageLimit = 0;
         }
