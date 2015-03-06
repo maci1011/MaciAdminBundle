@@ -416,7 +416,7 @@ class DefaultController extends Controller
             if($file->isValid()) {
                 if (method_exists($item, 'getTranslations')) {
                     $locs = $this->container->getParameter('a2lix_translation_form.locales');
-                    $date = date('m/d/Y h:i:s');
+                    $date = date('m-d-Y h:i:s');
                     foreach ($locs as $loc) {
                         $clnm = $this->getEntityClass($entity).'Translation';
                         $tran = new $clnm;
