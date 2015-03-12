@@ -17,12 +17,15 @@ class AdminMenuBuilder
 
     private $om;
 
-	public function __construct(FactoryInterface $factory, SecurityContext $securityContext, ObjectManager $om)
+    private $entities;
+
+	public function __construct(FactoryInterface $factory, SecurityContext $securityContext, ObjectManager $om, $entities)
 	{
 	    $this->factory = $factory;
 	    $this->securityContext = $securityContext;
 	    $this->user = $securityContext->getToken()->getUser();
         $this->om = $om;
+        $this->entities = $entities;
 	}
 
     public function createLeftMenu(Request $request)
@@ -31,67 +34,22 @@ class AdminMenuBuilder
 
 		$routes = array();
 
+		$menu->addChild('Homepage', array('route' => 'maci_homepage'));
+
 		$menu->addChild('Dashboard', array('route' => 'maci_admin'));
 
-		$menu->addChild('Album', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'album')
-		));
-
-		$menu->addChild('Media', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'media')
-		));
-
-		$menu->addChild('Media Tag', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'media_tag')
-		));
-
-		$menu->addChild('Blog', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'blog_post')
-		));
-
-		$menu->addChild('Blog Tag', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'blog_tag')
-		));
-
-		$menu->addChild('Categories', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'category')
-		));
-
-		$menu->addChild('Products', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'product')
-		));
-
-		$menu->addChild('Variants', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'product_variant')
-		));
-
-		$menu->addChild('Translations', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'language')
-		));
-
-		$menu->addChild('Page', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'page')
-		));
-
-		$menu->addChild('Panel', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'panel')
-		));
-
-		$menu->addChild('Panel Item', array(
-		    'route' => 'maci_admin_entity',
-		    'routeParameters' => array('entity' => 'panel_item')
-		));
+		foreach ($this->entities as $name => $entity) {
+			if (array_key_exists('label', $entity)) {
+				$label = $entity['label'];
+			} else {
+				$label = str_replace('_', ' ', $name);
+        		$label = ucwords($label);
+			}
+			$menu->addChild($label, array(
+			    'route' => 'maci_admin_entity',
+			    'routeParameters' => array('entity' => $name)
+			));
+		}
 
 		return $menu;
 	}

@@ -6,6 +6,6 @@
 
 {% block leftMenu %}
 
-	<nav>{{ render(controller('MaciAdminBundle:Default:nav')) }}</nav>
+	<nav>{{ knp_menu_render('admin_left', {'currentClass': 'active'}) }}</nav>
 
 {% endblock %}

@@ -24,13 +24,6 @@ class DefaultController extends Controller
         ));
     }
 
-    public function navAction()
-    {
-        return $this->render('MaciAdminBundle:Default:_nav.html.twig', array(
-            'entities' => $this->getEntities()
-        ));
-    }
-
     public function showAction(Request $request, $entity, $id)
     {
         $entity = $this->getEntity($entity);

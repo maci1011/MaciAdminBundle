@@ -3,7 +3,7 @@ services:
 
     maci_admin.menu_builder:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder
-        arguments: ["@knp_menu.factory","@security.context","@doctrine.orm.entity_manager"]
+        arguments: ["@knp_menu.factory","@security.context","@doctrine.orm.entity_manager","%maci.admin.entities%"]
 
     maci_admin.menu.admin_left:
         class: Knp\Menu\MenuItem
