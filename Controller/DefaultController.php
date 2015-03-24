@@ -300,7 +300,7 @@ class DefaultController extends Controller
         }
 
         $form = $this->createFormBuilder($item)
-            ->add('Delete', 'submit', array(
+            ->add('remove', 'submit', array(
                 'attr' => array(
                     'class' => 'btn-danger'
                 )
