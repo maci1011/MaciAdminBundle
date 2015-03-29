@@ -66,32 +66,12 @@ class DefaultController extends Controller
             }
 
             if ($clone) {
-                $cnm = $this->getEntityClass($entity);
-                $item = new $cnm;
-                $fields = $this->getEntityFields($entity);
-                foreach ($fields as $field) {
-                    if (method_exists($item, 'set'.ucfirst($field))) {
-                        call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
-                    }
-                }
-                if (method_exists($item, 'getTranslations')) {
-                    $translatons = $result->getTranslations();
-                    $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
-                    $tcname = $item->getTranslationEntityClass();
-                    foreach ($translatons as $translaton) {
-                        $tc = new $tcname;
-                        foreach ($fields as $field) {
-                            if (method_exists($tc, 'set'.ucfirst($field))) {
-                                call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
-                            }
-                        }
-                        $item->addTranslation($tc);
-                        $tc->setTranslatable($item);
-                    }
-                }
+                $item = $this->cloneItem($entity, $result);
             } else {
                 $item = $result;
             }
+        } else {
+            $result = $item;
         }
 
         $form = $this->getEntityForm($entity, $item);
@@ -104,31 +84,7 @@ class DefaultController extends Controller
             $em->persist($item);
 
             if ($clone) {
-                if (method_exists($item, 'getChildren')) {
-                    $children = $result->getChildren();
-                    foreach ($children as $child) {
-                        $cc = clone $child;
-                        $item->addChild($cc);
-                        $cc->setParent($item);
-                        $em->persist($cc);
-                        if (method_exists($cc, 'getTranslations')) {
-                            $translatons = $child->getTranslations();
-                            $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
-                            $tcname = $cc->getTranslationEntityClass();
-                            foreach ($translatons as $translaton) {
-                                $tc = new $tcname;
-                                foreach ($fields as $field) {
-                                    if (method_exists($tc, 'set'.ucfirst($field))) {
-                                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
-                                    }
-                                }
-                                $cc->addTranslation($tc);
-                                $tc->setTranslatable($cc);
-                                $em->persist($tc);
-                            }
-                        }
-                    }
-                }
+                $this->cloneItemChildren($entity, $item, $result);
             }
 
             $em->flush();
@@ -156,7 +112,7 @@ class DefaultController extends Controller
         ));
     }
 
-    public function listAction(Request $request, $entity)
+    public function listAction(Request $request, $entity, $trash = false)
     {
         $entity = $this->getEntity($entity);
         if (!$entity) {
@@ -174,7 +130,7 @@ class DefaultController extends Controller
         $filters = $this->getEntityFilters($entity);
         $repo = $this->getEntityRepository($entity);
         if ( method_exists($item, 'getRemoved') ) {
-            $filters['removed'] = false;
+            $filters['removed'] = $trash;
         }
         $optf = $request->get('optf', array());
         foreach ($optf as $key => $value) {
@@ -287,30 +243,7 @@ class DefaultController extends Controller
             if (!$result) {
                 return $this->returnError($request, 'item-not-found');
             }
-            $cnm = $this->getEntityClass($entity);
-            $item = new $cnm;
-            $fields = $this->getEntityFields($entity);
-            foreach ($fields as $field) {
-                if (method_exists($item, 'set'.ucfirst($field))) {
-                    call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
-                }
-            }
-            if (method_exists($item, 'getTranslations')) {
-                $translatons = $result->getTranslations();
-                $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
-                $tcname = $item->getTranslationEntityClass();
-                foreach ($translatons as $translaton) {
-                    $tc = new $tcname;
-                    foreach ($fields as $field) {
-                        if (method_exists($tc, 'set'.ucfirst($field))) {
-                            call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
-                        }
-                    }
-                    $item->addTranslation($tc);
-                    $tc->setTranslatable($item);
-                }
-            }
-
+            $item = $this->cloneItem($entity, $result);
         }
 
         $save = false;
@@ -353,31 +286,7 @@ class DefaultController extends Controller
             $em = $this->getDoctrine()->getManager();
 
             if ($clone) {
-                if (method_exists($item, 'getChildren')) {
-                    $children = $result->getChildren();
-                    foreach ($children as $child) {
-                        $cc = clone $child;
-                        $item->addChild($cc);
-                        $cc->setParent($item);
-                        $em->persist($cc);
-                        if (method_exists($cc, 'getTranslations')) {
-                            $translatons = $child->getTranslations();
-                            $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
-                            $tcname = $cc->getTranslationEntityClass();
-                            foreach ($translatons as $translaton) {
-                                $tc = new $tcname;
-                                foreach ($fields as $field) {
-                                    if (method_exists($tc, 'set'.ucfirst($field))) {
-                                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
-                                    }
-                                }
-                                $cc->addTranslation($tc);
-                                $tc->setTranslatable($cc);
-                                $em->persist($tc);
-                            }
-                        }
-                    }
-                }
+                $this->cloneItemChildren($entity, $item, $result);
             }
 
 			if (!$item->getId() && method_exists($item, 'getTranslations') && !count($item->getTranslations())) {
@@ -612,6 +521,64 @@ class DefaultController extends Controller
             return new JsonResponse(array('success' => false, 'error' => $message), 200);
         } else {
             return $this->redirect($this->generateUrl('maci_admin', array('error' => $message)));
+        }
+    }
+
+    public function cloneItem($entity, $result)
+    {
+        $cnm = $this->getEntityClass($entity);
+        $item = new $cnm;
+        $fields = $this->getEntityFields($entity);
+        foreach ($fields as $field) {
+            if (method_exists($item, 'set'.ucfirst($field))) {
+                call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
+            }
+        }
+        if (method_exists($item, 'getTranslations')) {
+            $translatons = $result->getTranslations();
+            $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
+            $tcname = $item->getTranslationEntityClass();
+            foreach ($translatons as $translaton) {
+                $tc = new $tcname;
+                foreach ($fields as $field) {
+                    if (method_exists($tc, 'set'.ucfirst($field))) {
+                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                    }
+                }
+                $item->addTranslation($tc);
+                $tc->setTranslatable($item);
+            }
+        }
+        return $item;
+    }
+
+    public function cloneItemChildren($entity, $item, $result)
+    {
+        $em = $this->getDoctrine()->getManager();
+        if (method_exists($item, 'getChildren')) {
+            $children = $result->getChildren();
+            foreach ($children as $child) {
+                $cc = clone $child;
+                $item->addChild($cc);
+                $cc->setParent($item);
+                $em->persist($cc);
+                if (method_exists($cc, 'getTranslations')) {
+                    $translatons = $child->getTranslations();
+                    $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
+                    $tcname = $cc->getTranslationEntityClass();
+                    foreach ($translatons as $translaton) {
+                        $tc = new $tcname;
+                        foreach ($fields as $field) {
+                            if (method_exists($tc, 'set'.ucfirst($field))) {
+                                call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                            }
+                        }
+                        $cc->addTranslation($tc);
+                        $tc->setTranslatable($cc);
+                        $em->persist($tc);
+                    }
+                }
+            }
         }
     }
 

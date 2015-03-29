@@ -46,6 +46,10 @@ maci_admin_entity_new:
     pattern:  /admin/{entity}/new
     defaults: { _controller: MaciAdminBundle:Default:form, id: 0 }
 
+maci_admin_entity_trash:
+    pattern:  /admin/{entity}/trash
+    defaults: { _controller: MaciAdminBundle:Default:list, trash: true }
+
 maci_admin_entity:
     pattern:  /admin/{entity}
     defaults: { _controller: MaciAdminBundle:Default:list }

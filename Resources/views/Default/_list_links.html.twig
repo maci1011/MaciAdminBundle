@@ -1,0 +1,10 @@
+
+{% include 'MaciAdminBundle:Link:new.html.twig' with {'entity': entity, 'label': 'New Item'} %}
+
+<br/>
+
+{% if pager.list.0.removed is defined %}
+<a href="{{ path('maci_admin_entity_trash', {'entity': entity}) }}">
+	See Trash
+</a>
+{% endif %}
