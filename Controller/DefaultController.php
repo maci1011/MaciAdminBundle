@@ -56,11 +56,41 @@ class DefaultController extends Controller
 
         $item = $this->getEntityNewObj($entity);
 
-        if ($id) {
-            $item = $this->getEntityRepository($entity)->findOneById($id);
+        $clone = $request->get('clone', false);
 
-            if (!$item) {
+        if ($id) {
+            $result = $this->getEntityRepository($entity)->findOneById($id);
+
+            if (!$result) {
                 return $this->returnError($request, 'item-not-found');
+            }
+
+            if ($clone) {
+                $cnm = $this->getEntityClass($entity);
+                $item = new $cnm;
+                $fields = $this->getEntityFields($entity);
+                foreach ($fields as $field) {
+                    if (method_exists($item, 'set'.ucfirst($field))) {
+                        call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
+                    }
+                }
+                if (method_exists($item, 'getTranslations')) {
+                    $translatons = $result->getTranslations();
+                    $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
+                    $tcname = $item->getTranslationEntityClass();
+                    foreach ($translatons as $translaton) {
+                        $tc = new $tcname;
+                        foreach ($fields as $field) {
+                            if (method_exists($tc, 'set'.ucfirst($field))) {
+                                call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                            }
+                        }
+                        $item->addTranslation($tc);
+                        $tc->setTranslatable($item);
+                    }
+                }
+            } else {
+                $item = $result;
             }
         }
 
@@ -69,9 +99,40 @@ class DefaultController extends Controller
         $form->handleRequest($request);
 
         if ($form->isValid()) {
+
             $em = $this->getDoctrine()->getManager();
             $em->persist($item);
+
+            if ($clone) {
+                if (method_exists($item, 'getChildren')) {
+                    $children = $result->getChildren();
+                    foreach ($children as $child) {
+                        $cc = clone $child;
+                        $item->addChild($cc);
+                        $cc->setParent($item);
+                        $em->persist($cc);
+                        if (method_exists($cc, 'getTranslations')) {
+                            $translatons = $child->getTranslations();
+                            $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
+                            $tcname = $cc->getTranslationEntityClass();
+                            foreach ($translatons as $translaton) {
+                                $tc = new $tcname;
+                                foreach ($fields as $field) {
+                                    if (method_exists($tc, 'set'.ucfirst($field))) {
+                                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                                    }
+                                }
+                                $cc->addTranslation($tc);
+                                $tc->setTranslatable($cc);
+                                $em->persist($tc);
+                            }
+                        }
+                    }
+                }
+            }
+
             $em->flush();
+
             if ($request->isXmlHttpRequest()) {
                 return $this->renderTemplate($request, $entity, 'show', array(
                     'entity' => $entity['name'],
@@ -90,7 +151,7 @@ class DefaultController extends Controller
 
         return $this->renderTemplate($request, $entity, 'form', array(
             'entity' => $entity['name'],
-            'item' => $item,
+            'item' => $result,
             'form' => $form->createView()
         ));
     }
@@ -221,6 +282,35 @@ class DefaultController extends Controller
             if (!$item) {
                 return $this->returnError($request, 'item-not-found');
             }
+        } elseif ($clone = $request->get('clone')) {
+            $result = $this->getEntityRepository($entity)->findOneById($id = $clone);
+            if (!$result) {
+                return $this->returnError($request, 'item-not-found');
+            }
+            $cnm = $this->getEntityClass($entity);
+            $item = new $cnm;
+            $fields = $this->getEntityFields($entity);
+            foreach ($fields as $field) {
+                if (method_exists($item, 'set'.ucfirst($field))) {
+                    call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
+                }
+            }
+            if (method_exists($item, 'getTranslations')) {
+                $translatons = $result->getTranslations();
+                $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
+                $tcname = $item->getTranslationEntityClass();
+                foreach ($translatons as $translaton) {
+                    $tc = new $tcname;
+                    foreach ($fields as $field) {
+                        if (method_exists($tc, 'set'.ucfirst($field))) {
+                            call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                        }
+                    }
+                    $item->addTranslation($tc);
+                    $tc->setTranslatable($item);
+                }
+            }
+
         }
 
         $save = false;
@@ -262,7 +352,35 @@ class DefaultController extends Controller
         if ($save) {
             $em = $this->getDoctrine()->getManager();
 
-			if (!$item->getId() && method_exists($item, 'getTranslations')) {
+            if ($clone) {
+                if (method_exists($item, 'getChildren')) {
+                    $children = $result->getChildren();
+                    foreach ($children as $child) {
+                        $cc = clone $child;
+                        $item->addChild($cc);
+                        $cc->setParent($item);
+                        $em->persist($cc);
+                        if (method_exists($cc, 'getTranslations')) {
+                            $translatons = $child->getTranslations();
+                            $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
+                            $tcname = $cc->getTranslationEntityClass();
+                            foreach ($translatons as $translaton) {
+                                $tc = new $tcname;
+                                foreach ($fields as $field) {
+                                    if (method_exists($tc, 'set'.ucfirst($field))) {
+                                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                                    }
+                                }
+                                $cc->addTranslation($tc);
+                                $tc->setTranslatable($cc);
+                                $em->persist($tc);
+                            }
+                        }
+                    }
+                }
+            }
+
+			if (!$item->getId() && method_exists($item, 'getTranslations') && !count($item->getTranslations())) {
 			    $locs = $this->container->getParameter('a2lix_translation_form.locales');
 			    foreach ($locs as $loc) {
 			        $clnm = $this->getEntityClass($entity).'Translation';
@@ -575,6 +693,27 @@ class DefaultController extends Controller
     public function getEntityFields($entity)
     {
         $metadata = $this->getEntityMetadata($entity);
+
+        $fields = (array) $metadata->fieldNames;
+
+        // Remove the primary key field if it's not managed manually
+        if (!$metadata->isIdentifierNatural()) {
+            $fields = array_diff($fields, $metadata->identifier);
+        }
+
+        foreach ($metadata->associationMappings as $fieldName => $relation) {
+            if ($relation['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
+                $fields[] = $fieldName;
+            }
+        }
+
+        return $fields;
+    }
+
+    public function getEntityTranslationFields($entity)
+    {
+        $metadata = $this->getDoctrine()->getManager()
+            ->getClassMetadata( $entity );
 
         $fields = (array) $metadata->fieldNames;
 

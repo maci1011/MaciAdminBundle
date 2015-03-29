@@ -169,7 +169,7 @@ var maciAdmin = function () {
 	},
 
 	getModal: function(el, callback) {
-		var data = { 'modal': true, 'optf': {} };
+		var data = { 'modal': true, 'clone': ($(el).attr('clone') ? true : null), 'optf': {} };
 		$(el).children('input').each(function(){
 			data['optf'][$(this).attr('name')] = $(this).val();
 		});
@@ -180,23 +180,28 @@ var maciAdmin = function () {
 		_obj.ajax(url, 'POST', data, callback);
 	},
 
-	submitForm: function(form, callback) {
-		var method = ( form.attr('method') ? form.attr('method') : 'POST' );
-		_obj.ajax(form.attr('action'), method, _obj.getFormData(form), callback);
+	submitForm: function(el, form, callback) {
+		var method = ( form.attr('method') ? form.attr('method') : 'POST' ), data = _obj.getFormData(form);
+		if ($(el).attr('clone')) {
+			data['clone'] = true;
+		}
+		_obj.ajax(form.attr('action'), method, data, callback);
 	},
 
 	createObject: function(el,id,callback) {
 		var relations = { 0: {} };
-		relations[0]['set'] = $(el).attr('from');
-		relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
-		relations[0]['val'] = id;
+		if ($(el).attr('from') && !$(el).attr('clone')) {
+			relations[0]['set'] = $(el).attr('from');
+			relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
+			relations[0]['val'] = id;
+		}
 		if ($(el).attr('to')) {
 			relations[1] = {};
 			relations[1]['set'] = $(el).attr('to');
 			relations[1]['type'] = $(el).attr('totype') ? $(el).attr('totype') : $(el).attr('to');
 			relations[1]['val'] = $(el).attr('toid');
 		}
-		_obj.setObject($(el).attr('sync'), { 'setfields': relations }, callback);
+		_obj.setObject($(el).attr('sync'), { 'setfields': relations, 'clone': ($(el).attr('clone') ? id : null) }, callback);
 	},
 
 	setField: function(el, callback) {
@@ -232,10 +237,21 @@ var maciAdmin = function () {
 						$(el).attr('parentval')
 					)
 				;
-				sel.parents('.form-group').first().html('').append(inp);
+				var fg = sel.parents('.form-group').first();
+				inp.insertAfter(fg);
+				fg.remove();
 			} else {
 				modal.find($(el).attr('parent')).parents('.form-group').first().remove();
 			}
+		}
+	},
+
+	hideInputs: function(el, modal) {
+		if ($(el).attr('hide')) {
+			var list = $(el).attr('hide').split(',');
+			$.each(list, function(i,str) {
+				$(modal).find(str.trim()).parents('.form-group').first().hide();
+			});
 		}
 	},
 
@@ -257,7 +273,7 @@ var maciAdmin = function () {
 		});
 	},
 
-	setModalForm: function(modal, callback) {
+	setModalForm: function(el, modal, callback) {
 		var form = modal.find('form').first();
 		form.find('[type=file]').each(function() {
 			$(this).hide().parents('.form-group').first().hide();
@@ -267,7 +283,7 @@ var maciAdmin = function () {
 		});
 		form.find('[type=submit]').click(function(e) {
 			e.preventDefault();
-			_obj.submitForm(form,callback);
+			_obj.submitForm(el, form,callback);
 			modal.modal('hide');
 		});
 		_obj.removeSubmitButton(modal);
@@ -327,7 +343,8 @@ var maciAdmin = function () {
 	setFormButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setParentInput(el, modal);
-			_obj.setModalForm(modal, function(dat) {
+			_obj.hideInputs(el, modal);
+			_obj.setModalForm(el, modal, function(dat) {
 				if ($(el).attr('sync')) {
 					_obj.createObject(el,dat['id'],callback);
 				} else {
