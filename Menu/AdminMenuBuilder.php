@@ -32,6 +32,8 @@ class AdminMenuBuilder
 	{
 		$menu = $this->factory->createItem('root');
 
+		$menu->setChildrenAttribute('class', 'nav');
+
 		$routes = array();
 
 		$menu->addChild('Homepage', array('route' => 'maci_homepage'));

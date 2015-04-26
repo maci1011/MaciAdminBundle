@@ -232,13 +232,14 @@ class DefaultController extends Controller
         }
 
         $item = $this->getEntityNewObj($entity);
+        $clone = $request->get('clone');
 
         if ($id) {
             $item = $this->getEntityRepository($entity)->findOneById($id);
             if (!$item) {
                 return $this->returnError($request, 'item-not-found');
             }
-        } elseif ($clone = $request->get('clone')) {
+        } elseif ($clone) {
             $result = $this->getEntityRepository($entity)->findOneById($id = $clone);
             if (!$result) {
                 return $this->returnError($request, 'item-not-found');

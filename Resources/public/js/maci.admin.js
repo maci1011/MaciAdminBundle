@@ -71,10 +71,11 @@ var maciUploader = function (form, options) {
 	clearList: function() {
 		_files = [];
 		_list.html('');
+		_obj.hideUploadButton();
 	},
 
 	end: function(map) {
-		$('<span/>').text('uploaded!').appendTo(map.item);
+		$('<span/>').text(' - uploaded!').appendTo(map.item);
 	},
 
 	setList: function(e) {
@@ -87,6 +88,17 @@ var maciUploader = function (form, options) {
 		} else {
 			_obj.addItem(e.target.files[0]);
 		}
+		_obj.showUploadButton();
+	},
+
+	hideUploadButton: function() {
+		_upload.hide();
+		_reset.hide();
+	},
+
+	showUploadButton: function() {
+		_upload.show();
+		_reset.show();
 	},
 
 	set: function(form, options) {
@@ -104,9 +116,11 @@ var maciUploader = function (form, options) {
 		});
 		_upload.click(function(e) {
 			e.preventDefault();
-			console.log('up');
+			_obj.hideUploadButton();
+			console.log('uploading...');
 			_obj.upload();
 		});
+		_obj.hideUploadButton();
 		_obj.clearList();
 	}
 
@@ -134,9 +148,8 @@ var maciAdmin = function () {
 					if ($.isFunction(callback)) {
 						callback(dat);
 					} else {
-						alert('Success!');
+						console.log('Success!');
 					}
-					console.log('Success!');
 				} else {
 					alert('Error!');
 				}
