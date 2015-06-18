@@ -13,11 +13,12 @@ var maciUploader = function (form, options) {
 		_reset = false,
 		_upload = false,
 		_callback = false,
+		_end_callback = false,
 		_name = 'file',
 
 	_obj = {
 
-	sendFile: function(map) {
+	sendFile: function(i, map) {
 		var data = new FormData();
 		data.append(_name, map.file);
 		$.ajax({
@@ -29,18 +30,33 @@ var maciUploader = function (form, options) {
 			processData: false, // Don't process the files
 			contentType: false,
 			success: function (dat,sts,jqx) {
-				_obj.end(map);
+				_obj.end(i, map);
 				if ($.isFunction(_callback)) {
 					_callback(dat);
+				}
+				if (!_files.length) {
+					_obj.endUpload(dat);
 				}
 			}
 		});
 	},
 
-	upload: function() {
-		$.each(_files, function(k, map) {
-			_obj.sendFile(map);
+	upload: function(dat) {
+		_select.hide();
+		_obj.hideUploadButton();
+		$.each(_files, function(i, map) {
+			_obj.sendFile(i, map);
 		});
+	},
+
+	endUpload: function(dat) {
+		_obj.clearList();
+		_select.show();
+		if ($.isFunction(_end_callback)) {
+			_end_callback(dat);
+		} else {
+			alert('Uploaded!');
+		}
 	},
 
 	setName: function(name) {
@@ -49,6 +65,10 @@ var maciUploader = function (form, options) {
 
 	setCallback: function(callback) {
 		_callback = callback;
+	},
+
+	setEndCallback: function(callback) {
+		_end_callback = callback;
 	},
 
 	getLength: function() {
@@ -74,7 +94,8 @@ var maciUploader = function (form, options) {
 		_obj.hideUploadButton();
 	},
 
-	end: function(map) {
+	end: function(i, map) {
+		_files.splice(i);
 		$('<span/>').text(' - uploaded!').appendTo(map.item);
 	},
 
@@ -116,9 +137,11 @@ var maciUploader = function (form, options) {
 		});
 		_upload.click(function(e) {
 			e.preventDefault();
-			_obj.hideUploadButton();
-			console.log('uploading...');
 			_obj.upload();
+		});
+		_reset.click(function(e) {
+			e.preventDefault();
+			_obj.clearList();
 		});
 		_obj.hideUploadButton();
 		_obj.clearList();
