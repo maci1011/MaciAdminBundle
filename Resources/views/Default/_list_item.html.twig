@@ -34,10 +34,20 @@
 	<div class="col-xs-{{ (tot / len)|number_format }}">
 		{% if field == '_string' %}
 		<span class="admin-list-ht">{{ item }}</span>
-		{% elseif attribute(item, field ~ 'Label') %}
-		<span class="admin-list-ht">{{ attribute(item, field ~ 'Label') }}</span>
 		{% else %}
-		<span class="admin-list-ht">{{ attribute(item, field) }}</span>
+
+		{% if attribute(item, (field ~ 'Label')) is defined %}
+		{% set meth = attribute(item, (field ~ 'Label')) %}
+		{% else %}
+		{% set meth = attribute(item, field) %}
+		{% endif %}
+
+		{% if meth.timestamp is defined %}
+		<span class="admin-list-ht">{{ meth|date('d/m/Y') }}</span>
+		{% else %}
+		<span class="admin-list-ht">{{ meth }}</span>
+		{% endif %}
+
 		{% endif %}
 	</div>
 
