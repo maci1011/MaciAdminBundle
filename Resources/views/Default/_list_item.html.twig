@@ -36,8 +36,9 @@
 		<span class="admin-list-ht">{{ item }}</span>
 		{% else %}
 
-		{% if attribute(item, (field ~ 'Label')) is defined %}
-		{% set meth = attribute(item, (field ~ 'Label')) %}
+		{% set mthlbl = attribute(item, ('get' ~ field|capitalize ~ 'Label')) %}
+		{% if mthlbl|length %}
+		{% set meth = mthlbl %}
 		{% else %}
 		{% set meth = attribute(item, field) %}
 		{% endif %}
