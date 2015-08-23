@@ -196,7 +196,7 @@ class DefaultController extends Controller
                     $method = 'get'.ucfirst($filter);
                 }
                 if ($method) {
-                    $default = call_user_method($method, $new);
+                    $default = call_user_func($method, $new);
                     if ( $value !== $default) {
                         $filters[$filter] = $value;
                     }
@@ -263,7 +263,7 @@ class DefaultController extends Controller
                     if (!$type || $type == 'default') {
                         $mth = ( method_exists($item, $key) ?  $key : false );
                         if ($mth) {
-                            call_user_method($mth, $item, $value);
+                            call_user_func($mth, $item, $value);
                             $save = true;
                         }
                     } else if ($rel = $this->getEntity($type)) {
@@ -274,7 +274,7 @@ class DefaultController extends Controller
                         if ($mth) {
                             $rob = $this->getEntityRepository($rel)->findOneById(intval($value));
                             if ($rob) {
-                                call_user_method($mth, $item, $rob);
+                                call_user_func($mth, $item, $rob);
                                 $save = true;
                             }
                         }
@@ -532,7 +532,7 @@ class DefaultController extends Controller
         $fields = $this->getEntityFields($entity);
         foreach ($fields as $field) {
             if (method_exists($item, 'set'.ucfirst($field))) {
-                call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
+                call_user_func('set'.ucfirst($field), $item, call_user_func('get'.ucfirst($field), $result));
             }
         }
         if (method_exists($item, 'getTranslations')) {
@@ -543,7 +543,7 @@ class DefaultController extends Controller
                 $tc = new $tcname;
                 foreach ($fields as $field) {
                     if (method_exists($tc, 'set'.ucfirst($field))) {
-                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                        call_user_func('set'.ucfirst($field), $tc, call_user_func('get'.ucfirst($field), $translaton));
                     }
                 }
                 $item->addTranslation($tc);
@@ -571,7 +571,7 @@ class DefaultController extends Controller
                         $tc = new $tcname;
                         foreach ($fields as $field) {
                             if (method_exists($tc, 'set'.ucfirst($field))) {
-                                call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                                call_user_func('set'.ucfirst($field), $tc, call_user_func('get'.ucfirst($field), $translaton));
                             }
                         }
                         $cc->addTranslation($tc);
@@ -636,16 +636,16 @@ class DefaultController extends Controller
             $uf = ucfirst($field);
 
             if (method_exists($object, ('is'.$uf))) {
-                $value = ( call_user_method(('is'.$uf), $object) ? 'True' : 'False' );
+                $value = ( call_user_func(('is'.$uf), $object) ? 'True' : 'False' );
             } else if (method_exists($object, ('get'.$uf.'Label'))) {
-                $value = call_user_method(('get'.$uf.'Label'), $object);
+                $value = call_user_func(('get'.$uf.'Label'), $object);
             } else if (method_exists($object, ('get'.$uf))) {
-                $value = call_user_method(('get'.$uf), $object);
+                $value = call_user_func(('get'.$uf), $object);
                 if (is_object($value) && get_class($value) === 'DateTime') {
                     $value = $value->format("Y-m-d H:i:s");
                 }
             } else if (method_exists($object, $field)) {
-                $value = call_user_method($field, $object);
+                $value = call_user_func($field, $object);
             }
 
             array_push($details, array(
@@ -738,7 +738,7 @@ class DefaultController extends Controller
         foreach ($filters as $field => $filter) {
             $method = ('set' . ucfirst($field));
             if ( method_exists($object, $method) ) {
-                call_user_method_array($method, $object, array($filter));
+                call_user_func_array($method, $object, array($filter));
             }
         }
         $fields = $this->getEntityFilterFields($entity);
@@ -803,7 +803,7 @@ class DefaultController extends Controller
             if ( method_exists($object, $method) ) {
                 $form->add($field, 'choice', array(
                     'empty_value' => '',
-                    'choices' => call_user_method($method, $object)
+                    'choices' => call_user_func($method, $object)
                 ));
             } else {
                 $form->add($field);
