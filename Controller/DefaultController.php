@@ -754,7 +754,7 @@ class DefaultController extends Controller
         if (array_key_exists('form', $entity)) {
             $form = $entity['form'];
         }
-        if (strpos('\\', $form) && class_exists($form)) {
+        if (strpos($form,'\\') && class_exists($form)) {
             return $this->createForm(new $form, $object);
         } else if ($this->container->get('form.registry')->hasType($form)) {
             return $this->createForm($form, $object);
