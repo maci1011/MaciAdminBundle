@@ -225,6 +225,7 @@ var maciAdmin = function () {
 	},
 
 	createObject: function(el,id,callback) {
+		if (!$(el).attr('sync')) { return; }
 		var relations = { 0: {} };
 		if ($(el).attr('from') && !$(el).attr('clone')) {
 			relations[0]['set'] = $(el).attr('from');
