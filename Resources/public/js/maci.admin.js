@@ -358,18 +358,6 @@ var maciAdmin = function () {
 		_obj.removeSubmitButton(modal);
 	},
 
-	setRemoveButton: function(el, callback) {
-		$(el).click(function(e) {
-			e.preventDefault();
-			if (confirm('Remove Item?')) {
-				_obj.getModal($(el), function(dat) {
-					if ($.isFunction(callback)) { callback(); }
-					else { alert('Removed!') }
-				});
-			}
-		});
-	},
-
 	setFieldButton: function(el, callback) {
 		$(el).click(function(e) {
 			e.preventDefault();
@@ -386,7 +374,7 @@ var maciAdmin = function () {
 					_obj.createObject(el,dat['id'],callback);
 				} else {
 					if ( $.isFunction(callback) ) { callback(); }
-					else { alert('Success!') }
+					else { console.log('Success!') }
 				}
 			});
 		});
@@ -422,7 +410,7 @@ $(document).ready(function(e) {
 
 	$('.ma-remove').each(function() {
 		admin.setFormButton($(this), function(dat) {
-			alert('Removed!');
+			console.log('Removed!');
 		});
 	});
 
@@ -465,7 +453,7 @@ $(document).ready(function(e) {
 		            data: {ids: ids},
 		            url: $(el).attr('sortable'),
 		            success: function () {
-		                // alert('Reorded!');
+		                console.log('Reorded!');
 		            }
 		        });
 
