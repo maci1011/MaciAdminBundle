@@ -447,7 +447,7 @@ class DefaultController extends Controller
                 if (method_exists($item, 'getTranslations')) {
                     $locs = $this->container->getParameter('a2lix_translation_form.locales');
                     foreach ($locs as $loc) {
-                        $clnm = new ProductTranslation;
+                        $clnm = ($this->getEntityClass($entity) . 'Translation');
                         $tran = new $clnm;
                         $tran->setLocale($loc);
                         $tran->setName( explode('.',$file->getClientOriginalName())[0] );

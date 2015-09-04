@@ -403,9 +403,9 @@ var maciAdmin = function () {
 	setUploaderButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalUploader(modal, function(dat) {
-				_obj.createObject(el,dat['id'],function(dat) {
+				if (dat['success']) { _obj.createObject(el,dat['id'],function(dat) {
 					if ( $.isFunction(callback) ) { callback(); }
-				});
+				}); } else { console.log('error: ' + dat['error']) }
 			});
 		});
 	}
