@@ -14,6 +14,7 @@ var maciUploader = function (form, options) {
 		_upload = false,
 		_callback = false,
 		_end_callback = false,
+		_upload_index,
 		_name = 'file',
 
 	_obj = {
@@ -30,23 +31,20 @@ var maciUploader = function (form, options) {
 			processData: false, // Don't process the files
 			contentType: false,
 			success: function (dat,sts,jqx) {
-				_obj.end(i, map);
 				if ($.isFunction(_callback)) {
 					_callback(dat);
 				}
-				if (!_files.length) {
+				_obj.end(map);
+				if (_upload_index == _files.length) {
 					_obj.endUpload(dat);
 				}
 			}
 		});
 	},
 
-	upload: function(dat) {
-		_select.hide();
-		_obj.hideUploadButton();
-		$.each(_files, function(i, map) {
-			_obj.sendFile(i, map);
-		});
+	end: function(map) {
+		$('<span/>').text(' - uploaded!').appendTo(map.item);
+		_upload_index++;
 	},
 
 	endUpload: function(dat) {
@@ -57,6 +55,16 @@ var maciUploader = function (form, options) {
 		} else {
 			alert('Uploaded!');
 		}
+	},
+
+	upload: function(dat) {
+		_select.hide();
+		_obj.hideUploadButton();
+		_obj.startUpload(dat);
+		_upload_index = 0;
+		$.each(_files, function(i, map) {
+			_obj.sendFile(i, map);
+		});
 	},
 
 	setName: function(name) {
@@ -89,14 +97,10 @@ var maciUploader = function (form, options) {
 	},
 
 	clearList: function() {
+		_upload_index = 0;
 		_files = [];
 		_list.html('');
 		_obj.hideUploadButton();
-	},
-
-	end: function(i, map) {
-		_files.splice(i);
-		$('<span/>').text(' - uploaded!').appendTo(map.item);
 	},
 
 	setList: function(e) {
