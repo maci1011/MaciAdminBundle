@@ -13,6 +13,7 @@ var maciUploader = function (form, options) {
 		_reset = false,
 		_upload = false,
 		_callback = false,
+		_start_callback = false,
 		_end_callback = false,
 		_upload_index,
 		_name = 'file',
@@ -54,6 +55,12 @@ var maciUploader = function (form, options) {
 			_end_callback(dat);
 		} else {
 			alert('Uploaded!');
+		}
+	},
+
+	startUpload: function(dat) {
+		if ($.isFunction(_start_callback)) {
+			_start_callback(dat);
 		}
 	},
 
