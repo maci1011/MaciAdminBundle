@@ -86,6 +86,10 @@ var maciUploader = function (form, options) {
 		_end_callback = callback;
 	},
 
+	setStartCallback: function(callback) {
+		_start_callback = callback;
+	},
+
 	getLength: function() {
 		return _files ? _files.length : 0;
 	},
