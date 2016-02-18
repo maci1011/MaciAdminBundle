@@ -327,7 +327,12 @@ class DefaultController extends Controller
             return $this->returnError($request, 'item-not-found');
         }
 
+        $redirect = $request->get('redirect');
+
         $form = $this->createFormBuilder($item)
+            ->setAction($this->generateUrl('maci_admin_entity_remove', array(
+                'entity'=>$entity['name'], 'id'=>$item->getId(), 'redirect'=>$redirect
+            )))
             ->add('remove', 'submit', array(
                 'attr' => array(
                     'class' => 'btn-danger'
@@ -351,13 +356,23 @@ class DefaultController extends Controller
             $em->flush();
 
             if ($request->isXmlHttpRequest()) {
+
                 return new JsonResponse(array('success' => true), 200);
-            }
-            else {
+
+            } else if( strlen($redirect) ) {
+
+                return $this->redirect($this->generateUrl($redirect, array(
+                    'entity' => $entity['name'],
+                    'message' => 'form.removed'
+                )));
+
+            } else {
+
                 return $this->redirect($this->generateUrl('maci_admin_entity', array(
                     'entity' => $entity['name'],
                     'message' => 'form.removed'
                 )));
+
             }
 
         }
