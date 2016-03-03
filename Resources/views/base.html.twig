@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Maci, http://macister.com/" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+
+    <title>
+    {% block title %}
+    {{ company_title }} | Administration
+    {% endblock %}
+    </title>
+
+    {% block description %}
+    <meta name="description" content="" />
+    {% endblock %}
+
+
+    {% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/font-awesome.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/lightbox.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/maci.style.css') }}" />
+    {% endblock %}
+
+</head>
+{% block bodyTag %}<body>{% endblock %}
+
+    {% block body %}{% endblock %}
+
+    {% block javascripts %}
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/bundles/macipage/js/jquery-1.11.1.min.js"><\/script>')</script>
+    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/lightbox.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/jquery.scrollTo.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/bootstrap.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/maci.script.js') }}" ></script>
+    {% endblock %}
+
+
+</body>
+</html>

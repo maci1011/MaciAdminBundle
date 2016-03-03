@@ -1,11 +1,166 @@
 
-{% extends "MaciPageBundle::layout.html.twig" %}
+{% extends "::base.html.twig" %}
 
 
 {% block bodyTag %}<body id="bodyAdministration">{% endblock %}
 
-{% block leftMenu %}
 
-	<nav>{{ knp_menu_render('admin_left', {'currentClass': 'active'}) }}</nav>
+{% block stylesheets %}
+
+    {{ parent() }}
+
+    {% if is_granted("ROLE_ADMIN") %}
+
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/jquery-ui.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/maci.admin.css') }}" />
+
+    {% endif %}
 
 {% endblock %}
+
+
+{% block javascripts %}
+
+    {{ parent() }}
+
+    {% if is_granted("ROLE_ADMIN") %}
+
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/jquery-ui.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/shortcut.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/bootstrap-dropdown.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/ckeditor.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/maci.admin.js') }}" ></script>
+
+    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="http://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
+    {% endif %}
+
+{% endblock %}
+
+
+{% block body %}
+
+<div id="main">
+
+    {% block navbar %}
+
+    <div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+
+    {% block cookieMessage %}
+
+    {% if not app.session.get('cookie-message', false) %}
+
+    <div id="cookieMessage" class="container">
+
+        <nav><ul class="nav navbar-nav">
+
+        <li><p class="navbar-text">{{ 'cookie-message' | matra(('By using ' ~ app.request.host ~ ', you agree to our use of cookies to enhance your experience.')) }}</p></li>
+        <li><a class="set-cookie" href="{{ path('maci_set_cookie', {'cookie': 'cookie-message'}) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> {{ 'form.close' | matra('Close') }}</a></li>
+
+        </ul></nav>
+
+    </div>
+
+    {% endif %}
+
+    {% endblock %}
+
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="{{ path('homepage') }}">{{ company_title }}</a></li>
+                </ul>
+            <nav>{{ knp_menu_render('user', {'currentClass': 'active'}) }}</nav>
+        </div>
+    </div>
+
+    </div>
+
+    {% endblock %}
+
+    <header id="header">
+
+    {% block header %}
+
+    <div class="container">
+
+    <div id="pathBar" class="row">
+
+        {% block pathBar %}{% endblock %}
+
+    </div>
+
+    </div>
+
+    {% endblock %}
+
+    </header>
+
+
+    <div id="mainContainer">
+
+    {% block container %}
+
+    <div class="row">
+
+        <div class="col-sm-3 col-md-2">
+        <div id="menuContainer" class="row">
+
+            {% block leftMenu %}
+
+                <nav>{{ knp_menu_render('admin_left', {'currentClass': 'active'}) }}</nav>
+
+            {% endblock %}
+
+        </div>
+        </div>
+        <div class="col-sm-9 col-md-10">
+        <div id="pageContainer">
+
+            {% block content %}{% endblock %}
+
+        </div>
+        </div>
+
+    </div>
+
+    {% endblock container %}
+
+    </div>
+
+    <footer id="footer">
+
+    {% block footer %}
+
+    <div class="container">
+
+    <div class="navbar">
+
+        <nav>
+                <ul class="nav navbar-nav">
+                    <li><span class="navbar-text">{{ company_title }}</span></li>
+                    <li><a href="{{ path('homepage') }}" target="_blank">Homepage</a></li>
+                </ul>
+
+        </nav>
+
+    </div>
+
+    </div>
+
+    {% endblock footer %}
+
+    </footer>
+
+</div>
+
+
+{% endblock body %}
