@@ -14,7 +14,7 @@
 
     <title>
     {% block title %}
-    {{ company_title }} | Administration
+    Site Administration
     {% endblock %}
     </title>
 
@@ -24,24 +24,34 @@
 
 
     {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/font-awesome.css') }}" />
-    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/bootstrap.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/lightbox.css') }}" />
-    <link rel="stylesheet" href="{{ asset('/bundles/macipage/css/maci.style.css') }}" />
+
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/font-awesome.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/lightbox.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/jquery-ui.min.css') }}" />
+    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/maci.admin.css') }}" />
+
     {% endblock %}
 
 </head>
-{% block bodyTag %}<body>{% endblock %}
+{% block bodyTag %}<body id="bodyAdministration">{% endblock %}
 
     {% block body %}{% endblock %}
 
     {% block javascripts %}
+
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/bundles/macipage/js/jquery-1.11.1.min.js"><\/script>')</script>
-    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/lightbox.min.js') }}" ></script>
-    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/jquery.scrollTo.min.js') }}" ></script>
-    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/bootstrap.min.js') }}" ></script>
-    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/maci.script.js') }}" ></script>
+    <script>window.jQuery || document.write('<script src="/bundles/maciadmin/js/jquery-1.11.1.min.js"><\/script>')</script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/lightbox.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/bootstrap.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/jquery-ui.min.js') }}" ></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/shortcut.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/bootstrap-dropdown.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/ckeditor.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/maci.admin.js') }}" ></script>
+
+    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="http://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+
     {% endblock %}
 
 

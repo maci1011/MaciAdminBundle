@@ -2,42 +2,6 @@
 {% extends "::base.html.twig" %}
 
 
-{% block bodyTag %}<body id="bodyAdministration">{% endblock %}
-
-
-{% block stylesheets %}
-
-    {{ parent() }}
-
-    {% if is_granted("ROLE_ADMIN") %}
-
-    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/jquery-ui.min.css') }}" />
-    <link rel="stylesheet" href="{{ asset('/bundles/maciadmin/css/maci.admin.css') }}" />
-
-    {% endif %}
-
-{% endblock %}
-
-
-{% block javascripts %}
-
-    {{ parent() }}
-
-    {% if is_granted("ROLE_ADMIN") %}
-
-    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/jquery-ui.min.js') }}" ></script>
-    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/shortcut.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('/bundles/macipage/js/bootstrap-dropdown.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/ckeditor.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('/bundles/maciadmin/js/maci.admin.js') }}" ></script>
-
-    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="http://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
-
-    {% endif %}
-
-{% endblock %}
-
-
 {% block body %}
 
 <div id="main">
@@ -75,10 +39,17 @@
             </button>
         </div>
         <div class="collapse navbar-collapse">
+            <nav>
                 <ul class="nav navbar-nav">
-                    <li><a href="{{ path('homepage') }}">{{ company_title }}</a></li>
+                    <li><a href="{{ path('maci_admin') }}">Administration</a></li>
                 </ul>
-            <nav>{{ knp_menu_render('user', {'currentClass': 'active'}) }}</nav>
+                <ul class="nav navbar-nav">
+                    <li><a href="{{ path('homepage') }}">Homepage</a></li>
+                </ul>
+            </nav>
+            <nav>
+                {{ knp_menu_render('user', {'currentClass': 'active'}) }}
+            </nav>
         </div>
     </div>
 
@@ -138,25 +109,7 @@
 
     <footer id="footer">
 
-    {% block footer %}
-
-    <div class="container">
-
-    <div class="navbar">
-
-        <nav>
-                <ul class="nav navbar-nav">
-                    <li><span class="navbar-text">{{ company_title }}</span></li>
-                    <li><a href="{{ path('homepage') }}" target="_blank">Homepage</a></li>
-                </ul>
-
-        </nav>
-
-    </div>
-
-    </div>
-
-    {% endblock footer %}
+    {% block footer %}{% endblock footer %}
 
     </footer>
 
