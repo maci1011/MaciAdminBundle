@@ -21,7 +21,7 @@
 {% block body %}
 
 
-{% block navbar %}
+{% block navbar_top %}
 
 <div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
 
@@ -35,28 +35,24 @@
         </button>
     </div>
     <div class="collapse navbar-collapse">
-        <nav>
-            <ul class="nav navbar-nav">
-                <li><a id="menu-toggle" href="#">MENU</a></li>
-            </ul>
-        </nav>
         {% block top_menu %}
         <nav>
             <ul class="nav navbar-nav">
-                <li><a href="{{ path('maci_admin') }}">Dashboard</a></li>
-                <li><a href="{{ path('homepage') }}">Homepage</a></li>
+                <li>
+                    <a id="menu-toggle" href="#">ENTITIES</a>
+                </li>
+                <li>
+                    <a href="{{ path('homepage') }}">Homepage</a>
+                </li>
             </ul>
         </nav>
         {% endblock top_menu %}
-        <nav>
-            {{ knp_menu_render('user', {'currentClass': 'active'}) }}
-        </nav>
     </div>
 </div>
 
 </div>
 
-{% endblock %}
+{% endblock navbar_top %}
 
 
 <div id="wrapper" class="toggled">

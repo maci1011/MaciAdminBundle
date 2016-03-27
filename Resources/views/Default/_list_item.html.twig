@@ -35,7 +35,7 @@
 
 		{% if field == '_string' %}
 
-		<p class="item-val">{{ item }}</p>
+		<p>{{ item }}</p>
 
 		{% else %}
 
@@ -48,9 +48,9 @@
 		{% endif %}
 
 		{% if meth.timestamp is defined %}
-		<p class="item-val">{{ meth|date('d/m/Y') }}</p>
+		<p>{{ meth|date('d/m/Y') }}</p>
 		{% else %}
-		<p class="item-val">{{ meth }}</p>
+		<p>{{ meth }}</p>
 		{% endif %}
 
 		{% endif %}

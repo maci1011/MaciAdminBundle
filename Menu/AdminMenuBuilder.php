@@ -34,6 +34,8 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav');
 
+		$menu->addChild('Dashboard', array('route' => 'maci_admin'));
+
 		$routes = array();
 
 		foreach ($this->entities as $name => $entity) {

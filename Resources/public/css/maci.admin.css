@@ -132,7 +132,8 @@ h4 {
     text-align: center;
 }
 
-.list-default .tab-td-id > a {
+.list-default .tab-td-id > a,
+.list-default .tab-td-id > p {
     text-align: center;
     display: block;
 }
