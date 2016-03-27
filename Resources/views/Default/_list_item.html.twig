@@ -1,10 +1,10 @@
 
-<div class="row">
+<div class="row list-item {% if loop.index0 is even %}even{% else %}odd{% endif %}">
 
 	{% if '_id' in fields %}
-	<div class="col-xs-1">
+	<div class="col-xs-1 tab-td-id">
 		<input name="id" type="hidden" value="{{ item.id }}" />
-		<a href="{{ path('maci_admin_entity_show', { 'entity': entity, 'id': item.id }) }}">
+		<a href="{{ path('maci_admin_entity_show', { 'entity': entity, 'id': item.id }) }}" title="See Details">
 			{{ item.id }}
 		</a>
 	</div>
@@ -32,8 +32,11 @@
 	{% if not ( field in ['_id', '_actions'] ) %}
 
 	<div class="col-xs-{{ (tot / len)|number_format }}">
+
 		{% if field == '_string' %}
-		<span class="admin-list-ht">{{ item }}</span>
+
+		<p class="item-val">{{ item }}</p>
+
 		{% else %}
 
 		{% set mth1 = (field|capitalize ~ 'Label') %}
@@ -45,12 +48,13 @@
 		{% endif %}
 
 		{% if meth.timestamp is defined %}
-		<span class="admin-list-ht">{{ meth|date('d/m/Y') }}</span>
+		<p class="item-val">{{ meth|date('d/m/Y') }}</p>
 		{% else %}
-		<span class="admin-list-ht">{{ meth }}</span>
+		<p class="item-val">{{ meth }}</p>
 		{% endif %}
 
 		{% endif %}
+
 	</div>
 
 	{% endif %}
@@ -58,11 +62,15 @@
 	{% endfor %}
 
 	{% if '_actions' in fields %}
-	<div class="col-xs-2 admin-list-actions">
+	<div class="col-xs-2 item-actions">
 
-		{% include 'MaciAdminBundle:Link:edit.html.twig' with {'entity': entity, 'item': item} %}
-		|
-		{% include 'MaciAdminBundle:Link:remove.html.twig' with {'entity': entity, 'item': item} %}
+		<a class="btn btn-sm" href="{{ path('maci_admin_entity_form', {'entity': entity, 'id': item.id}) }}">
+			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
+		</a>
+
+		<a class="btn btn-sm" href="{{ path('maci_admin_entity_remove', {'entity': entity, 'id': item.id}) }}">
+			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
+		</a>
 
 	</div>
 	{% endif %}

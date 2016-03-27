@@ -2,13 +2,71 @@
 {% extends "MaciAdminBundle::layout.html.twig" %}
 
 
+{% block pathBar %}
+<nav>
+<ul class="nav navbar-nav">
+
+    <li class="pathbar-parent">
+		<a href="{{ path('maci_admin') }}">
+    		Entities
+			<span class="glyphicon glyphicon-chevron-right"></span>
+		</a>
+    </li>
+
+	<li class="pathbar-parent">
+		<a href="{{ path('maci_admin_entity', {'entity': entity}) }}">
+			{{ entity_label }}
+			<span class="glyphicon glyphicon-chevron-right"></span>
+		</a>
+	</li>
+
+    <li>
+    	<span class="navbar-text">List</span>
+    </li>
+
+</ul>
+</nav>
+{% endblock %}
+
+
 {% block content %}
 
-<h3>{{ entity_label }}</h3>
+<h1>{{ entity_label }}</h1>
+<h2>List</h2>
+
+<div class="container-fluid">
+<div class="content-navbar">
+	<nav>
+	<ul class="nav navbar-nav">
+
+		<li>
+			<a href="{{ path('maci_admin_entity_new', {'entity': entity}) }}">
+				<span class="glyphicon glyphicon-plus"></span> {{ entity_label }}
+			</a>
+		</li>
+
+		{% if params.pager.list.0.removed is defined %}
+		{% if params.pager.list.0.removed %}
+		<li>
+			<a href="{{ path('maci_admin_entity', {'entity': entity}) }}">
+				<span class="glyphicon glyphicon-th-list"></span> List
+			</a>
+		</li>
+		{% else %}
+		<li>
+			<a href="{{ path('maci_admin_entity_trash', {'entity': entity}) }}">
+				<span class="glyphicon glyphicon-trash"></span> Trash
+			</a>
+		</li>
+		{% endif %}
+		{% endif %}
+
+	</ul>
+	</nav>
+</div>
+</div>
 
 {% include template with params %}
-
-{% include 'MaciAdminBundle:Default:_list_links.html.twig' with params %}
 
 {% endblock %}
 

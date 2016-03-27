@@ -1,11 +1,12 @@
 
-<form class="maci-form form-remove" action="{{ form.vars.action }}" method="post">
+<div class="container-fluid">
 
-	<p>
-		Are you sure to delete this item?
-	</p>
-	<br/>
+<form class="admin-form form-remove" action="{{ form.vars.action }}" method="post">
+
+	<h3>Are you sure to delete this item?</h3>
 
     {{ form_rest(form) }}
 
 </form>
+
+</div>

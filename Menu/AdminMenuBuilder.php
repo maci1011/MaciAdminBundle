@@ -28,17 +28,13 @@ class AdminMenuBuilder
         $this->entities = $entities;
 	}
 
-    public function createLeftMenu(Request $request)
+    public function createEntitiesMenu(Request $request)
 	{
 		$menu = $this->factory->createItem('root');
 
 		$menu->setChildrenAttribute('class', 'nav');
 
 		$routes = array();
-
-		$menu->addChild('Homepage', array('route' => 'maci_homepage'));
-
-		$menu->addChild('Dashboard', array('route' => 'maci_admin'));
 
 		foreach ($this->entities as $name => $entity) {
 			if (array_key_exists('label', $entity)) {

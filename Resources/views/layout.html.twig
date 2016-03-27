@@ -1,74 +1,102 @@
 
-{% extends "::base.html.twig" %}
+{% extends "MaciAdminBundle::base.html.twig" %}
+
+
+{% block javascripts %}
+
+    {{ parent() }}
+
+    <script>
+
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+
+    </script>
+
+{% endblock %}
 
 
 {% block body %}
 
-<div id="main">
 
-    {% block navbar %}
+{% block navbar %}
 
-    <div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
 
-    {% block cookieMessage %}
-
-    {% if not app.session.get('cookie-message', false) %}
-
-    <div id="cookieMessage" class="container">
-
-        <nav><ul class="nav navbar-nav">
-
-        <li><p class="navbar-text">{{ 'cookie-message' | matra(('By using ' ~ app.request.host ~ ', you agree to our use of cookies to enhance your experience.')) }}</p></li>
-        <li><a class="set-cookie" href="{{ path('maci_set_cookie', {'cookie': 'cookie-message'}) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> {{ 'form.close' | matra('Close') }}</a></li>
-
-        </ul></nav>
-
+<div class="container">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
     </div>
+    <div class="collapse navbar-collapse">
+        <nav>
+            <ul class="nav navbar-nav">
+                <li><a id="menu-toggle" href="#">MENU</a></li>
+            </ul>
+        </nav>
+        {% block top_menu %}
+        <nav>
+            <ul class="nav navbar-nav">
+                <li><a href="{{ path('maci_admin') }}">Dashboard</a></li>
+                <li><a href="{{ path('homepage') }}">Homepage</a></li>
+            </ul>
+        </nav>
+        {% endblock top_menu %}
+        <nav>
+            {{ knp_menu_render('user', {'currentClass': 'active'}) }}
+        </nav>
+    </div>
+</div>
 
-    {% endif %}
+</div>
+
+{% endblock %}
+
+
+<div id="wrapper" class="toggled">
+
+
+<!-- Sidebar -->
+<div id="sidebar-wrapper">
+
+    <div id="mainMenu">
+
+    {% block main_menu %}
+
+        <h3>Entities</h3>
+
+        <nav>{{ knp_menu_render('admin_entities', {'currentClass': 'active'}) }}</nav>
 
     {% endblock %}
 
-    <div class="container">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-        </div>
-        <div class="collapse navbar-collapse">
-            <nav>
-                <ul class="nav navbar-nav">
-                    <li><a href="{{ path('maci_admin') }}">Administration</a></li>
-                </ul>
-                <ul class="nav navbar-nav">
-                    <li><a href="{{ path('homepage') }}">Homepage</a></li>
-                </ul>
-            </nav>
-            <nav>
-                {{ knp_menu_render('user', {'currentClass': 'active'}) }}
-            </nav>
-        </div>
     </div>
 
-    </div>
+</div>
+<!-- /#sidebar-wrapper -->
 
-    {% endblock %}
+
+<!-- Page Content -->
+<div id="page-content-wrapper">
+
+
+<div id="main" class="container-fluid">
 
     <header id="header">
 
     {% block header %}
 
-    <div class="container">
-
-    <div id="pathBar" class="row">
+    <div class="container-fluid">
+    <div id="pathbar" class="content-navbar">
 
         {% block pathBar %}{% endblock %}
 
     </div>
-
     </div>
 
     {% endblock %}
@@ -80,26 +108,9 @@
 
     {% block container %}
 
-    <div class="row">
+    <div id="pageContainer">
 
-        <div class="col-sm-3 col-md-2">
-        <div id="menuContainer" class="row">
-
-            {% block leftMenu %}
-
-                <nav>{{ knp_menu_render('admin_left', {'currentClass': 'active'}) }}</nav>
-
-            {% endblock %}
-
-        </div>
-        </div>
-        <div class="col-sm-9 col-md-10">
-        <div id="pageContainer">
-
-            {% block content %}{% endblock %}
-
-        </div>
-        </div>
+        {% block content %}{% endblock %}
 
     </div>
 
@@ -113,7 +124,13 @@
 
     </footer>
 
+
+</div>
+
+</div>
+
 </div>
 
 
 {% endblock body %}
+

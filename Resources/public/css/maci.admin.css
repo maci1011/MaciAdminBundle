@@ -1,7 +1,173 @@
 
-#maciadmin {
-	padding: 15px 90px;
+h1, h2, h3, h4, h5 {
+    margin: 0;
+    padding: 0 0 15px 0;
+    text-transform: uppercase;
+    font-size: 12pt;
 }
+
+h1 {
+    font-size: 18pt;
+}
+
+h2 {
+    font-size: 14pt;
+}
+
+h3 {
+    font-size: 13pt;
+}
+
+h4 {
+    font-size: 11pt;
+}
+
+/*   -----> Layout <-----   */
+
+#sidebar-wrapper {
+    background-color: #eee;
+}
+#page-content-wrapper {
+    padding: 65px 0;
+    left: 0;
+}
+
+/*   -----> Top Navbar <-----   */
+
+.navbar-inverse .navbar-nav > li > a {
+    color: #999;
+}
+
+/*   -----> Main Menu <-----   */
+
+#mainMenu {
+    width: 250px;
+}
+
+#mainMenu h3 {
+    margin: 0;
+    padding: 60px 0 10px 25px;
+}
+
+#mainMenu h3,
+#mainMenu .nav > li > a {
+    color: #333;
+    text-transform: uppercase;
+    font-size: 9pt;
+    letter-spacing: 0.9px;
+}
+
+#mainMenu .nav > li > a:hover,
+#mainMenu .nav > li > a:focus,
+#mainMenu .nav > li.active > a {
+    background-color: #ccc;
+    color: #000;
+}
+
+#mainMenu h3 {
+    margin: 0;
+    padding: 65px 0 10px 15px;
+    font-size: 10pt;
+    color: #000;
+}
+
+/*   -----> Content Navbar <-----   */
+
+#pathbar.content-navbar .nav {
+    background-color: transparent;
+}
+
+.content-navbar .nav {
+    padding: 0 15px;
+    margin: 0 0 15px -15px;
+    background-color: #eee;
+}
+
+#pathbar.content-navbar .nav > li > a {
+    text-decoration: underline;
+    color: #999;
+}
+
+#pathbar.content-navbar .nav > li > a,
+#pathbar.content-navbar .nav > li > span {
+    text-transform: uppercase;
+    font-size: 9pt;
+    line-height: 20px;
+}
+
+.content-navbar .nav > li > a {
+    color: #666;
+}
+
+.content-navbar .nav > li > a:hover,
+.content-navbar .nav > li > a:focus,
+.content-navbar .nav > li.active > a {
+    background-color: #eaeaea;
+    color: #000;
+}
+
+/*   -----> List <-----   */
+
+.list-default .list-title {
+    padding: 10px 0;
+    text-transform: uppercase;
+    font-size: 10pt;
+    display: block;
+}
+
+.list-default .list-item > div > a,
+.list-default .list-item > div > p {
+    padding: 5px;
+    font-size: 10pt;
+    line-height: 20px;
+    margin: 0;
+    border: 0;
+}
+
+.list-default .list-item.even {
+    background-color: #eee;
+}
+
+.list-default .tab-hd-id {
+    text-align: center;
+}
+
+.list-default .tab-td-id > a {
+    text-align: center;
+    display: block;
+}
+
+.list-default .tab-td-id > a:hover {
+    background-color: #ccc;
+}
+
+/*   -----> Filters <-----   */
+
+.admin-form.filters-form {
+    padding-bottom: 15px;
+}
+
+.admin-form.filters-form label {
+    text-transform: uppercase;
+    font-size: 9pt;
+    padding: 5px;
+}
+
+.admin-form.filters-form .btn {
+    margin: 26px 0 0 10px;
+}
+
+/*   -----> Show <-----   */
+
+.details-item {
+    padding: 10px 0;
+}
+
+.details-item.even {
+    background-color: #eee;
+}
+
+/*   -----> Form <-----   */
 
 .maci_admin_form {
     padding: 0 20px;

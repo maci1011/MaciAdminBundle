@@ -21,7 +21,7 @@
 	</li>
 
     <li>
-    	<span class="navbar-text">Remove [{{ params.item.id }}]</span>
+    	<span class="navbar-text">Trash</span>
     </li>
 
 </ul>
@@ -32,7 +32,7 @@
 {% block content %}
 
 <h1>{{ entity_label }}</h1>
-<h2>Remove [{{ params.item.id }}]</h2>
+<h2>Trash</h2>
 
 <div class="container-fluid">
 <div class="content-navbar">
@@ -50,7 +50,7 @@
 </div>
 </div>
 
-{% include template with params %}
+{% include "MaciAdminBundle:Default:_list.html.twig" with params %}
 
 {% endblock %}
 

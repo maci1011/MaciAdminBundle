@@ -7,6 +7,8 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Loader;
 
+use Maci\AdminBundle\DependencyInjection\EntitiesCompilerPass;
+
 /**
  * This is the class that loads and manages your bundle configuration
  *
@@ -25,6 +27,8 @@ class MaciAdminExtension extends Extension
         $container->setParameter('maci.admin.entities', $config['entities']);
         $container->setParameter('maci.admin.page_limit', $config['page_limit']);
         $container->setParameter('maci.admin.page_range', $config['page_range']);
+
+        // $container->addCompilerPass(new EntitiesCompilerPass());
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yml');

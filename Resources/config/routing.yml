@@ -48,7 +48,7 @@ maci_admin_entity_new:
 
 maci_admin_entity_trash:
     pattern:  /admin/entities/{entity}/trash
-    defaults: { _controller: MaciAdminBundle:Default:list, trash: true }
+    defaults: { _controller: MaciAdminBundle:Default:trash }
 
 maci_admin_entity:
     pattern:  /admin/entities/{entity}

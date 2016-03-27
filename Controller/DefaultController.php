@@ -9,11 +9,13 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 use A2lix\I18nDoctrineBundle\Annotation\I18nDoctrine;
-use Maci\CoreBundle\Entity\MaciPager;
+use Maci\AdminBundle\MaciPager;
 
 class DefaultController extends Controller
 {
     private $_entities;
+
+    private $last;
 
     public function indexAction()
     {
@@ -26,8 +28,7 @@ class DefaultController extends Controller
 
     public function showAction(Request $request, $entity, $id)
     {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
+        if (!$entity = $this->getEntity($entity)) {
             return $this->returnError($request, 'entity-not-found');
         }
 
@@ -41,6 +42,38 @@ class DefaultController extends Controller
             'entity' => $entity['name'],
             'item' => $item,
             'details' => $this->getEntityDetails($entity, $item)
+        ));
+    }
+
+    public function listAction(Request $request, $entity)
+    {
+        if (!$entity = $this->getEntity($entity)) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $pager = $this->getEntityList($request, $entity, false);
+
+        return $this->renderTemplate($request, $entity, 'list', array(
+            'fields' => $pager->getListFields(),
+            'entity' => $entity['name'],
+            'pager' => $pager,
+            'form' => $pager->getFiltersForm()
+        ));
+    }
+
+    public function trashAction(Request $request, $entity)
+    {
+        if (!$entity = $this->getEntity($entity)) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $pager = $this->getEntityList($request, $entity, true);
+
+        return $this->renderTemplate($request, $entity, 'trash', array(
+            'fields' => $pager->getListFields(),
+            'entity' => $entity['name'],
+            'pager' => $pager,
+            'form' => $pager->getFiltersForm()
         ));
     }
 
@@ -109,62 +142,6 @@ class DefaultController extends Controller
             'entity' => $entity['name'],
             'item' => $result,
             'form' => $form->createView()
-        ));
-    }
-
-    public function listAction(Request $request, $entity, $trash = false)
-    {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        $filters_fields = $this->getEntityFilterFields($entity);
-        $form = false;
-        if ( count($filters_fields) ) {
-            $form = $this->getEntityFiltersForm($entity);
-            $form = $form->createView();
-        }
-
-        $item = $this->getEntityNewObj($entity);
-        $filters = $this->getEntityFilters($entity);
-        $repo = $this->getEntityRepository($entity);
-        if ( method_exists($item, 'getRemoved') ) {
-            $filters['removed'] = $trash;
-        }
-        $optf = $request->get('optf', array());
-        foreach ($optf as $key => $value) {
-            if (method_exists($item, ('get'.ucfirst($key)))) {
-                $filters[$key] = ( strlen($value) ? $value : null );
-            }
-        }
-        if ( $this->hasEntityFilters($entity) ) {
-            $query = $repo->createQueryBuilder('e');
-            foreach ($filters as $filter => $value) {
-                $query->orWhere('e.' . $filter . ' LIKE :' . $filter);
-                $query->setParameter(':' . $filter, "%$value%");
-            }
-            $query = $query->getQuery();
-            $list = $query->getResult();
-        } else {
-            $list = $repo->findBy($filters);
-        }
-
-        $pageLimit = $this->container->getParameter('maci.admin.page_limit');
-        $pageRange = $this->container->getParameter('maci.admin.page_range');
-        $page = $request->get('page', 1);
-        if ($request->get('modal')) {
-            $pageLimit = 0;
-        }
-        $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
-
-        $fields = $this->getEntityListFields($entity);
-
-        return $this->renderTemplate($request, $entity, 'list', array(
-            'fields' => $fields,
-            'entity' => $entity['name'],
-            'pager' => $pager,
-            'form' => $form
         ));
     }
 
@@ -596,6 +573,10 @@ class DefaultController extends Controller
         }
     }
 
+/*
+    ---> Entities Functions
+*/
+
     public function getEntities()
     {
         if ( !is_array($this->_entities) ) {
@@ -611,11 +592,23 @@ class DefaultController extends Controller
         return $this->_entities;
     }
 
-    public function getEntity($name)
+    public function getEntity($entity)
     {
+        if (is_array($this->last) && $this->last[0] == $entity) {
+            return $this->last[1];
+        } 
         $entities = $this->getEntities();
-        if (array_key_exists($name, $entities)) {
-            return $entities[$name];
+        if (array_key_exists($entity, $entities)) {
+            $this->last = array($entity, $entities[$entity]);
+            return $entities[$entity];
+        }
+        return false;
+    }
+
+    public function hasEntity($entity)
+    {
+        if ($this->getEntity($entity)) {
+            return true;
         }
         return false;
     }
@@ -743,6 +736,14 @@ class DefaultController extends Controller
         return array();
     }
 
+    public function hasEntityFilterFields($entity)
+    {
+        if (array_key_exists('filters', $entity) && count($entity['filters'])) {
+            return true;
+        }
+        return false;
+    }
+
     public function getEntityFiltersForm($entity)
     {
         $form = $entity['name'];
@@ -801,12 +802,6 @@ class DefaultController extends Controller
         return $this->getDoctrine()->getRepository($entity['class']);
     }
 
-    public function generateLabel($name)
-    {
-        $str = str_replace('_', ' ', $name);
-        return ucwords($str);
-    }
-
     public function generateEntityForm($fields, $entity, $object)
     {
         $form = $this->createFormBuilder($object);
@@ -829,5 +824,58 @@ class DefaultController extends Controller
         ;
 
         return $form->getForm();
+    }
+
+    public function generateLabel($name)
+    {
+        $str = str_replace('_', ' ', $name);
+        return ucwords($str);
+    }
+
+    public function getEntityList(Request $request, $entity, $trash)
+    {
+        $form = false;
+
+        if ($this->hasEntityFilterFields($entity)) {
+            $form = $this->getEntityFiltersForm($entity);
+            $form = $form->createView();
+        }
+
+        $filters = $this->getEntityFilters($entity);
+        $repo = $this->getEntityRepository($entity);
+        $fields = $this->getEntityFields($entity);
+        $list_fields = $this->getEntityListFields($entity);
+
+        if ( in_array('removed', $fields) ) {
+            $filters['removed'] = $trash;
+        }
+
+        $optf = $request->get('optf', array());
+
+        foreach ($optf as $key => $value) {
+            if (in_array($mth = ('get'.ucfirst($key)), $fields)) {
+                $filters[$mth] = ( strlen($value) ? $value : null );
+            }
+        }
+
+        if ( count($filters) ) {
+            $list = $repo->findBy($filters);
+        } else {
+            $list = $repo->findAll();
+        }
+
+        $pageLimit = $this->container->getParameter('maci.admin.page_limit');
+        $pageRange = $this->container->getParameter('maci.admin.page_range');
+        $page = $request->get('page', 1);
+
+        if ($request->get('modal') || $request->get('nolimit')) {
+            $pageLimit = 0;
+        }
+
+        $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
+        $pager->setListFields($list_fields);
+        $pager->setFiltersForm($form);
+
+        return $pager;
     }
 }

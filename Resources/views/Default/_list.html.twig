@@ -2,22 +2,25 @@
 <div class="ma-admin-list">
 
 {% if form %}
-<div class="row">
-	<h4>Filters:</h4>
+
+<div class="container-fluid">
 	{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': form, 'entity': entity } %}
 </div>
+
 {% endif %}
+
 
 {% set list = pager.pageList %}
 
 {% if list|length %}
 
+<div class="list-default">
+
 <div class="row">
-	<h4>List:</h4>
 
 	{% if '_id' in fields %}
-	<div class="col-xs-1">
-		<span class="admin-list-ht">Id</span>
+	<div class="col-xs-1 tab-hd-id">
+		<span class="list-title">Id</span>
 	</div>
 	{% endif %}
 
@@ -44,9 +47,9 @@
 
 	<div class="col-xs-{{ (tot / len)|number_format }}">
 		{% if field == '_string' %}
-		<span class="admin-list-ht">Name</span>
+		<span class="list-title">Name</span>
 		{% else %}
-		<span class="admin-list-ht">{{ field|capitalize }}</span>
+		<span class="list-title">{{ field|capitalize }}</span>
 		{% endif %}
 	</div>
 
@@ -56,7 +59,7 @@
 
 	{% if '_actions' in fields %}
 	<div class="col-xs-2">
-		<span class="admin-list-ht">Actions</span>
+		<span class="list-title">Actions</span>
 	</div>
 	{% endif %}
 
@@ -70,7 +73,7 @@
 {% endfor %}
 
 {% if pager.requiresPagination() %}
-<div class="row">
+<div class="container-fluid">
 <ul class="pagination">
 	<li {% if not pager.hasPrev() %}class="disabled"{% endif %}>
 		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.prev }) }}">«</a>
@@ -86,6 +89,8 @@
 </ul>
 </div>
 {% endif %}
+
+</div>
 
 {% else %}
 

@@ -5,11 +5,14 @@ services:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder
         arguments: ["@knp_menu.factory","@security.context","@doctrine.orm.entity_manager","%maci.admin.entities%"]
 
-    maci_admin.menu.admin_left:
+    maci_admin.menu.admin_entities:
         class: Knp\Menu\MenuItem
         factory_service: maci_admin.menu_builder
-        factory_method: createLeftMenu
+        factory_method: createEntitiesMenu
         arguments: ["@request"]
         scope: request
         tags:
-            - { name: knp_menu.menu, alias: admin_left }
+            - { name: knp_menu.menu, alias: admin_entities }
+
+    maci_admin.entities_chain:
+        class: Maci\AdminBundle\DependencyInjection\EntitiesChain

@@ -1,12 +1,7 @@
 
-<div class="row">
-	{% if item.id %}
-	<h4>Edit:</h4>
-	{% else %}
-	<h4>New:</h4>
-	{% endif %}
+<div class="container-fluid">
 
-<form class="maci-form" action="
+<form class="admin-form" action="
 	{% if item.id %}
 		{{ path("maci_admin_entity_form", {'entity': entity, 'id': item.id}) }}
 	{% else %}
@@ -14,7 +9,7 @@
 	{% endif %}
 		" method="post" role="form" {{ form_enctype(form) }}>
 
-    {{ form_rest(form) }}
+{{ form_rest(form) }}
 
 </form>
 
