@@ -832,6 +832,10 @@ class DefaultController extends Controller
         return ucwords($str);
     }
 
+/*
+    ---> Generic Actions
+*/
+
     public function getEntityList(Request $request, $entity, $trash)
     {
         $form = false;
