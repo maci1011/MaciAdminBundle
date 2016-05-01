@@ -836,7 +836,7 @@ class DefaultController extends Controller
     ---> Generic Actions
 */
 
-    public function getEntityList(Request $request, $entity, $trash)
+    public function getEntityList(Request $request, $entity, $trashValue)
     {
         $form = false;
 
@@ -849,24 +849,26 @@ class DefaultController extends Controller
         $repo = $this->getEntityRepository($entity);
         $fields = $this->getEntityFields($entity);
         $list_fields = $this->getEntityListFields($entity);
+        $query = $repo->createQueryBuilder('e');
 
-        if ( in_array('removed', $fields) ) {
-            $filters['removed'] = $trash;
+        $trashAttr = $this->container->getParameter('maci.admin.trash_attr');
+        if ( in_array($trashAttr, $fields) ) {
+            $query->where('e.' . $trashAttr . ' = :' . $trashAttr);
+            $query->setParameter(':' . $trashAttr, $trashValue);
         }
 
         $optf = $request->get('optf', array());
-
         foreach ($optf as $key => $value) {
-            if (in_array($mth = ('get'.ucfirst($key)), $fields)) {
-                $filters[$mth] = ( strlen($value) ? $value : null );
+            if ($value !== '' && in_array($key, $fields)) {
+                $query->andWhere('e.' . $key . ' LIKE :' . $key);
+                $query->setParameter(':' . $key, "%$value%");
             }
         }
 
-        if ( count($filters) ) {
-            $list = $repo->findBy($filters);
-        } else {
-            $list = $repo->findAll();
-        }
+        $query->orderBy('e.id', 'DESC');
+
+        $query = $query->getQuery();
+        $list = $query->getResult();
 
         $pageLimit = $this->container->getParameter('maci.admin.page_limit');
         $pageRange = $this->container->getParameter('maci.admin.page_range');

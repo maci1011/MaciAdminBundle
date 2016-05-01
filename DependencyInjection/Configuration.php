@@ -57,8 +57,13 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
-                ->scalarNode('page_limit')->defaultValue(30)->end()
-                ->scalarNode('page_range')->defaultValue(7)->end()
+                ->arrayNode('options')
+                    ->children()
+                        ->scalarNode('page_limit')->defaultValue(30)->end()
+                        ->scalarNode('page_range')->defaultValue(7)->end()
+                        ->scalarNode('trash_attr')->defaultValue('soft_delete')->end()
+                    ->end()
+                ->end()
             ->end()
         ;
 

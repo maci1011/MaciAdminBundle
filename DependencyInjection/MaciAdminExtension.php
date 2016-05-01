@@ -25,8 +25,9 @@ class MaciAdminExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $container->setParameter('maci.admin.entities', $config['entities']);
-        $container->setParameter('maci.admin.page_limit', $config['page_limit']);
-        $container->setParameter('maci.admin.page_range', $config['page_range']);
+        $container->setParameter('maci.admin.page_limit', $config['options']['page_limit']);
+        $container->setParameter('maci.admin.page_range', $config['options']['page_range']);
+        $container->setParameter('maci.admin.trash_attr', $config['options']['trash_attr']);
 
         // $container->addCompilerPass(new EntitiesCompilerPass());
 
