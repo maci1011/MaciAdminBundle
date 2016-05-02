@@ -1,13 +1,4 @@
 
-{% if form %}
-
-<div class="container-fluid">
-	{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': form, 'entity': entity } %}
-</div>
-
-{% endif %}
-
-
 {% set list = pager.pageList %}
 
 {% if list|length %}

@@ -31,8 +31,10 @@
 
 {% block content %}
 
+
 <h1>{{ entity_label }}</h1>
 <h2>List</h2>
+
 
 <div class="container-fluid">
 <div class="content-navbar">
@@ -66,7 +68,18 @@
 </div>
 </div>
 
+
+{% if params.form %}
+
+<div class="container-fluid">
+	{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': params.form, 'entity': entity } %}
+</div>
+
+{% endif %}
+
+
 {% include template with params %}
+
 
 {% endblock %}
 
