@@ -72,7 +72,9 @@
 {% if params.form %}
 
 <div class="container-fluid">
-	{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': params.form, 'entity': entity } %}
+
+{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': params.form, 'entity': entity } %}
+
 </div>
 
 {% endif %}
