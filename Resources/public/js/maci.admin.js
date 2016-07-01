@@ -277,7 +277,11 @@ var maciAdmin = function () {
 
 	setRichTextEditor: function(el) {
 		if (!el.hasClass('noeditor')) {
-			CKEDITOR.replace( el.get(0) );
+			$('<a/>').attr('class', 'btn btn-default').insertAfter(el).click(function(e) {
+				e.preventDefault();
+				CKEDITOR.replace( el.get(0) );
+				$(this).remove();
+			}).text('Use Editor');
 		}
 	},
 
@@ -478,8 +482,7 @@ $(document).ready(function(e) {
 
     });
 
-
-    $('#bodyAdministration .maci-form textarea').not('.noeditor').each(function() {
+    $('#bodyAdministration .admin-form textarea').not('.noeditor').each(function() {
     	admin.setRichTextEditor( $(this) );
     });
 
