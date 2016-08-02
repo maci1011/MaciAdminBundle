@@ -83,6 +83,8 @@
 
 <div id="main" class="container-fluid">
 
+    {% block container %}
+
     <header id="header">
 
     {% block header %}
@@ -102,15 +104,11 @@
 
     <div id="mainContainer">
 
-    {% block container %}
-
     <div id="pageContainer">
 
         {% block content %}{% endblock %}
 
     </div>
-
-    {% endblock container %}
 
     </div>
 
@@ -120,6 +118,7 @@
 
     </footer>
 
+    {% endblock container %}
 
 </div>
 

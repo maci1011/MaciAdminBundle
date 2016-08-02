@@ -28,14 +28,15 @@ class DefaultController extends Controller
 
     public function showAction(Request $request, $entity, $id)
     {
-        if (!$entity = $this->getEntity($entity)) {
-            return $this->returnError($request, 'entity-not-found');
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'not-found');
         }
 
-        $item = $this->getEntityRepository($entity)->findOneById($id);
+        $item = $this->getEntityItem($request, $entity, $id);
 
         if (!$item) {
-            return $this->returnError($request, 'item-not-found');
+            return $this->returnError($request, 'not-found');
         }
 
         return $this->renderTemplate($request, $entity, 'show', array(
@@ -47,31 +48,31 @@ class DefaultController extends Controller
 
     public function listAction(Request $request, $entity)
     {
-        if (!$entity = $this->getEntity($entity)) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
         $pager = $this->getEntityList($request, $entity, false);
 
+        if (!$pager) {
+            return $this->returnError($request, 'not-found');
+        }
+
         return $this->renderTemplate($request, $entity, 'list', array(
-            'fields' => $pager->getListFields(),
-            'entity' => $entity['name'],
             'pager' => $pager,
+            'fields' => $pager->getListFields(),
+            'entity' => $entity,
             'form' => $pager->getFiltersForm()
         ));
     }
 
     public function trashAction(Request $request, $entity)
     {
-        if (!$entity = $this->getEntity($entity)) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
         $pager = $this->getEntityList($request, $entity, true);
+
+        if (!$pager) {
+            return $this->returnError($request, 'not-found');
+        }
 
         return $this->renderTemplate($request, $entity, 'trash', array(
             'fields' => $pager->getListFields(),
-            'entity' => $entity['name'],
+            'entity' => $entity,
             'pager' => $pager,
             'form' => $pager->getFiltersForm()
         ));
@@ -143,62 +144,6 @@ class DefaultController extends Controller
             'item' => $result,
             'form' => $form->createView()
         ));
-    }
-
-    public function setFiltersAction(Request $request, $entity)
-    {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        $filters = array();
-        $filters_fields = $this->getEntityFilterFields($entity);
-
-        if ( !count($filters_fields) ) {
-            return $this->returnError($request, 'no-filters');
-        }
-
-        $form = $this->getEntityFiltersForm($entity);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $new = $this->getEntityNewObj($entity);
-            foreach ($filters_fields as $filter) {
-                $value = $form[$filter]->getData();
-                $method = false;
-                if (method_exists($new, 'get'.ucfirst($filter))) {
-                    $method = 'get'.ucfirst($filter);
-                } else if (method_exists($new, 'get'.ucfirst($filter))) {
-                    $method = 'get'.ucfirst($filter);
-                }
-                if ($method) {
-                    $default = call_user_method($method, $new);
-                    if ( $value !== $default) {
-                        $filters[$filter] = $value;
-                    }
-                }
-            }
-            $this->setEntityFilters($entity, $filters);
-        }
-
-        return $this->redirect($this->generateUrl('maci_admin_entity', array(
-            'entity' => $entity['name']
-        )));
-    }
-
-    public function removeFiltersAction(Request $request, $entity)
-    {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        $this->removeEntityFilters($entity);
-
-        return $this->redirect($this->generateUrl('maci_admin_entity', array(
-            'entity' => $entity['name']
-        )));
     }
 
     public function objectAction(Request $request, $entity, $id)
@@ -465,6 +410,13 @@ class DefaultController extends Controller
 
     public function renderTemplate(Request $request, $entity, $action, $params)
     {
+        if (is_string($entity)) {
+            $entity = $this->getEntity($entity);
+            if (!$entity) {
+                return false;
+            }
+        }
+
         if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates'])) {
             $template = $entity['templates'][$action];
         } else {
@@ -571,6 +523,66 @@ class DefaultController extends Controller
                 }
             }
         }
+    }
+
+/*
+    ---> List Filters
+*/
+
+    public function setFiltersAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $filters = array();
+        $filters_fields = $this->getEntityFilterFields($entity);
+
+        if ( !count($filters_fields) ) {
+            return $this->returnError($request, 'no-filters');
+        }
+
+        $form = $this->getEntityFiltersForm($entity);
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+            $new = $this->getEntityNewObj($entity);
+            foreach ($filters_fields as $filter) {
+                $value = $form[$filter]->getData();
+                $method = false;
+                if (method_exists($new, 'get'.ucfirst($filter))) {
+                    $method = 'get'.ucfirst($filter);
+                } else if (method_exists($new, 'get'.ucfirst($filter))) {
+                    $method = 'get'.ucfirst($filter);
+                }
+                if ($method) {
+                    $default = call_user_method($method, $new);
+                    if ( $value !== $default) {
+                        $filters[$filter] = $value;
+                    }
+                }
+            }
+            $this->setEntityFilters($entity, $filters);
+        }
+
+        return $this->redirect($this->generateUrl('maci_admin_entity', array(
+            'entity' => $entity['name']
+        )));
+    }
+
+    public function removeFiltersAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $this->removeEntityFilters($entity);
+
+        return $this->redirect($this->generateUrl('maci_admin_entity', array(
+            'entity' => $entity['name']
+        )));
     }
 
 /*
@@ -836,19 +848,35 @@ class DefaultController extends Controller
     ---> Generic Actions
 */
 
-    public function getEntityList(Request $request, $entity, $trashValue)
+    public function getEntityItem(Request $request, $entity, $id)
     {
-        $form = false;
-
-        if ($this->hasEntityFilterFields($entity)) {
-            $form = $this->getEntityFiltersForm($entity);
-            $form = $form->createView();
+        if (is_string($entity)) {
+            $entity = $this->getEntity($entity);
+            if (!$entity) {
+                return false;
+            }
         }
 
-        $filters = $this->getEntityFilters($entity);
+        $item = $this->getEntityRepository($entity)->findOneById($id);
+
+        if (!$item) {
+            return false;
+        }
+
+        return $item;
+    }
+
+    public function getEntityList(Request $request, $entity, $trashValue)
+    {
+        if (is_string($entity)) {
+            $entity = $this->getEntity($entity);
+            if (!$entity) {
+                return false;
+            }
+        }
+
         $repo = $this->getEntityRepository($entity);
         $fields = $this->getEntityFields($entity);
-        $list_fields = $this->getEntityListFields($entity);
         $query = $repo->createQueryBuilder('e');
 
         $trashAttr = $this->container->getParameter('maci.admin.trash_attr');
@@ -870,18 +898,46 @@ class DefaultController extends Controller
         $query = $query->getQuery();
         $list = $query->getResult();
 
+        return $this->getPager($request, $entity, $list);
+    }
+
+/*
+    ---> Pager
+*/
+
+    public function getPager($request, $entity, $result)
+    {
+        if (is_string($entity)) {
+            $entity = $this->getEntity($entity);
+            if (!$entity) {
+                return false;
+            }
+        }
+
         $pageLimit = $this->container->getParameter('maci.admin.page_limit');
         $pageRange = $this->container->getParameter('maci.admin.page_range');
+
         $page = $request->get('page', 1);
 
         if ($request->get('modal') || $request->get('nolimit')) {
             $pageLimit = 0;
         }
 
-        $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
-        $pager->setListFields($list_fields);
+        $pager = new MaciPager($result, $pageLimit, $page, $pageRange);
+
+        $form = false;
+
+        if ($this->hasEntityFilterFields($entity)) {
+            $form = $this->getEntityFiltersForm($entity);
+            $form = $form->createView();
+        }
+
+        $fields_list = $this->getEntityListFields($entity);
+
+        $pager->setListFields($fields_list);
         $pager->setFiltersForm($form);
 
         return $pager;
     }
+
 }

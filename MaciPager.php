@@ -4,7 +4,7 @@ namespace Maci\AdminBundle;
 
 class MaciPager
 {
-	protected $list;
+	protected $result;
 
 	protected $limit;
 
@@ -14,30 +14,33 @@ class MaciPager
 
 	protected $length;
 
-	protected $list_fields;
+	protected $fields_list;
 
 	protected $filters_form;
 
-	public function __construct($list = array(), $limit = 10, $page = 1, $range = 5)
+	public function __construct($result = null, $limit = 10, $page = 1, $range = 5)
 	{
-		$this->list = $list;
-		$this->length = count( $list );
+		$this->result = $result;
 		$this->limit = $limit;
 		$this->page = $page;
 		$this->range = $range;
-		$this->list_fields = array();
+		$this->fields_list = array();
 		$this->filters_form = false;
 	}
 
-	public function getList()
+	public function getResult()
 	{
-		return $this->list;
+		return $this->result;
 	}
 
-	public function setList($list)
+	public function setResult($result)
 	{
-		$this->list = $list;
-		$this->length = count( $list );
+		$this->result = $result;
+	}
+
+	public function getItem()
+	{
+		return $this->getResult();
 	}
 
 	public function getPage()
@@ -72,12 +75,12 @@ class MaciPager
 
 	public function getListFields()
 	{
-		return $this->list_fields;
+		return $this->fields_list;
 	}
 
-	public function setListFields($list_fields)
+	public function setListFields($fields_list)
 	{
-		$this->list_fields = $list_fields;
+		$this->fields_list = $fields_list;
 	}
 
 	public function getFiltersForm()
@@ -94,12 +97,12 @@ class MaciPager
 
 	public function getLength()
 	{
-		return $this->length;
+		return count( $this->result );
 	}
 
 	public function getMaxPages()
 	{
-		return ( 0 < $this->limit ? ceil( $this->length / $this->limit ) : 1 );
+		return ( 0 < $this->limit ? ceil( $this->getLength() / $this->limit ) : 1 );
 	}
 
 	public function getOffset()
@@ -109,7 +112,7 @@ class MaciPager
 
 	public function requiresPagination()
 	{
-		return ( $this->limit && $this->length > $this->limit );
+		return ( $this->limit && $this->getLength() > $this->limit );
 	}
 
 	public function hasPrev()
@@ -155,11 +158,11 @@ class MaciPager
 			$to = $from + $this->limit;
 		} else {
 			$from = 0;
-			$to = count($this->list);
+			$to = count($this->result);
 		}
 
 		$i = 0;
-		foreach ($this->list as $key => $value) {
+		foreach ($this->result as $key => $value) {
 			if ( $from <= $i && $i < $to) {
 				$return[$key] = $value;
 			}
