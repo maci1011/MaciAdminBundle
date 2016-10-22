@@ -38,13 +38,14 @@
         {% block top_menu %}
         <nav>
             <ul class="nav navbar-nav">
-                <li>
-                    <a id="menu-toggle" href="#">ENTITIES</a>
-                </li>
-                <li>
-                    <a href="{{ path('homepage') }}">Homepage</a>
+                <li class="active">
+                    <a id="menu-toggle" href="#">
+                        <span class="glyphicon glyphicon-menu-hamburger"></span>
+                        {{ app.request.get('section')|upper }}
+                    </a>
                 </li>
             </ul>
+            {{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}
         </nav>
         {% endblock top_menu %}
     </div>
@@ -65,7 +66,7 @@
 
     {% block main_menu %}
 
-        <h3>Entities</h3>
+        <h3>{{ app.request.get('section')|upper }}</h3>
 
         <nav>{{ knp_menu_render('admin_entities', {'currentClass': 'active'}) }}</nav>
 
@@ -85,38 +86,17 @@
 
     {% block container %}
 
-    <header id="header">
-
-    {% block header %}
-
-    <div class="container-fluid">
-    <div id="pathbar" class="content-navbar">
+    <div id="pathbar" class="content-navbar container-fluid">
 
         {% block pathBar %}{% endblock %}
 
     </div>
-    </div>
-
-    {% endblock %}
-
-    </header>
-
 
     <div id="mainContainer">
-
-    <div id="pageContainer">
 
         {% block content %}{% endblock %}
 
     </div>
-
-    </div>
-
-    <footer id="footer">
-
-    {% block footer %}{% endblock footer %}
-
-    </footer>
 
     {% endblock container %}
 

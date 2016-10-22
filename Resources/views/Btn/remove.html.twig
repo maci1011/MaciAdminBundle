@@ -1,9 +1,0 @@
-
-{% if label is not defined %}
-{% set label = 'Remove' %}
-{% endif %}
-
-<a class="btn btn-danger" href="{{ path('maci_admin_entity_remove', {'entity': entity, 'id': item.id}) }}">
-	<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-	{{ label }}
-</a>

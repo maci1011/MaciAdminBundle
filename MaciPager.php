@@ -38,11 +38,6 @@ class MaciPager
 		$this->result = $result;
 	}
 
-	public function getItem()
-	{
-		return $this->getResult();
-	}
-
 	public function getPage()
 	{
 		return $this->page;

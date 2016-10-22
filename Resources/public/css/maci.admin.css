@@ -78,8 +78,7 @@ h4 {
 }
 
 .content-navbar .nav {
-    padding: 0 15px;
-    margin: 0 0 15px -15px;
+    margin: 0 0 15px 0;
     background-color: #eee;
 }
 
@@ -95,14 +94,20 @@ h4 {
     line-height: 20px;
 }
 
-.content-navbar .nav > li > a {
+#pathbar.content-navbar .nav > li > a:hover,
+#pathbar.content-navbar .nav > li > a:focus {
+    background-color: #eaeaea;
+}
+
+#actionsbar.content-navbar .nav > li > a,
+#actionsbar.content-navbar .nav > li > span {
     color: #666;
 }
 
-.content-navbar .nav > li > a:hover,
-.content-navbar .nav > li > a:focus,
-.content-navbar .nav > li.active > a {
-    background-color: #eaeaea;
+#actionsbar.content-navbar .nav > li > a:hover,
+#actionsbar.content-navbar .nav > li > a:focus,
+#actionsbar.content-navbar .nav > li.active > a {
+    background-color: #dadada;
     color: #000;
 }
 
@@ -166,6 +171,16 @@ h4 {
 
 .details-item.even {
     background-color: #eee;
+}
+
+/*   -----> Messages <-----   */
+
+.messages {
+    font-size: 13pt;
+    letter-spacing: 0.4px;
+    border-radius: 9px;
+    margin: 10px 0;
+    padding: 15px;
 }
 
 /*   -----> Form <-----   */

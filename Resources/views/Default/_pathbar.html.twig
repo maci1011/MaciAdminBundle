@@ -1,0 +1,56 @@
+
+{% if params.section is defined %}
+
+<nav>
+<ul class="nav navbar-nav">
+
+    <li class="pathbar-parent">
+		{% if params.entity is defined and params.entity %}
+		<a href="{{ path('maci_admin_view', {'section': params.section}) }}">
+    		{{ params.section_label }}
+			<span class="glyphicon glyphicon-chevron-right"></span>
+		</a>
+		{% else %}
+    	<span class="navbar-text">{{ params.section_label }}</span>
+		{% endif %}
+    </li>
+
+	{% if params.entity is defined and params.entity %}
+	<li class="pathbar-parent">
+		{% if params.action is defined and params.action %}
+		<a href="{{ path('maci_admin_view', {'section': params.section, 'entity': params.entity}) }}">
+			{{ params.entity_label }}
+			<span class="glyphicon glyphicon-chevron-right"></span>
+		</a>
+		{% else %}
+    	<span class="navbar-text">{{ params.entity_label }}</span>
+		{% endif %}
+	</li>
+	{% endif %}
+
+	{% if params.action is defined and params.action %}
+	<li class="pathbar-parent">
+		{% if params.id is defined and params.id %}
+		<span class="navbar-text">
+			{{ params.action_label }}
+			<span class="glyphicon glyphicon-chevron-right"></span>
+		</span>
+		{% else %}
+    	<span class="navbar-text">{{ params.action_label }}</span>
+		{% endif %}
+	</li>
+	{% endif %}
+
+	{% if params.id is defined and params.id %}
+	<li class="pathbar-parent">
+    	<span class="navbar-text">{{ params.id }}</span>
+	</li>
+	{% endif %}
+
+    <li>
+    </li>
+
+</ul>
+</nav>
+
+{% endif %}

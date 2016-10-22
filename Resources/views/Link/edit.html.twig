@@ -1,8 +1,0 @@
-
-{% if label is not defined %}
-{% set label = 'Edit' %}
-{% endif %}
-
-<a href="{{ path('maci_admin_entity_form', {'entity': entity, 'id': item.id}) }}">
-	{{ label }}
-</a>

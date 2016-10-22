@@ -1,0 +1,51 @@
+
+
+<h3>{{ relation_label }}</h3>
+
+<h4>{{ relation_action_label }}</h4>
+
+
+{% if relation_action == 'show' and pager is defined %}
+
+{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'relation' } %}
+
+<div class="container-fluid">
+<a class="btn btn-primary" href="{{ path('maci_admin_view_relations', { 'section': section, 'entity': entity, 'action': action, 'id': item.id, 'relation': relation, 'relAction': 'set' }) }}">Set</a>
+</div>
+
+{% endif %}
+
+
+{% if relation_action == 'list' and pager is defined %}
+
+{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'relation' } %}
+
+<div class="container-fluid">
+<a class="btn btn-primary" href="{{ path('maci_admin_view_relations', { 'section': section, 'entity': entity, 'action': action, 'id': item.id, 'relation': relation, 'relAction': 'add' }) }}">Add</a>
+</div>
+
+{% endif %}
+
+
+{% if relation_action == 'add' and pager is defined %}
+
+{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'add' } %}
+
+<div class="container-fluid">
+<form action="#" method="post">
+<input type="hidden" name="ids">
+<button class="btn btn-sm btn-primary list-add-submit">
+	<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Save
+</button>
+</form>
+</div>
+
+{% endif %}
+
+
+{% if relation_action == 'set' and pager is defined %}
+
+{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'set' } %}
+
+{% endif %}
+

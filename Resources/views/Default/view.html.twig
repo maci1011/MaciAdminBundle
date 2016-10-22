@@ -1,0 +1,27 @@
+
+{% extends "MaciAdminBundle::layout.html.twig" %}
+
+
+{% block pathBar %}
+
+{% include "MaciAdminBundle:Default:_pathbar.html.twig" %}
+
+{% endblock %}
+
+
+
+{% block content %}
+
+{% include "MaciAdminBundle:Default:_view_header.html.twig" with params %}
+
+{% include "MaciAdminBundle:Default:_messages.html.twig" with params %}
+
+{#% if params.form is defined %}
+<div class="container-fluid">
+{% include "MaciAdminBundle:Default:_filters.html.twig" with { 'form': params.form, 'entity': params.entity } %}
+</div>
+{% endif %#}
+
+{% include template with params %}
+
+{% endblock %}

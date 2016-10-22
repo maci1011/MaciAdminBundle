@@ -1,0 +1,10 @@
+
+{% if form is defined and form %}
+
+<form class="admin-form container-fluid" action="{{ path("maci_admin_view", {'section': section, 'entity': entity, 'action': 'edit', 'id': item.id}) }}" method="post" role="form" {{ form_enctype(form) }}>
+
+{{ form_rest(form) }}
+
+</form>
+
+{% endif %}

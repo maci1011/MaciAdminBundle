@@ -3,7 +3,7 @@
 
 {% if list|length %}
 
-<div class="list-default">
+<div class="list-default{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
 
 <div class="row list-header">
 
@@ -46,10 +46,22 @@
 
 	{% endfor %}
 
+	{% if type is not defined or type == 'list' %}
 	{% if '_actions' in fields %}
 	<div class="col-xs-2">
 		<span class="list-title">Actions</span>
 	</div>
+	{% endif %}
+	{% elseif type == 'add' %}
+	<div class="col-xs-2">
+		<span class="list-title">Add Items</span>
+	</div>
+	{% elseif type == 'set' %}
+	{% if '_actions' in fields %}
+	<div class="col-xs-2">
+		<span class="list-title">Set Item</span>
+	</div>
+	{% endif %}
 	{% endif %}
 
 </div>
@@ -57,7 +69,7 @@
 
 {% for item in list %}
 
-	{% include "MaciAdminBundle:Default:_list_item.html.twig" with { 'fields': fields, 'entity': entity, 'item': item } %}
+	{% include "MaciAdminBundle:Actions:_list_item.html.twig" with { 'fields': fields, 'entity': entity, 'item': item } %}
 
 {% endfor %}
 
@@ -83,7 +95,8 @@
 
 {% else %}
 
-<h3 class="noitems">No Items.</h3>
+<div class="container-fluid">
+	<span class="noitems">No Items.</span>
+</div>
 
 {% endif %}
-

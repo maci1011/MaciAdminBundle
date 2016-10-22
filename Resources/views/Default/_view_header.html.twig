@@ -1,0 +1,29 @@
+
+
+{% if entity is defined and entity %}
+
+
+<h1>{{ entity_label }}</h1>
+
+<div id="actionsbar" class="content-navbar container-fluid">
+	<nav>{{ knp_menu_render('admin_actions', {'currentClass': 'active'}) }}</nav>
+</div>
+
+
+{% if id is defined and id %}
+
+<h2>ITEM ID: {{ id }}</h2>
+
+<div id="actionsbar" class="content-navbar container-fluid">
+	<nav>{{ knp_menu_render('admin_item_actions', {'currentClass': 'active'}) }}</nav>
+</div>
+
+{% else %}
+
+<h2>{{ action_label }}</h2>
+
+{% endif %}
+
+
+{% endif %}
+

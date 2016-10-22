@@ -1,0 +1,16 @@
+
+<div class="container-fluid">
+
+<form class="admin-form filters-form form-inline" action="{{ path("maci_admin_view", {'section': params.section, 'entity': params.entity, 'action': 'set_filters'}) }}" method="post" }}>
+
+    {{ form_rest(form) }}
+
+	{% if app.session.get(('admin_filters_' ~ params.entity), {})|length %}
+	<a class="btn btn-danger" href="{{ path("maci_admin_view", {'section': params.section, 'entity': params.entity, 'action': 'remove_filters'}) }}">
+		Remove Filters
+	</a>
+	{% endif %}
+
+</form>
+
+</div>

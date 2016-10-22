@@ -1,0 +1,14 @@
+
+{% if section and actions %}
+
+<div class="btn-group">
+
+{% for acn_name, acn_label in actions %}
+
+<a class="btn btn-primary" href="{{ path('maci_admin_view', {'section': section,'entity': entity,'action': acn_name,'id': id}) }}">{{ acn_label }}</a>
+
+{% endfor %}
+
+</div>
+
+{% endif %}

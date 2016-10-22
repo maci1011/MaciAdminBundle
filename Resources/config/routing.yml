@@ -1,59 +1,75 @@
 
 
-maci_admin_entity_form:
-    pattern:  /admin/entities/{entity}/{id}/edit
-    defaults: { _controller: MaciAdminBundle:Default:form }
+maci_admin_view_relations:
+    pattern:  /mcm/view/{section}/{entity}/relations/{id}/{relation}/{relAction}
+    defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: 'relations', relAction: false }
     requirements:
-        id: \d+
+      id: \d+
 
-maci_admin_entity_file_upload:
-    pattern:  /admin/entities/{entity}/{id}/fileUpload
-    defaults: { _controller: MaciAdminBundle:Default:fileUpload, id: 0 }
+maci_admin_view:
+    pattern:  /mcm/view/{section}/{entity}/{action}/{id}
+    defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: false, id: false }
 
-maci_admin_entity_object:
-    pattern:  /admin/entities/{entity}/{id}/object
-    defaults: { _controller: MaciAdminBundle:Default:object, id: 0 }
-
-maci_admin_entity_remove:
-    pattern:  /admin/entities/{entity}/{id}/remove
-    defaults: { _controller: MaciAdminBundle:Default:remove }
-    requirements:
-        id: \d+
-
-maci_admin_entity_set_filters:
-    pattern:  /admin/entities/{entity}/set_filters
-    defaults: { _controller: MaciAdminBundle:Default:setFilters }
-    requirements:
-        _method: POST
-
-maci_admin_entity_remove_filters:
-    pattern:  /admin/entities/{entity}/remove_filters
-    defaults: { _controller: MaciAdminBundle:Default:removeFilters }
-
-maci_admin_entity_show:
-    pattern:  /admin/entities/{entity}/{id}
-    defaults: { _controller: MaciAdminBundle:Default:show }
-    requirements:
-        id: \d+
-
-maci_admin_entity_reorder:
-    pattern:  /admin/entities/{entity}/reorder
-    defaults: { _controller: MaciAdminBundle:Default:reorder }
-    requirements:
-        _method: POST
-
-maci_admin_entity_new:
-    pattern:  /admin/entities/{entity}/new
-    defaults: { _controller: MaciAdminBundle:Default:form, id: 0 }
-
-maci_admin_entity_trash:
-    pattern:  /admin/entities/{entity}/trash
-    defaults: { _controller: MaciAdminBundle:Default:trash }
-
-maci_admin_entity:
-    pattern:  /admin/entities/{entity}
-    defaults: { _controller: MaciAdminBundle:Default:list }
+maci_admin_not_found:
+    pattern:  /mcm/not-found
+    defaults: { _controller: MaciAdminBundle:Default:notFound }
 
 maci_admin:
-    pattern:  /admin
+    pattern:  /mcm
     defaults: { _controller: MaciAdminBundle:Default:index }
+
+
+# maci_admin_entity_form:
+#     pattern:  /admin/entities/{entity}/{id}/edit
+#     defaults: { _controller: MaciAdminBundle:Default:form }
+#     requirements:
+#         id: \d+
+
+# maci_admin_entity_file_upload:
+#     pattern:  /admin/entities/{entity}/{id}/fileUpload
+#     defaults: { _controller: MaciAdminBundle:Default:fileUpload, id: 0 }
+
+# maci_admin_entity_object:
+#     pattern:  /admin/entities/{entity}/{id}/object
+#     defaults: { _controller: MaciAdminBundle:Default:object, id: 0 }
+
+# maci_admin_entity_remove:
+#     pattern:  /admin/entities/{entity}/{id}/remove
+#     defaults: { _controller: MaciAdminBundle:Default:remove }
+#     requirements:
+#         id: \d+
+
+# maci_admin_entity_set_filters:
+#     pattern:  /admin/entities/{entity}/set_filters
+#     defaults: { _controller: MaciAdminBundle:Default:setFilters }
+#     requirements:
+#         _method: POST
+
+# maci_admin_entity_remove_filters:
+#     pattern:  /admin/entities/{entity}/remove_filters
+#     defaults: { _controller: MaciAdminBundle:Default:removeFilters }
+
+# maci_admin_entity_show:
+#     pattern:  /admin/entities/{entity}/{id}
+#     defaults: { _controller: MaciAdminBundle:Default:show }
+#     requirements:
+#         id: \d+
+
+# maci_admin_entity_reorder:
+#     pattern:  /admin/entities/{entity}/reorder
+#     defaults: { _controller: MaciAdminBundle:Default:reorder }
+#     requirements:
+#         _method: POST
+
+# maci_admin_entity_new:
+#     pattern:  /admin/entities/{entity}/new
+#     defaults: { _controller: MaciAdminBundle:Default:form, id: 0 }
+
+# maci_admin_entity_trash:
+#     pattern:  /admin/entities/{entity}/trash
+#     defaults: { _controller: MaciAdminBundle:Default:trash }
+
+# maci_admin_entity:
+#     pattern:  /admin/entities/{entity}
+#     defaults: { _controller: MaciAdminBundle:Default:list }
+

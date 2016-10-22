@@ -1,12 +1,20 @@
 
+{% if type is not defined or not type in ['list', 'add', 'set'] %}
+{% set type = 'list' %}
+{% endif %}
+
 <div class="row list-item {% if loop.index0 is even %}even{% else %}odd{% endif %}">
 
 	{% if '_id' in fields %}
 	<div class="col-xs-1 tab-td-id">
 		<input name="id" type="hidden" value="{{ item.id }}" />
-		<a href="{{ path('maci_admin_entity_show', { 'entity': entity, 'id': item.id }) }}" title="See Details">
+		{% if type == 'list' %}
+		<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'show', 'id': item.id }) }}" title="See Details">
 			{{ item.id }}
 		</a>
+		{% else %}
+		<p>{{ item.id }}</p>
+		{% endif %}
 	</div>
 	{% endif %}
 
@@ -17,7 +25,7 @@
 	{% set len = len - 1 %}
 	{% endif %}
 
-	{% if '_actions' in fields %}
+	{% if '_actions' in fields or type in ['add','set'] %}
 	{% set len = len - 1 %}
 	{% endif %}
 
@@ -61,16 +69,41 @@
 
 	{% endfor %}
 
+	{% if type == 'list' %}
 	{% if '_actions' in fields %}
 	<div class="col-xs-2 list-item-actions">
 
-		<a class="btn btn-sm" href="{{ path('maci_admin_entity_form', {'entity': entity, 'id': item.id}) }}">
+		<a class="btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'edit', 'id': item.id}) }}">
 			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
 		</a>
 
-		<a class="btn btn-sm" href="{{ path('maci_admin_entity_remove', {'entity': entity, 'id': item.id}) }}">
+		<a class="btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': item.id}) }}">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
 		</a>
+
+	</div>
+	{% endif %}
+	{% elseif type == 'add' %}
+	<div class="col-xs-2">
+
+		<a class="btn btn-sm list-item-add" href="#" rel="{{ item.id }}">
+			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+		</a>
+
+		<a class="btn btn-sm list-item-remove" href="#" rel="{{ item.id }}">
+			<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+		</a>
+
+	</div>
+	{% elseif type == 'set' %}
+	<div class="col-xs-2">
+
+		<form action="#" method="post">
+		<input type="hidden" name="ids" value="{{ item.id }}">
+		<button class="btn btn-sm list-item-set">
+			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Set
+		</button>
+		</form>
 
 	</div>
 	{% endif %}
