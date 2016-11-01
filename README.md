@@ -54,7 +54,7 @@ class AppKernel extends Kernel
 # app/config/routing.yml
 maci_admin:
     resource: "@MaciAdminBundle/Resources/config/routing.yml"
-    prefix:   /admin
+    prefix:   /
 
 # ...
 ```
