@@ -50,7 +50,7 @@ class AdminMenuBuilder
 			}
 		}
 
-		$menu->addChild('Dashboard', array('route' => 'maci_admin'));
+		// $menu->addChild('Dashboard', array('route' => 'maci_admin'));
 		$menu->addChild('Homepage', array('route' => 'homepage'));
 
 		return $menu;
