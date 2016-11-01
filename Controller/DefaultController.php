@@ -5,490 +5,134 @@ namespace Maci\AdminBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
-
-use A2lix\I18nDoctrineBundle\Annotation\I18nDoctrine;
 
 class DefaultController extends Controller
 {
-    public function indexAction()
+    public function indexAction(Request $request)
     {
-        $admin = $this->getConfig();
-
-        return $this->render('MaciAdminBundle:Default:index.html.twig', array(
-            'admin' => $admin
-        ));
+        return $this->redirect($this->generateUrl('maci_admin_view'));
     }
 
-    public function listAction(Request $request, $entity)
+    public function viewAction(Request $request, $section, $entity, $action, $id)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        $admin = $this->container->get('maci.admin');
+        $sections = $admin->getSections();
+
+        if (!count($sections)) {
+            return $this->redirect($this->generateUrl('homepage'));
         }
-
-        $repo = $this->getDoctrine()->getManager()->getRepository($admin['repository']);
-
-        if ($filters = $request->get('filters')) {
-            $item = new $admin['new'];
-            $list = $repo->findBy($filters, (
-                method_exists($item, 'setPosition') ?
-                array('position' => 'ASC') :
-                false
+        if (!$section) {
+            return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$sections[0])));
+        }
+        if (!in_array($section, $sections)) {
+            $request->getSession()->getFlashBag()->add('error', 'Section not Found.');
+            return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$sections[0])));
+        }
+        if (!$entity) {
+            return $this->render('MaciAdminBundle:Default:dashboard.html.twig', array(
+                'section' => $section,
+                'section_label' => $admin->getSectionLabel($section)
             ));
-        } else {
-            $list = $repo->findAll();
         }
-
-        return $this->renderTemplate($request, $admin, 'list', array(
-            'admin' => $admin,
-            'list' => $list
-        ));
-    }
-
-    public function itemAction(Request $request, $entity, $id)
-    {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        if (!$admin->hasEntity($section, $entity)) {
+            $request->getSession()->getFlashBag()->add('error', 'Entity not Found.');
+            return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section)));
         }
-
-        $item = $this->getDoctrine()->getManager()
-            ->getRepository($admin['repository'])->findOneById($id);
-
-        if (!$item) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        if (!$action || !in_array($action, $admin->getActions($section, $entity))) {
+            $request->getSession()->getFlashBag()->add('error', 'Action not Found.');
+            return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
         }
-
-        return $this->renderTemplate($request, $admin, 'item', array(
-            'admin' => $admin,
-            'item' => $item
-        ));
-    }
-
-    /**
-     * @I18nDoctrine
-     */
-    public function formAction(Request $request, $entity, $id)
-    {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
-        }
-
-        $item = new $admin['new'];
-
-        if ($id) {
-            $item = $this->getDoctrine()->getManager()
-                ->getRepository($admin['repository'])->findOneById($id);
-
-            if (!$item) {
-                return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
+        if ($action === 'relations') {
+            if (!intval($id)) {
+                $request->getSession()->getFlashBag()->add('error', 'Missing Id.');
+                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
+            }
+            $relation = $request->get('relation');
+            if (!$relation) {
+                $_entity = $admin->getEntity($section, $entity);
+                $relations = $admin->getEntityAssociations($_entity);
+                $relAction = $admin->getRelationDefaultAction($_entity, $relation[0]);
+                return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0],'relAction'=>$relAction)));
+            }
+            $relAction = $request->get('relAction');
+            if (!$relAction || !in_array($relAction, $admin->getRelationActions($section,$entity,$relation))) {
+                $_entity = $admin->getEntity($section, $entity);
+                $relAction = $admin->getRelationDefaultAction($_entity, $relation);
+                return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relation,'relAction'=>$relAction)));
             }
         }
 
-        $form = $this->createForm($admin['form'], $item);
-        $form->handleRequest($request);
+        $callAction = ( $action . 'Action' );
+        if (!method_exists($admin, $callAction)) {
+            $request->getSession()->getFlashBag()->add('error', 'View not found.');
+            return $this->redirect($this->generateUrl('maci_admin_not_found'));
+        }
 
-        if ($form->isValid()) {
-            $em = $this->getDoctrine()->getManager();
-            $em->persist($item);
-            $em->flush();
-            if ($request->isXmlHttpRequest()) {
-                return new JsonResponse(array('success' => true, 'id' => $item->getId()), 200);
-            }
-            // else {
-            //     return $this->redirect($this->generateUrl('maci_admin_entity_list', array(
-            //         'entity' => $admin['name'],
-            //         'message' => 'form.add'
-            //     )));
+        $params = call_user_method($callAction, $admin, $section, $entity, $id);
+
+        if ($params===false) {
+            // if ($request->isXmlHttpRequest()) {
+            //     return new JsonResponse(array('error' => true), 200);
             // }
+            $request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');
+            return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
 
-        return $this->renderTemplate($request, $admin, 'form', array(
-            'admin' => $admin,
+        if (array_key_exists('redirect', $params)) {
+            return $this->redirect($this->generateUrl($params['redirect'],$params['redirect_params']));
+        }
+
+        $template = 'MaciAdminBundle:Actions:' . $action .'.html.twig';
+
+        return $this->render('MaciAdminBundle:Default:view.html.twig', array(
+            'template' => $template,
+            'params' => array_merge($admin->getDefaultParams($section, $entity, $action, $id), $params)
+        ));
+    }
+
+    public function adminBarAction(Request $request, $entity, $item = false)
+    {
+        $admin = $this->container->get('maci.admin');
+        $sections = $admin->getSections();
+        $id = false;
+        $section = false;
+        $actions = false;
+
+        foreach ($sections as $secname) {
+            if ($admin->hasEntity($secname, $entity)) {
+                $section = $secname;
+                if ($item) {
+                    $actions = $admin->arrayLabels($admin->getSingleActions($section,$entity));
+                    $id = $item->getId();
+                } else {
+                    $actions = $admin->arrayLabels($admin->getMainActions($section,$entity));
+                }
+                break;
+            }
+        }
+
+        return $this->render('MaciAdminBundle:Default:admin_bar.html.twig', array(
+            'id' => $id,
+            'section' => $section,
+            'entity' => $entity,
+            'entity_label' => $admin->generateLabel($entity),
             'item' => $item,
-            'form' => $form->createView()
+            'actions' => $actions
         ));
     }
 
-    public function objectAction(Request $request, $entity, $id)
+    public function notFoundAction(Request $request)
     {
-        $admin = $this->getAdmin($entity);
-        if (!$admin || !$request->isXmlHttpRequest()) {
-            return new JsonResponse(array('error' => 'error.noadmin'), 200);
-        }
-
-        $em = $this->getDoctrine()->getManager();
-
-        $item = false;
-
-        if ($id) {
-            $item = $em->getRepository($admin['repository'])->findOneById($id);
-            if (!$item) {
-                return new JsonResponse(array('error' => 'error.noitem'), 200);
-            }
-        } else {
-            $item = new $admin['new'];
-        }
-
-        $save = false;
-
-        $setfields = $request->get('setfields');
-
-        if (is_array($setfields) && count($setfields)) {
-            foreach ($setfields as $set) {
-                if ($set) {
-                    $key = $set['set'];
-                    $type = false;
-                    $value = $set['val'];
-                    if (array_key_exists('type', $set)) {
-                        $type = $set['type'];
-                    }
-                    if (!$type || $type == 'default') {
-                        $mth = ( method_exists($item, $key) ?  $key : false );
-                        if ($mth) {
-                            call_user_method($mth, $item, $value);
-                            $save = true;
-                        }
-                    } else if ($rel = $this->getAdmin($type)) {
-                        $mth = (
-                            method_exists($item, ('set' . ucfirst($key))) || method_exists($item, ('add' . ucfirst($key))) ? (
-                                method_exists($item, ('set' . ucfirst($key))) ?
-                                'set' . ucfirst($key) :
-                                'add' . ucfirst($key)
-                            ) : false
-                        );
-                        if ($mth) {
-                            $rob = $em->getRepository($rel['repository'])->findOneById(intval($value));
-                            if ($rob) {
-                                call_user_method($mth, $item, $rob);
-                                $save = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if ($save) {
-			if (!$item->getId() && method_exists($item, 'getTranslations')) {
-			    $locs = $this->container->getParameter('a2lix_translation_form.locales');
-			    foreach ($locs as $loc) {
-			        $clnm = $admin['new'].'Translation';
-			        $tran = new $clnm;
-			        $tran->setLocale($loc);
-			        $item->addTranslation($tran);
-			        $em->persist($tran);
-			    }
-			}
-
-            $em->persist($item);
-            $em->flush();
-
-            return new JsonResponse(array('success' => true, 'id' => $item->getId()), 200);
-        }
-
-        return new JsonResponse(array('error' => 'error.nothingdone'), 200);
-    }
-
-    public function removeAction(Request $request, $entity, $id)
-    {
-        $admin = $this->getAdmin($entity);
-        if (!$admin || !$request->isXmlHttpRequest()) {
-            return new JsonResponse(array('error' => 'error.noadmin'), 200);
-        }
-
-        $em = $this->getDoctrine()->getManager();
-        $item = $em->getRepository($admin['repository'])->findOneById($id);
-
-        if (!$item) {
-            return new JsonResponse(array('error' => 'error.not-found'), 200);
-        }
-
-        if (method_exists($item, 'setRemoved')) {
-            $item->setRemoved(true);
-        } else {
-            $em->remove($item);
-        }
-
-        $em->flush();
-
-        return new JsonResponse(array('success' => true), 200);
-    }
-
-    public function reorderAction(Request $request, $entity)
-    {
-        $admin = $this->getAdmin($entity);
-        if (!$admin) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.notfound')));
-        }
-
-        $ids = $this->getRequest()->get('ids');
-
-        $this->getDoctrine()->getRepository($admin['repository'])->reorder($ids);
-
-        return new JsonResponse(array('success' => true), 200);
-    }
-
-    public function fileUploadAction(Request $request, $entity, $id)
-    {
-        if (!$request->isXmlHttpRequest()) {
-            return $this->redirect($this->generateUrl('maci_admin_homepage', array('error' => 'error.action_denied')));
-        }
-
-        $admin = $this->getAdmin($entity);
-
-        if (!$admin) {
-            return new JsonResponse(array('success' => false, 'error' => 'error.noadmin'), 200);
-        }
-
-        if (!count($request->files)) {
-            return $this->renderTemplate($request, $admin, 'uploader', array(
-                'admin' => $admin
-            ));
-        }
-
-        $em = $this->getDoctrine()->getManager();
-
-        $repo = $em->getRepository($admin['repository']);
-
-        $item = new $admin['new'];
-
-        if ($id) {
-            $item = $repo->findOneById($id);
-            if (!$item) {
-                return new JsonResponse(array('success' => false, 'error' => 'error.notfound'), 200);
-            }
-            $name = $request->files->keys()[0];
-            $file = $request->files->get($name);
-		    if($file->isValid()) {
-		        $item->setFile($file);
-		        $em->persist($item);
-		    } else {
-                return new JsonResponse(array('success' => false, 'error' => 'error.upload'), 200);
-            }
-        } else {
-            $name = $request->files->keys()[0];
-            $file = $request->files->get($name);
-            if($file->isValid()) {
-                if (method_exists($item, 'getTranslations')) {
-                    $locs = $this->container->getParameter('a2lix_translation_form.locales');
-                    $date = date('m/d/Y h:i:s');
-                    foreach ($locs as $loc) {
-                        $clnm = $admin['new'].'Translation';
-                        $tran = new $clnm;
-                        $tran->setLocale($loc);
-                        $traname = $admin['label'].' [' . $loc . '] ' . $date;
-                        $tran->setName($traname);
-                        $item->addTranslation($tran);
-                        $em->persist($tran);
-                    }
-                }
-                $item->setFile($file);
-                $em->persist($item);
-            } else {
-                return new JsonResponse(array('success' => false, 'error' => 'error.upload'), 200);
-            }
-        }
-
-        $em->flush();
-
-        return $this->renderTemplate($request, $admin, 'item', array(
-            'admin' => $admin,
-            'item' => $item
-        ));
-    }
-/*
-    public function pagerAction()
-    {
-        $adminLimitPerPage = $this->getBlogConfig('admin_limit_per_page');
-        $repo = $this->getDoctrine()->getEntityManager()->getRepository('Eight\BlogBundle\Entity\Post');
-        $page = $this->getRequest()->get('page', 1);
-
-        $pager = new PostPager($repo, $adminLimitPerPage, $page, 5);
-
-        return $this->render('EightBlogBundle:Admin:list.html.twig', array(
-            'posts' => $this->container->get('eight.posts')->getPaged($adminLimitPerPage, $page),
-            'pager' => $pager
-        ));
-    }
-*/
-    public function renderTemplate(Request $request, $admin, $action, $params)
-    {
-        if ( array_key_exists('templates', $admin) && array_key_exists($action, $admin['templates'])) {
-            $template = $admin['templates'][$action];
-        } else {
-            $template = 'MaciAdminBundle:Default:_' . $action .'.html.twig';
-        }
-
-        if ($request->isXmlHttpRequest()) {
-            $id = 0;
-            if (array_key_exists('item', $params)) {
-                $item = $params['item'];
-                $id = $item->getId();
-            }
-            if ($request->get('modal')) {
-                return new JsonResponse(array(
-                    'success' => true,
-                    'id' => $id,
-                    'entity' => $admin['name'],
-                    'template' => $this->renderView('MaciAdminBundle:Default:async.html.twig', array(
-                        'params' => $params,
-                        'template' => $template
-                    ))
-                ), 200);
-            } else {
-                return new JsonResponse(array(
-                    'success' => true,
-                    'id' => $id,
-                    'entity' => $admin['name'],
-                    'template' => $this->renderView($template, $params)
-                ), 200);
-            }
-        } else {
-            return $this->render('MaciAdminBundle:Default:' . $action .'.html.twig', array(
-                'admin' => $admin,
-                'params' => $params,
-                'template' => $template
-            ));
-        }
-    }
-
-    public function getAdmin($entity = false)
-    {
-        $config = $this->getConfig();
-        if ($entity && array_key_exists($entity, $config)) {
-            $admin = $config[$entity];
-            $admin['name'] = $entity;
-            return $admin;
-        }
-        return false;
-    }
-
-    public function getConfig()
-    {
-        return array(
-            'album' => array(
-                'label' => 'Album',
-                'repository' => 'MaciMediaBundle:Album',
-                'new' => '\Maci\MediaBundle\Entity\Album',
-                'form' => 'media_album',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media' => array(
-                'label' => 'Media',
-                'repository' => 'MaciMediaBundle:Media',
-                'new' => '\Maci\MediaBundle\Entity\Media',
-                'form' => 'media',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media_item' => array(
-                'label' => 'Album Item',
-                'repository' => 'MaciMediaBundle:Item',
-                'new' => '\Maci\MediaBundle\Entity\Item',
-                'form' => 'media_item',
-                'templates' => array(
-                    'list' => 'MaciMediaBundle:Default:_list.html.twig',
-                    'item' => 'MaciMediaBundle:Default:_item.html.twig'
-                )
-            ),
-            'media_tag' => array(
-                'label' => 'Media Tag',
-                'repository' => 'MaciMediaBundle:Tag',
-                'new' => '\Maci\MediaBundle\Entity\Tag',
-                'form' => 'media_tag'
-            ),
-            'blog_post' => array(
-                'label' => 'Post',
-                'repository' => 'MaciBlogBundle:Post',
-                'new' => '\Maci\BlogBundle\Entity\Post',
-                'form' => 'blog_post'
-            ),
-            'blog_media_item' => array(
-                'label' => 'Media Item',
-                'repository' => 'MaciBlogBundle:MediaItem',
-                'new' => '\Maci\BlogBundle\Entity\MediaItem',
-                'form' => 'blog_media_item'
-            ),
-            'blog_tag' => array(
-                'label' => 'Tag',
-                'repository' => 'MaciBlogBundle:Tag',
-                'new' => '\Maci\BlogBundle\Entity\Tag',
-                'form' => 'blog_tag'
-            ),
-            'category' => array(
-                'label' => 'Cateogry',
-                'repository' => 'MaciProductBundle:Category',
-                'new' => '\Maci\ProductBundle\Entity\Category',
-                'form' => 'category'
-            ),
-            'category_item' => array(
-                'label' => 'Cateogry Item',
-                'repository' => 'MaciProductBundle:CategoryItem',
-                'new' => '\Maci\ProductBundle\Entity\CategoryItem',
-                'form' => 'category_item'
-            ),
-            'product' => array(
-                'label' => 'Product',
-                'repository' => 'MaciProductBundle:Product',
-                'new' => '\Maci\ProductBundle\Entity\Product',
-                'form' => 'product'
-            ),
-            'product_media_item' => array(
-                'label' => 'Product Media Item',
-                'repository' => 'MaciProductBundle:MediaItem',
-                'new' => '\Maci\ProductBundle\Entity\MediaItem',
-                'form' => 'product_media_item'
-            ),
-            'product_variant' => array(
-                'label' => 'Product Variant',
-                'repository' => 'MaciProductBundle:Variant',
-                'new' => '\Maci\ProductBundle\Entity\Variant',
-                'form' => 'product_variant'
-            ),
-            'product_variant_item' => array(
-                'label' => 'Product VariantItem',
-                'repository' => 'MaciProductBundle:VariantItem',
-                'new' => '\Maci\ProductBundle\Entity\VariantItem',
-                'form' => 'product_variant_item'
-            ),
-            'language' => array(
-                'label' => 'Language',
-                'repository' => 'MaciTranslatorBundle:Language',
-                'new' => '\Maci\TranslatorBundle\Entity\Language',
-                'form' => 'language'
-            ),
-            'page' => array(
-                'label' => 'Page',
-                'repository' => 'MaciPageBundle:Page',
-                'new' => '\Maci\PageBundle\Entity\Page',
-                'form' => 'page'
-            ),
-            'page_translation' => array(
-                'label' => 'Page Translation',
-                'repository' => 'MaciPageBundle:PageTranslation',
-                'new' => '\Maci\PageBundle\Entity\PageTranslation',
-                'form' => 'page'
-            ),
-            'panel' => array(
-                'label' => 'Panel',
-                'repository' => 'MaciListBundle:Panel',
-                'new' => '\Maci\ListBundle\Entity\Panel',
-                'form' => 'panel'
-            ),
-            'panel_item' => array(
-                'label' => 'Panel Item',
-                'repository' => 'MaciListBundle:Item',
-                'new' => '\Maci\ListBundle\Entity\Item',
-                'form' => 'panel_item'
-            )
-        );
+        // var_dump( $this->getDoctrine()->getManager()->getMetadataFactory()->getAllMetadata() ); die();
+        // var_dump( $this->container->getParameter('maci.admin.config') ); die();
+        // foreach ($this->get('kernel')->getBundles() as $key => $value) {
+        //     echo get_class($value)."<br>\n";
+        // } die();
+        // var_dump( $this->container->get('maci.admin')->getEntityMetadata($this->container->get('maci.admin')->getEntity('blog_post'))); die();
+        // var_dump( $this->getDoctrine()->getManager()->getConfiguration()->getMetadataDriverImpl()->getAllClassNames() ); die();
+        // var_dump( $this->getDoctrine()->getManager()->getClassMetadata('Maci\BlogBundle\Entity\Post') ); die();
+        // var_dump( $this->container->get('maci.admin')->getSections() ); die();
+        // var_dump( get_class($this->container->get('router')) ); die();
+        return $this->render('MaciAdminBundle:Default:not_found.html.twig');
     }
 }

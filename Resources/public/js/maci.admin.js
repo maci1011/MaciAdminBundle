@@ -13,11 +13,14 @@ var maciUploader = function (form, options) {
 		_reset = false,
 		_upload = false,
 		_callback = false,
+		_start_callback = false,
+		_end_callback = false,
+		_upload_index,
 		_name = 'file',
 
 	_obj = {
 
-	sendFile: function(map) {
+	sendFile: function(i, map) {
 		var data = new FormData();
 		data.append(_name, map.file);
 		$.ajax({
@@ -29,17 +32,45 @@ var maciUploader = function (form, options) {
 			processData: false, // Don't process the files
 			contentType: false,
 			success: function (dat,sts,jqx) {
-				_obj.end(map);
 				if ($.isFunction(_callback)) {
 					_callback(dat);
+				}
+				_obj.end(map);
+				if (_upload_index == _files.length) {
+					_obj.endUpload(dat);
 				}
 			}
 		});
 	},
 
-	upload: function() {
-		$.each(_files, function(k, map) {
-			_obj.sendFile(map);
+	end: function(map) {
+		$('<span/>').text(' - uploaded!').appendTo(map.item);
+		_upload_index++;
+	},
+
+	endUpload: function(dat) {
+		_obj.clearList();
+		_select.show();
+		if ($.isFunction(_end_callback)) {
+			_end_callback(dat);
+		} else {
+			alert('Uploaded!');
+		}
+	},
+
+	startUpload: function(dat) {
+		if ($.isFunction(_start_callback)) {
+			_start_callback(dat);
+		}
+	},
+
+	upload: function(dat) {
+		_select.hide();
+		_obj.hideUploadButton();
+		_obj.startUpload(dat);
+		_upload_index = 0;
+		$.each(_files, function(i, map) {
+			_obj.sendFile(i, map);
 		});
 	},
 
@@ -49,6 +80,14 @@ var maciUploader = function (form, options) {
 
 	setCallback: function(callback) {
 		_callback = callback;
+	},
+
+	setEndCallback: function(callback) {
+		_end_callback = callback;
+	},
+
+	setStartCallback: function(callback) {
+		_start_callback = callback;
 	},
 
 	getLength: function() {
@@ -69,12 +108,10 @@ var maciUploader = function (form, options) {
 	},
 
 	clearList: function() {
+		_upload_index = 0;
 		_files = [];
 		_list.html('');
-	},
-
-	end: function(map) {
-		$('<span/>').text('uploaded!').appendTo(map.item);
+		_obj.hideUploadButton();
 	},
 
 	setList: function(e) {
@@ -87,6 +124,17 @@ var maciUploader = function (form, options) {
 		} else {
 			_obj.addItem(e.target.files[0]);
 		}
+		_obj.showUploadButton();
+	},
+
+	hideUploadButton: function() {
+		_upload.hide();
+		_reset.hide();
+	},
+
+	showUploadButton: function() {
+		_upload.show();
+		_reset.show();
 	},
 
 	set: function(form, options) {
@@ -104,9 +152,13 @@ var maciUploader = function (form, options) {
 		});
 		_upload.click(function(e) {
 			e.preventDefault();
-			console.log('up');
 			_obj.upload();
 		});
+		_reset.click(function(e) {
+			e.preventDefault();
+			_obj.clearList();
+		});
+		_obj.hideUploadButton();
 		_obj.clearList();
 	}
 
@@ -134,15 +186,14 @@ var maciAdmin = function () {
 					if ($.isFunction(callback)) {
 						callback(dat);
 					} else {
-						alert('success!');
+						console.log('Success!');
 					}
-					console.log('success');
 				} else {
-					alert('error!');
+					alert('Error!');
 				}
 			},
 			error: function(dat,sts,jqx) {
-				alert('error!');
+				alert('Error!');
 			}
 		});
 	},
@@ -168,30 +219,41 @@ var maciAdmin = function () {
 		return data;
 	},
 
-	getModal: function(url, callback) {
-		_obj.ajax(url, 'GET', { 'modal': true }, callback);
+	getModal: function(el, callback) {
+		var data = { 'modal': true, 'clone': ($(el).attr('clone') ? true : null), 'optf': {} };
+		$(el).children('input').each(function(){
+			data['optf'][$(this).attr('name')] = $(this).val();
+		});
+		_obj.ajax($(el).attr('href'), 'GET', data, callback);
 	},
 
 	setObject: function(url, data, callback) {
 		_obj.ajax(url, 'POST', data, callback);
 	},
 
-	submitForm: function(form, callback) {
-		_obj.ajax(form.attr('action'), 'POST', _obj.getFormData(form), callback);
+	submitForm: function(el, form, callback) {
+		var method = ( form.attr('method') ? form.attr('method') : 'POST' ), data = _obj.getFormData(form);
+		if ($(el).attr('clone')) {
+			data['clone'] = true;
+		}
+		_obj.ajax(form.attr('action'), method, data, callback);
 	},
 
-	createObject: function(el,row,callback) {
+	createObject: function(el,id,callback) {
+		if (!$(el).attr('sync')) { return; }
 		var relations = { 0: {} };
-		relations[0]['set'] = $(el).attr('from');
-		relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
-		relations[0]['val'] = $(row).find('[name=id]').first().val();
+		if ($(el).attr('from') && !$(el).attr('clone')) {
+			relations[0]['set'] = $(el).attr('from');
+			relations[0]['type'] = $(el).attr('fromtype') ? $(el).attr('fromtype') : $(el).attr('from');
+			relations[0]['val'] = id;
+		}
 		if ($(el).attr('to')) {
 			relations[1] = {};
 			relations[1]['set'] = $(el).attr('to');
 			relations[1]['type'] = $(el).attr('totype') ? $(el).attr('totype') : $(el).attr('to');
 			relations[1]['val'] = $(el).attr('toid');
 		}
-		_obj.setObject($(el).attr('sync'), { 'setfields': relations }, callback);
+		_obj.setObject($(el).attr('sync'), { 'setfields': relations, 'clone': ($(el).attr('clone') ? id : null) }, callback);
 	},
 
 	setField: function(el, callback) {
@@ -215,7 +277,11 @@ var maciAdmin = function () {
 
 	setRichTextEditor: function(el) {
 		if (!el.hasClass('noeditor')) {
-			CKEDITOR.replace( el.get(0) );
+			$('<a/>').attr('class', 'btn btn-default').insertAfter(el).click(function(e) {
+				e.preventDefault();
+				CKEDITOR.replace( el.get(0) );
+				$(this).remove();
+			}).text('Use Editor');
 		}
 	},
 
@@ -227,10 +293,21 @@ var maciAdmin = function () {
 						$(el).attr('parentval')
 					)
 				;
-				sel.parents('.form-group').first().html('').append(inp);
+				var fg = sel.parents('.form-group').first();
+				inp.insertAfter(fg);
+				fg.remove();
 			} else {
 				modal.find($(el).attr('parent')).parents('.form-group').first().remove();
 			}
+		}
+	},
+
+	hideInputs: function(el, modal) {
+		if ($(el).attr('hide')) {
+			var list = $(el).attr('hide').split(',');
+			$.each(list, function(i,str) {
+				$(modal).find(str.trim()).parents('.form-group').first().hide();
+			});
 		}
 	},
 
@@ -241,7 +318,7 @@ var maciAdmin = function () {
 			if (modal) {
 				modal.modal();
 			} else {
-				_obj.getModal($(el).attr('href'), function(dat) {
+				_obj.getModal($(el), function(dat) {
 					var div = $('<div/>').appendTo('body');
 					div.html($(dat['template'])).find('.modal-title').text($(el).text());
 					modal = div.children();
@@ -252,7 +329,7 @@ var maciAdmin = function () {
 		});
 	},
 
-	setModalForm: function(modal, callback) {
+	setModalForm: function(el, modal, callback) {
 		var form = modal.find('form').first();
 		form.find('[type=file]').each(function() {
 			$(this).hide().parents('.form-group').first().hide();
@@ -262,7 +339,7 @@ var maciAdmin = function () {
 		});
 		form.find('[type=submit]').click(function(e) {
 			e.preventDefault();
-			_obj.submitForm(form,callback);
+			_obj.submitForm(el, form,callback);
 			modal.modal('hide');
 		});
 		_obj.removeSubmitButton(modal);
@@ -271,7 +348,7 @@ var maciAdmin = function () {
 	setModalList: function(modal, callback) {
 		var container = $(modal).find('.modal-body').first().addClass('row');
 		container.find('.row').each(function(j,rw) {
-			var acd = $(rw).find('.actions').first(),
+			var acd = $(rw).find('.list-item-actions').first(),
 				btt = $('<a/>', {'href': '#'}).addClass('btn btn-success').text('Select');
 			acd.html('');
 			btt.appendTo(acd).click(function(e) {
@@ -300,36 +377,32 @@ var maciAdmin = function () {
 		_obj.removeSubmitButton(modal);
 	},
 
-	setRemoveButton: function(el, callback) {
-		$(el).click(function(e) {
-			e.preventDefault();
-			if (confirm('Remove Item?')) {
-				_obj.getModal($(el).attr('href'), function(dat) {
-					if ($.isFunction(callback)) { callback(); }
-					else { alert('Removed!') }
-				});
-			}
-		});
-	},
-
 	setFieldButton: function(el, callback) {
 		$(el).click(function(e) {
 			e.preventDefault();
-			_obj.setField(el, callback);
+			_obj.setField(el,callback);
 		});
 	},
 
 	setFormButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setParentInput(el, modal);
-			_obj.setModalForm(modal, callback);
+			_obj.hideInputs(el, modal);
+			_obj.setModalForm(el, modal, function(dat) {
+				if ($(el).attr('sync')) {
+					_obj.createObject(el,dat['id'],callback);
+				} else {
+					if ( $.isFunction(callback) ) { callback(); }
+					else { console.log('Success!') }
+				}
+			});
 		});
 	},
 
 	setListButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalList(modal, function(rw) {
-				_obj.createObject(el,rw,callback);
+				_obj.createObject(el,$(rw).find('[name=id]').first().val(),callback);
 			});
 		});
 	},
@@ -337,7 +410,9 @@ var maciAdmin = function () {
 	setUploaderButton: function(el, callback) {
 		_obj.setModalButton(el, function(modal, data) {
 			_obj.setModalUploader(modal, function(dat) {
-				_obj.createObject(el,dat['template'],callback);
+				if (dat['success']) { _obj.createObject(el,dat['id'],function(dat) {
+					if ( $.isFunction(callback) ) { callback(); }
+				}); } else { console.log('error: ' + dat['error']) }
 			});
 		});
 	}
@@ -353,7 +428,9 @@ $(document).ready(function(e) {
 	var admin = maciAdmin();
 
 	$('.ma-remove').each(function() {
-		admin.setRemoveButton($(this));
+		admin.setFormButton($(this), function(dat) {
+			console.log('Removed!');
+		});
 	});
 
 	$('.ma-set').each(function() {
@@ -371,6 +448,45 @@ $(document).ready(function(e) {
 	$('.ma-uploader').each(function() {
 		admin.setUploaderButton($(this))
 	});
+
+
+        
+    $( "div[sortable]" ).each(function(i,el) {
+
+    	$(el).sortable({
+
+			items: '.sortable',
+
+		    stop: function(e, ui) {
+
+		        var list = $(el).find(".sortable");
+
+		        var ids = [];
+
+		        list.each(function(j,fl) {
+		            ids.push( parseInt( $(fl).find('input[type=hidden]').eq(0).val() ) );
+		        });
+
+		        $.ajax({
+		            type: 'POST',
+		            data: {ids: ids},
+		            url: $(el).attr('sortable'),
+		            success: function () {
+		                console.log('Reorded!');
+		            }
+		        });
+
+		    }
+
+		});
+
+    });
+
+    $('#bodyAdministration .admin-form textarea').not('.noeditor').each(function() {
+    	admin.setRichTextEditor( $(this) );
+    });
+
+    console.log( $('#bodyAdministration .maci-form textarea').not('.noeditor').length );
 
 
 });

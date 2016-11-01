@@ -1,0 +1,122 @@
+
+{% if type is not defined or not type in ['list', 'add', 'set'] %}
+{% set type = 'list' %}
+{% endif %}
+
+<div class="row list-item {% if loop.index0 is even %}even{% else %}odd{% endif %}">
+
+	{% if '_id' in fields %}
+	<div class="col-xs-1 tab-td-id">
+		<input name="id" type="hidden" value="{{ item.id }}" />
+		{% if type == 'list' %}
+		<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'show', 'id': item.id }) }}" title="See Details">
+			{{ item.id }}
+		</a>
+		{% else %}
+		<p>{{ item.id }}</p>
+		{% endif %}
+	</div>
+	{% endif %}
+
+	{% set len = fields|length %}
+	{% set tot = 9 %}
+
+	{% if '_id' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if '_actions' in fields or type in ['add','set'] %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if 4 < len %}
+	{% set len = 1 %}
+	{% elseif len == 2 %}
+	{% set tot = 8 %}
+	{% endif %}
+
+	{% for field in fields %}
+
+	{% if not ( field in ['_id', '_actions'] ) %}
+
+	<div class="col-xs-{{ (tot / len)|number_format }}">
+
+		{% if field == '_string' %}
+
+		<p>{{ item }}</p>
+
+		{% else %}
+
+		{% set mth1 = (field|capitalize ~ 'Label') %}
+		{% set mth2 = (field|capitalize ~ 'Value') %}
+		{% if attribute(item, mth1) is defined %}
+		{% set meth = attribute(item, mth1) %}
+		{% else %}
+		{% set meth = attribute(item, field) %}
+		{% endif %}
+
+		{% if meth.timestamp is defined %}
+		<p>{{ meth|date('d/m/Y') }}</p>
+		{% else %}
+		<p>{{ meth }}</p>
+		{% endif %}
+
+		{% endif %}
+
+	</div>
+
+	{% endif %}
+
+	{% endfor %}
+
+	{% if type == 'list' %}
+	{% if '_actions' in fields %}
+	<div class="col-xs-2 list-item-actions">
+
+		<a class="btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'edit', 'id': item.id}) }}">
+			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
+		</a>
+
+		<a class="btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': item.id}) }}">
+			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
+		</a>
+
+	</div>
+	{% endif %}
+	{% elseif type == 'relation' %}
+	<div class="col-xs-2">
+
+		<form action="{{ path('maci_admin_view_relations', {'section': section, 'entity': entity, 'id': id, 'relation': relation, 'relAction': 'remove'}) }}" method="post">
+		<input type="hidden" name="ids" value="{{ item.id }}">
+		<button class="btn btn-sm list-item-set">
+			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
+		</button>
+		</form>
+
+	</div>
+	{% elseif type == 'add' %}
+	<div class="col-xs-2">
+
+		<a class="btn btn-sm list-item-add" href="#" rel="{{ item.id }}">
+			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+		</a>
+
+		<a class="btn btn-sm list-item-remove" href="#" rel="{{ item.id }}">
+			<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+		</a>
+
+	</div>
+	{% elseif type == 'set' %}
+	<div class="col-xs-2">
+
+		<form action="#" method="post">
+		<input type="hidden" name="ids" value="{{ item.id }}">
+		<button class="btn btn-sm list-item-set">
+			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Set
+		</button>
+		</form>
+
+	</div>
+	{% endif %}
+
+</div>

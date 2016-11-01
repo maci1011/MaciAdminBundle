@@ -1,7 +1,46 @@
-parameters:
-#    maci_admin.example.class: Maci\AdminBundle\Example
 
 services:
-#    maci_admin.example:
-#        class: %maci_admin.example.class%
-#        arguments: [@service_id, "plain_value", %parameter%]
+
+    maci.admin:
+        class: Maci\AdminBundle\Controller\AdminController
+        arguments: ["@doctrine.orm.entity_manager","@security.context","@session","@request_stack","@kernel","@form.factory","@form.registry","@router","%maci.admin.config%"]
+
+    maci_admin.menu_builder:
+        class: Maci\AdminBundle\Menu\AdminMenuBuilder
+        arguments: ["@knp_menu.factory","@security.context","@doctrine.orm.entity_manager","@maci.admin"]
+
+    maci_admin.menu.admin_entities:
+        class: Knp\Menu\MenuItem
+        factory_service: maci_admin.menu_builder
+        factory_method: createEntitiesMenu
+        arguments: ["@request"]
+        scope: request
+        tags:
+            - { name: knp_menu.menu, alias: admin_entities }
+
+    maci_admin.menu.admin_sections:
+        class: Knp\Menu\MenuItem
+        factory_service: maci_admin.menu_builder
+        factory_method: createSectionsMenu
+        arguments: ["@request"]
+        scope: request
+        tags:
+            - { name: knp_menu.menu, alias: admin_sections }
+
+    maci_admin.menu.admin_actions:
+        class: Knp\Menu\MenuItem
+        factory_service: maci_admin.menu_builder
+        factory_method: createActionsMenu
+        arguments: ["@request"]
+        scope: request
+        tags:
+            - { name: knp_menu.menu, alias: admin_actions }
+
+    maci_admin.menu.admin_item_actions:
+        class: Knp\Menu\MenuItem
+        factory_service: maci_admin.menu_builder
+        factory_method: createItemActionsMenu
+        arguments: ["@request"]
+        scope: request
+        tags:
+            - { name: knp_menu.menu, alias: admin_item_actions }

@@ -1,2 +1,111 @@
 
-{% extends "MaciPageBundle::layout.html.twig" %}
+{% extends "MaciAdminBundle::base.html.twig" %}
+
+
+{% block javascripts %}
+
+    {{ parent() }}
+
+    <script>
+
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+
+    </script>
+
+{% endblock %}
+
+
+{% block body %}
+
+
+{% block navbar_top %}
+
+<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+
+<div class="container">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+    </div>
+    <div class="collapse navbar-collapse">
+        {% block top_menu %}
+        <nav>
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a id="menu-toggle" href="#">
+                        <span class="glyphicon glyphicon-menu-hamburger"></span>
+                        {{ app.request.get('section')|upper }}
+                    </a>
+                </li>
+            </ul>
+            {{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}
+        </nav>
+        {% endblock top_menu %}
+    </div>
+</div>
+
+</div>
+
+{% endblock navbar_top %}
+
+
+<div id="wrapper" class="toggled">
+
+
+<!-- Sidebar -->
+<div id="sidebar-wrapper">
+
+    <div id="mainMenu">
+
+    {% block main_menu %}
+
+        <h3>{{ app.request.get('section')|upper }}</h3>
+
+        <nav>{{ knp_menu_render('admin_entities', {'currentClass': 'active'}) }}</nav>
+
+    {% endblock %}
+
+    </div>
+
+</div>
+<!-- /#sidebar-wrapper -->
+
+
+<!-- Page Content -->
+<div id="page-content-wrapper">
+
+
+<div id="main" class="container-fluid">
+
+    {% block container %}
+
+    <div id="pathbar" class="content-navbar container-fluid">
+
+        {% block pathBar %}{% endblock %}
+
+    </div>
+
+    <div id="mainContainer">
+
+        {% block content %}{% endblock %}
+
+    </div>
+
+    {% endblock container %}
+
+</div>
+
+</div>
+
+</div>
+
+
+{% endblock body %}
+

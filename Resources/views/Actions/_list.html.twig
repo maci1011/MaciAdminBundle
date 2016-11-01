@@ -1,0 +1,103 @@
+
+{% set list = pager.pageList %}
+
+{% if list|length %}
+
+<div class="list-default{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
+
+<div class="row list-header">
+
+	{% if '_id' in fields %}
+	<div class="col-xs-1 tab-hd-id">
+		<span class="list-title">Id</span>
+	</div>
+	{% endif %}
+
+	{% set len = fields|length %}
+	{% set tot = 9 %}
+
+	{% if '_id' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if '_actions' in fields %}
+	{% set len = len - 1 %}
+	{% endif %}
+
+	{% if 4 < len %}
+	{% set len = 1 %}
+	{% elseif len == 2 %}
+	{% set tot = 8 %}
+	{% endif %}
+
+	{% for field in fields %}
+
+	{% if not ( field in ['_id', '_actions'] ) %}
+
+	<div class="col-xs-{{ (tot / len)|number_format }}">
+		{% if field == '_string' %}
+		<span class="list-title">Name</span>
+		{% else %}
+		<span class="list-title">{{ field|capitalize }}</span>
+		{% endif %}
+	</div>
+
+	{% endif %}
+
+	{% endfor %}
+
+	{% if type is not defined or type == 'list' %}
+	{% if '_actions' in fields %}
+	<div class="col-xs-2">
+		<span class="list-title">Actions</span>
+	</div>
+	{% endif %}
+	{% elseif type == 'relation' %}
+	<div class="col-xs-2">
+		<span class="list-title">Remove Item</span>
+	</div>
+	{% elseif type == 'add' %}
+	<div class="col-xs-2">
+		<span class="list-title">Add Items</span>
+	</div>
+	{% elseif type == 'set' %}
+	<div class="col-xs-2">
+		<span class="list-title">Set Item</span>
+	</div>
+	{% endif %}
+
+</div>
+
+{% for item in list %}
+
+	{% include "MaciAdminBundle:Actions:_list_item.html.twig" with { 'fields': fields, 'entity': entity, 'item': item } %}
+
+{% endfor %}
+
+{% if pager.requiresPagination() %}
+<div class="container-fluid">
+<ul class="pagination">
+	<li {% if not pager.hasPrev() %}class="disabled"{% endif %}>
+		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.prev }) }}">«</a>
+	</li>
+	{% for page in pager.getPageRange() %}
+    	<li {% if pager.current(page) %}class="active"{% endif %}>
+    		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": page }) }}">{{ page }}</a>
+    	</li>
+	{% endfor %}
+	<li {% if not pager.hasNext() %}class="disabled"{% endif %}>
+		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.next() }) }}">»</a>
+	</li>
+</ul>
+</div>
+{% endif %}
+
+</div>
+
+{% else %}
+
+<div class="container-fluid">
+	<span class="noitems">No Items.</span>
+</div>
+
+{% endif %}
