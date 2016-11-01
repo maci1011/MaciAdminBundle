@@ -13,21 +13,6 @@ class DefaultController extends Controller
         return $this->redirect($this->generateUrl('maci_admin_view'));
     }
 
-    public function notFoundAction(Request $request)
-    {
-        // var_dump( $this->getDoctrine()->getManager()->getMetadataFactory()->getAllMetadata() ); die();
-        // var_dump( $this->container->getParameter('maci.admin.config') ); die();
-        // foreach ($this->get('kernel')->getBundles() as $key => $value) {
-        //     echo get_class($value)."<br>\n";
-        // } die();
-        // var_dump( $this->container->get('maci.admin')->getEntityMetadata($this->container->get('maci.admin')->getEntity('blog_post'))); die();
-        // var_dump( $this->getDoctrine()->getManager()->getConfiguration()->getMetadataDriverImpl()->getAllClassNames() ); die();
-        // var_dump( $this->getDoctrine()->getManager()->getClassMetadata('Maci\BlogBundle\Entity\Post') ); die();
-        // var_dump( $this->container->get('maci.admin')->getSections() ); die();
-        // var_dump( get_class($this->container->get('router')) ); die();
-        return $this->render('MaciAdminBundle:Default:not_found.html.twig');
-    }
-
     public function viewAction(Request $request, $section, $entity, $action, $id)
     {
         $admin = $this->container->get('maci.admin');
@@ -36,7 +21,11 @@ class DefaultController extends Controller
         if (!count($sections)) {
             return $this->redirect($this->generateUrl('homepage'));
         }
-        if (!$section || !in_array($section, $sections)) {
+        if (!$section) {
+            return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$sections[0])));
+        }
+        if (!in_array($section, $sections)) {
+            $request->getSession()->getFlashBag()->add('error', 'Section not Found.');
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$sections[0])));
         }
         if (!$entity) {
@@ -46,37 +35,46 @@ class DefaultController extends Controller
             ));
         }
         if (!$admin->hasEntity($section, $entity)) {
-            return $this->redirect($this->generateUrl('maci_admin_not_found'));
+            $request->getSession()->getFlashBag()->add('error', 'Entity not Found.');
+            return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section)));
         }
         if (!$action || !in_array($action, $admin->getActions($section, $entity))) {
+            $request->getSession()->getFlashBag()->add('error', 'Action not Found.');
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
         }
         if ($action === 'relations') {
+            if (!intval($id)) {
+                $request->getSession()->getFlashBag()->add('error', 'Missing Id.');
+                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
+            }
             $relation = $request->get('relation');
             if (!$relation) {
                 $_entity = $admin->getEntity($section, $entity);
                 $relations = $admin->getEntityAssociations($_entity);
-                return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0])));
+                $relAction = $admin->getRelationDefaultAction($_entity, $relation[0]);
+                return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0],'relAction'=>$relAction)));
             }
             $relAction = $request->get('relAction');
-            if (!$relAction) {
+            if (!$relAction || !in_array($relAction, $admin->getRelationActions($section,$entity,$relation))) {
                 $_entity = $admin->getEntity($section, $entity);
-                $relAction = $admin->getEntityRelationDefaultAction($_entity, $relation);
+                $relAction = $admin->getRelationDefaultAction($_entity, $relation);
                 return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relation,'relAction'=>$relAction)));
             }
         }
 
         $callAction = ( $action . 'Action' );
         if (!method_exists($admin, $callAction)) {
+            $request->getSession()->getFlashBag()->add('error', 'View not found.');
             return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
 
         $params = call_user_method($callAction, $admin, $section, $entity, $id);
 
         if ($params===false) {
-            if ($request->isXmlHttpRequest()) {
-                return new JsonResponse(array('error' => true), 200);
-            }
+            // if ($request->isXmlHttpRequest()) {
+            //     return new JsonResponse(array('error' => true), 200);
+            // }
+            $request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');
             return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
 
@@ -88,7 +86,7 @@ class DefaultController extends Controller
 
         return $this->render('MaciAdminBundle:Default:view.html.twig', array(
             'template' => $template,
-            'params' => array_merge($admin->getDefaultParams($request, $section, $entity, $action, $id), $params)
+            'params' => array_merge($admin->getDefaultParams($section, $entity, $action, $id), $params)
         ));
     }
 
@@ -117,8 +115,24 @@ class DefaultController extends Controller
             'id' => $id,
             'section' => $section,
             'entity' => $entity,
+            'entity_label' => $admin->generateLabel($entity),
             'item' => $item,
             'actions' => $actions
         ));
+    }
+
+    public function notFoundAction(Request $request)
+    {
+        // var_dump( $this->getDoctrine()->getManager()->getMetadataFactory()->getAllMetadata() ); die();
+        // var_dump( $this->container->getParameter('maci.admin.config') ); die();
+        // foreach ($this->get('kernel')->getBundles() as $key => $value) {
+        //     echo get_class($value)."<br>\n";
+        // } die();
+        // var_dump( $this->container->get('maci.admin')->getEntityMetadata($this->container->get('maci.admin')->getEntity('blog_post'))); die();
+        // var_dump( $this->getDoctrine()->getManager()->getConfiguration()->getMetadataDriverImpl()->getAllClassNames() ); die();
+        // var_dump( $this->getDoctrine()->getManager()->getClassMetadata('Maci\BlogBundle\Entity\Post') ); die();
+        // var_dump( $this->container->get('maci.admin')->getSections() ); die();
+        // var_dump( get_class($this->container->get('router')) ); die();
+        return $this->render('MaciAdminBundle:Default:not_found.html.twig');
     }
 }

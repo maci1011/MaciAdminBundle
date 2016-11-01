@@ -52,16 +52,18 @@
 		<span class="list-title">Actions</span>
 	</div>
 	{% endif %}
+	{% elseif type == 'relation' %}
+	<div class="col-xs-2">
+		<span class="list-title">Remove Item</span>
+	</div>
 	{% elseif type == 'add' %}
 	<div class="col-xs-2">
 		<span class="list-title">Add Items</span>
 	</div>
 	{% elseif type == 'set' %}
-	{% if '_actions' in fields %}
 	<div class="col-xs-2">
 		<span class="list-title">Set Item</span>
 	</div>
-	{% endif %}
 	{% endif %}
 
 </div>

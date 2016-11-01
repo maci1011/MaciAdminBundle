@@ -83,6 +83,17 @@
 
 	</div>
 	{% endif %}
+	{% elseif type == 'relation' %}
+	<div class="col-xs-2">
+
+		<form action="{{ path('maci_admin_view_relations', {'section': section, 'entity': entity, 'id': id, 'relation': relation, 'relAction': 'remove'}) }}" method="post">
+		<input type="hidden" name="ids" value="{{ item.id }}">
+		<button class="btn btn-sm list-item-set">
+			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
+		</button>
+		</form>
+
+	</div>
 	{% elseif type == 'add' %}
 	<div class="col-xs-2">
 

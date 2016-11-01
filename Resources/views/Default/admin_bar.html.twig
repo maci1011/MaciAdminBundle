@@ -3,6 +3,8 @@
 
 <div class="btn-group">
 
+<span class="btn btn-default">{% if id %}{{ entity_label }} [{{ id }}]{% else %}{{ entity_label }} Actions{% endif %}:</span>
+
 {% for acn_name, acn_label in actions %}
 
 <a class="btn btn-primary" href="{{ path('maci_admin_view', {'section': section,'entity': entity,'action': acn_name,'id': id}) }}">{{ acn_label }}</a>

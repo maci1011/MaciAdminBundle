@@ -145,7 +145,7 @@ class AdminMenuBuilder
 								continue;
 							}
 							$label = $this->mcm->generateLabel($relation);
-							$relAction = $this->mcm->getEntityRelationDefaultAction($entity, $relation);
+							$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
 							$menu->addChild($label, array(
 							    'route' => 'maci_admin_view_relations',
 							    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
