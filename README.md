@@ -85,6 +85,8 @@ maci_admin:
             entities:
                 product: 'AppEntityBundle:Product'
                 category: 'AppEntityBundle:Category'
+            config:
+                roles: [ROLE_SUPER_ADMIN]
 ```
 
 **Congratulations! You've just created your first fully-featured backend!**
