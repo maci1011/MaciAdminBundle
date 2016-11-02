@@ -1,21 +1,21 @@
 
 
 maci_admin_view_relations:
-    pattern:  /mcm/view/{section}/{entity}/relations/{id}/{relation}/{relAction}
+    pattern:  /view/{section}/{entity}/relations/{id}/{relation}/{relAction}
     defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: 'relations', relAction: false }
     requirements:
       id: \d+
 
 maci_admin_view:
-    pattern:  /mcm/view/{section}/{entity}/{action}/{id}
+    pattern:  /view/{section}/{entity}/{action}/{id}
     defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: false, id: false }
 
 maci_admin_not_found:
-    pattern:  /mcm/not-found
+    pattern:  /not-found
     defaults: { _controller: MaciAdminBundle:Default:notFound }
 
 maci_admin:
-    pattern:  /mcm
+    pattern:  /
     defaults: { _controller: MaciAdminBundle:Default:index }
 
 

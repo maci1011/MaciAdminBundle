@@ -54,7 +54,7 @@ class AppKernel extends Kernel
 # app/config/routing.yml
 maci_admin:
     resource: "@MaciAdminBundle/Resources/config/routing.yml"
-    prefix:   /
+    prefix:   /mcm
 
 # ...
 ```
@@ -90,7 +90,7 @@ maci_admin:
 ```
 
 **Congratulations! You've just created your first fully-featured backend!**
-Browse the `/admin/mcm` URL in your Symfony application and you'll get access to
+Browse the `/mcm` URL in your Symfony application and you'll get access to
 the admin backend:
 
 ![Default MaciAdmin Backend interface](https://github.com/maci1011/MaciAdminBundle/raw/master/Resources/doc/images/maciadmin-promo.png)
