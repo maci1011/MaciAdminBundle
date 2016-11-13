@@ -2,8 +2,6 @@
 MaciAdminBundle
 ===============
 
-<sup>SUPPORTS SYMFONY 2.5.x</sup>
-
 <img src="https://github.com/maci1011/MaciAdminBundle/raw/master/Resources/doc/images/maciadmin-promo.png" alt="Symfony Backends created with MaciAdmin" />
 
 MaciAdminBundle lets you simply create administration backends for Symfony 2.5.* applications.
@@ -11,6 +9,7 @@ MaciAdminBundle lets you simply create administration backends for Symfony 2.5.*
 **Requirements**
 ----------------
 
+  * SUPPORTS SYMFONY 2.5.x
   * Doctrine ORM entities (Doctrine ODM and Propel not supported).
 
 > **❮ NOTE ❯** you are reading the documentation of the bundle's **development** version.

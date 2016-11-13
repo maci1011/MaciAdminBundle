@@ -3,44 +3,29 @@
 
 {% if list|length %}
 
-<div class="list-default{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
+<div class="table-responsive">
+<table class="table table-striped list-default{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
 
-<div class="row list-header">
+<thead>
+<tr class="list-header">
 
 	{% if '_id' in fields %}
-	<div class="col-xs-1 tab-hd-id">
+	<th class="list-header-id">
 		<span class="list-title">Id</span>
-	</div>
-	{% endif %}
-
-	{% set len = fields|length %}
-	{% set tot = 9 %}
-
-	{% if '_id' in fields %}
-	{% set len = len - 1 %}
-	{% endif %}
-
-	{% if '_actions' in fields %}
-	{% set len = len - 1 %}
-	{% endif %}
-
-	{% if 4 < len %}
-	{% set len = 1 %}
-	{% elseif len == 2 %}
-	{% set tot = 8 %}
+	</th>
 	{% endif %}
 
 	{% for field in fields %}
 
 	{% if not ( field in ['_id', '_actions'] ) %}
 
-	<div class="col-xs-{{ (tot / len)|number_format }}">
+	<th>
 		{% if field == '_string' %}
 		<span class="list-title">Name</span>
 		{% else %}
 		<span class="list-title">{{ field|capitalize }}</span>
 		{% endif %}
-	</div>
+	</th>
 
 	{% endif %}
 
@@ -48,31 +33,37 @@
 
 	{% if type is not defined or type == 'list' %}
 	{% if '_actions' in fields %}
-	<div class="col-xs-2">
+	<th class="list-header-last list-header-actions">
 		<span class="list-title">Actions</span>
-	</div>
+	</th>
 	{% endif %}
 	{% elseif type == 'relation' %}
-	<div class="col-xs-2">
+	<th class="list-header-last list-header-remove">
 		<span class="list-title">Remove Item</span>
-	</div>
+	</th>
 	{% elseif type == 'add' %}
-	<div class="col-xs-2">
+	<th class="list-header-last list-header-add">
 		<span class="list-title">Add Items</span>
-	</div>
+	</th>
 	{% elseif type == 'set' %}
-	<div class="col-xs-2">
+	<th class="list-header-last list-header-set">
 		<span class="list-title">Set Item</span>
-	</div>
+	</th>
 	{% endif %}
 
-</div>
+</tr>
+</thead>
 
+<tbody>
 {% for item in list %}
 
 	{% include "MaciAdminBundle:Actions:_list_item.html.twig" with { 'fields': fields, 'entity': entity, 'item': item } %}
 
 {% endfor %}
+</tbody>
+
+</table>
+</div>
 
 {% if pager.requiresPagination() %}
 <div class="container-fluid">
@@ -91,8 +82,6 @@
 </ul>
 </div>
 {% endif %}
-
-</div>
 
 {% else %}
 
