@@ -107,6 +107,11 @@ class AdminController extends Controller
         return $this->mcmRelations($section, $entity, $id);
     }
 
+    public function uploaderAction($section, $entity, $id)
+    {
+        return $this->mcmUploader($section, $entity, $id);
+    }
+
 /*
     ---> Generic Functions
 */
@@ -217,6 +222,9 @@ class AdminController extends Controller
             $actions[] = 'trash';
         }
         $actions[] = 'new';
+        if ($this->isEntityUploadable($entity)) {
+            $actions[] = 'uploader';
+        }
         return $actions;
     }
 
@@ -536,6 +544,11 @@ class AdminController extends Controller
         return false;
     }
 
+    public function isEntityUploadable($entity)
+    {
+        return (bool) $entity['uploadable'];
+    }
+
     public function getCurrentRelation($entity)
     {
         $relationName = $this->request->get('relation');
@@ -567,6 +580,63 @@ class AdminController extends Controller
 
         return 'show';
 
+    }
+
+    public function getRelationInverseField($entity, $relation)
+    {
+        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+
+        $joinTable = false;
+        $joinColumns = false;
+        $inverseJoinColumns = false;
+        if (array_key_exists('joinTable', $relationMetadata)) {
+            $joinTable = $relationMetadata['joinTable'];
+            if (array_key_exists('joinColumns', $joinTable)) {
+                $joinColumns = $joinTable['joinColumns'];
+                $inverseJoinColumns = $joinTable['inverseJoinColumns'];
+            }
+        } else if (array_key_exists('joinColumns', $relationMetadata)) {
+            $joinColumns = $relationMetadata['joinColumns'];
+        }
+
+        $inverseField = false;
+
+        if ($joinColumns) {
+            $sourceField = $joinColumns[0]['referencedColumnName'];
+        }
+
+        if ($inverseJoinColumns) {
+            $inverseField = $inverseJoinColumns[0]['referencedColumnName'];
+        }
+
+        if (!$inverseField) {
+            $relationMetadataClass = $this->getEntityMetadata($relation);
+            $identifiers = $relationMetadataClass->getIdentifier();
+            $inverseField = $identifiers[0];
+        }
+
+        return $inverseField;
+    }
+
+    public function getRelationItems($relation, $object)
+    {
+        $getter = $this->getGetterMethod($object, $relation['name']);
+        if (!$getter) {
+            $this->session->getFlashBag()->add('error', 'Getter Method for ' . $relation['name'] . ' in ' . get_class($item) . ' not found.');
+            return array();
+        }
+
+        $getted = call_user_method($getter, $object);
+
+        if (is_object($getted)) {
+            if (get_class($getted) === $relation['class']) {
+                return array($getted);
+            } else {
+                return $getted;
+            }
+        }
+
+        return array();
     }
 
     public function getRelationParams($relation, $item = false)
@@ -825,9 +895,11 @@ class AdminController extends Controller
         $form = $this->getEntityForm($entity, $item);
         $form->handleRequest($this->request);
 
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
 
-            $this->em->persist($item);
+            if ($item->getId() === null) {
+                $this->em->persist($item);
+            }
 
             if ($clone) {
                 $this->cloneItemChildren($entity, $item, $result);
@@ -892,7 +964,14 @@ class AdminController extends Controller
 
             $this->em->flush();
 
-            $params['success'] = true;
+            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for ' . $entity['class'] . ' removed.');
+
+            $params['redirect'] = 'maci_admin_view';
+            $params['redirect_params'] = array(
+                'section' => $section,
+                'entity' => $entity['name'],
+                'action' => 'list'
+            );
 
         } else {
 
@@ -941,32 +1020,15 @@ class AdminController extends Controller
             return false;
         }
 
-        $getter = $this->getGetterMethod($item,$relation['name']);
-        if (!$getter) {
-            $this->session->getFlashBag()->add('error', 'Getter Method for ' . $relation['name'] . ' in ' . $entity['class'] . ' not found.');
-            return false;
-        }
-
-        $params = $this->getRelationParams($relation, $item);
-
-        $relAction = $this->request->get('relAction');
-
-        if ($relAction === 'list') {
-
-            $list = call_user_method($getter, $item);
-
-        } else if ($relAction === 'show') {
-
-            $relItem = call_user_method($getter, $item);
-            $list = $relItem ? array( $relItem ) : array();
-
-        }
+        $list = $this->getRelationItems($relation, $item);
 
         $pager = $this->getPager($entity, $list);
 
         if (!$pager) {
             return false;
         }
+
+        $params = $this->getRelationParams($relation, $item);
 
         $params['pager'] = $pager;
         $params['fields'] = $pager->getListFields();
@@ -991,61 +1053,30 @@ class AdminController extends Controller
             return false;
         }
 
-        $relAction = $this->request->get('relAction');
-        $params = $this->getRelationParams($relation, $item);
+        $inverseField = $this->getRelationInverseField($entity, $relation);
 
-        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+        $repo = $this->getEntityRepository($relation);
+        $query = $repo->createQueryBuilder('r');
+        $root = $query->getRootAlias();
 
-        $fieldName = $relationMetadata['fieldName'];
-        $isOwningSide = $relationMetadata['isOwningSide'];
-        $sourceEntity = $relationMetadata['sourceEntity'];
-        $targetEntity = $relationMetadata['targetEntity'];
-        $mappedBy = $relationMetadata['mappedBy'];
-        // $inversedBy = $relationMetadata['inversedBy'];
-        $joinTable = false;
-        $joinColumns = false;
-        $inverseJoinColumns = false;
-        if (array_key_exists('joinTable', $relationMetadata)) {
-            $joinTable = $relationMetadata['joinTable'];
-            if (array_key_exists('joinColumns', $joinTable)) {
-                $joinColumns = $joinTable['joinColumns'];
-                $inverseJoinColumns = $joinTable['inverseJoinColumns'];
-            }
-        } else if (array_key_exists('joinColumns', $relationMetadata)) {
-            $joinColumns = $relationMetadata['joinColumns'];
-        }
-        $sourceField = false;
-        // $sourceJoin = false;
-        $inverseField = false;
-        // $inverseJoin = false;
-        if ($joinColumns) {
-            $sourceField = $joinColumns[0]['referencedColumnName'];
-            // $sourceJoin = $joinColumns[0]['name'];
-        }
-        if ($inverseJoinColumns) {
-            $inverseField = $inverseJoinColumns[0]['referencedColumnName'];
-            // $inverseJoin = $inverseJoinColumns[0]['name'];
-        }
-        if (!$sourceField) {
-            $entityMetadataClass = $this->getEntityMetadata($entity);
-            $identifiers = $entityMetadataClass->getIdentifier();
-            $sourceField = $identifiers[0];
-        }
-        if (!$inverseField) {
-            $relationMetadataClass = $this->getEntityMetadata($relation);
-            $identifiers = $relationMetadataClass->getIdentifier();
-            $inverseField = $identifiers[0];
+        $relation_items = $this->getRelationItems($relation, $item);
+
+        foreach ($relation_items as $key => $value) {
+            $parameter = ':id_' . $key;
+            $query->andWhere($root . '.' . $inverseField . ' != ' . $parameter);
+            $query->setParameter($parameter, call_user_method(('get'.ucfirst($inverseField)), $value));
         }
 
-        $query = $this->em->createQuery('
-            SELECT r FROM ' . $targetEntity . ' r 
-            WHERE r.' . $inverseField . ' NOT IN( SELECT r2.id FROM ' . $sourceEntity . ' e 
-            JOIN e.' . $fieldName . ' r2 WHERE e.' . $sourceField . ' = :eparam ) 
-            ' . ( $targetEntity === $sourceEntity ? 'AND r.' . $inverseField . ' != :eparam ' : null ) . '
-            ORDER BY r.' . $inverseField . ' DESC
-        ')->setParameter('eparam', call_user_method(('get'.ucfirst($sourceField)), $item));
+        if ($this->getEntityClass($entity) === $relation['class']) {
+            $query->andWhere($root . '.' . $inverseField . ' != :pid');
+            $query->setParameter(':pid', call_user_method(('get'.ucfirst($inverseField)), $item));
+        }
+
+        $query = $query->getQuery();
 
         $list = $query->getResult();
+
+        $params = $this->getRelationParams($relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
             $ids = split(',', $this->request->get('ids', ''));
@@ -1059,13 +1090,16 @@ class AdminController extends Controller
                     continue;
                 }
                 $setEntity = $list[array_search($_id, $this->getListIds($list))];
-                $setter = $this->getSetterMethod($item,$fieldName);
+                $setter = $this->getSetterMethod($item,$relation['name']);
                 if ($setter) {
                     call_user_method($setter, $item, $setEntity);
                 } else {
-                    $this->session->getFlashBag()->add('error', 'Setter Method for ' . $fieldName . ' in ' . $entity['class'] . ' not found.');
+                    $this->session->getFlashBag()->add('error', 'Setter Method for ' . $relation['name'] . ' in ' . $entity['class'] . ' not found.');
                     continue;
                 }
+                $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+                $isOwningSide = $relationMetadata['isOwningSide'];
+                $mappedBy = $relationMetadata['mappedBy'];
                 if (!$isOwningSide && 0<strlen($mappedBy)) {
                     $setter = $this->getSetterMethod($setEntity,$mappedBy);
                     if ($setter) {
@@ -1121,33 +1155,9 @@ class AdminController extends Controller
             return false;
         }
 
-        $getter = $this->getGetterMethod($item,$relation['name']);
-        if (!$getter) {
-            $this->session->getFlashBag()->add('error', 'Getter Method for ' . $relation['name'] . ' in ' . $entity['class'] . ' not found.');
-            return false;
-        }
-
-        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
-
-        $isOwningSide = $relationMetadata['isOwningSide'];
-        $mappedBy = $relationMetadata['mappedBy'];
+        $list = $this->getRelationItems($relation, $item);
 
         $params = $this->getRelationParams($relation, $item);
-
-        $list = array();
-
-        $relAction = $this->getRelationDefaultAction($entity,$relation['name']);
-
-        if ($relAction === 'list') {
-
-            $list = call_user_method($getter, $item);
-
-        } else if ($relAction === 'show') {
-
-            $relItem = call_user_method($getter, $item);
-            $list = $relItem ? array( $relItem ) : array();
-
-        }
 
         if ($this->request->getMethod() === 'POST') {
             $ids = split(',', $this->request->get('ids', ''));
@@ -1173,6 +1183,9 @@ class AdminController extends Controller
                         continue;
                     }
                 }
+                $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+                $isOwningSide = $relationMetadata['isOwningSide'];
+                $mappedBy = $relationMetadata['mappedBy'];
                 if (!$isOwningSide && 0<strlen($mappedBy)) {
                     $remover = $this->getRemoverMethod($removeEntity,$mappedBy);
                     if ($remover) {
@@ -1203,367 +1216,42 @@ class AdminController extends Controller
         return $params;
     }
 
-/*
-    ---> Old Actions
-*/
-
-    public function objectAction($section, $entity, $id)
+    public function mcmUploader($section, $entity, $id)
     {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
+        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+            return array();
         }
 
-        $item = $this->getEntityNewObj($entity);
-        $clone = $request->get('clone');
+        $entity = $this->getEntity($section, $entity);
 
-        if ($id) {
-            $item = $this->getEntityRepository($entity)->findOneById($id);
-            if (!$item) {
-                return $this->returnError($request, 'item-not-found');
-            }
-        } elseif ($clone) {
-            $result = $this->getEntityRepository($entity)->findOneById($id = $clone);
-            if (!$result) {
-                return $this->returnError($request, 'item-not-found');
-            }
-            $item = $this->cloneItem($entity, $result);
-        }
-
-        $save = false;
-
-        $setfields = $request->get('setfields');
-
-        if (is_array($setfields) && count($setfields)) {
-            foreach ($setfields as $set) {
-                if ($set) {
-                    $key = $set['set'];
-                    $type = false;
-                    $value = $set['val'];
-                    if (array_key_exists('type', $set)) {
-                        $type = $set['type'];
-                    }
-                    if (!$type || $type == 'default') {
-                        $mth = ( method_exists($item, $key) ?  $key : false );
-                        if ($mth) {
-                            call_user_method($mth, $item, $value);
-                            $save = true;
-                        }
-                    } else if ($rel = $this->getEntity($type)) {
-                        $mth = false;
-                        if ( method_exists($item, $key) ) { $mth = $key; }
-                        else if ( method_exists($item, ('set' . ucfirst($key))) ) { $mth = 'set' . ucfirst($key); }
-                        else if ( method_exists($item, ('add' . ucfirst($key))) ) { $mth = 'add' . ucfirst($key); }
-                        if ($mth) {
-                            $rob = $this->getEntityRepository($rel)->findOneById(intval($value));
-                            if ($rob) {
-                                call_user_method($mth, $item, $rob);
-                                $save = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if ($save) {
-            $em = $this->getDoctrine()->getManager();
-
-            if ($clone) {
-                $this->cloneItemChildren($entity, $item, $result);
-            }
-
-            if (!$item->getId() && method_exists($item, 'getTranslations') && !count($item->getTranslations())) {
-                $locs = $this->container->getParameter('a2lix_translation_form.locales');
-                foreach ($locs as $loc) {
-                    $clnm = $this->getEntityClass($entity).'Translation';
-                    $tran = new $clnm;
-                    $tran->setLocale($loc);
-                    $item->addTranslation($tran);
-                    $em->persist($tran);
-                }
-            }
-
-            $em->persist($item);
-            $em->flush();
-
-            return $this->renderTemplate($request, $entity, 'show', array(
-                'entity' => $entity['name'],
-                'item' => $item,
-                'details' => $this->getEntityDetails($entity, $item)
-            ));
-        }
-
-        return $this->returnError($request, 'nothing-done');
-    }
-
-    public function reorderAction(Request $request, $section, $entity, $id)
-    {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        $ids = $request->get('ids');
-
-        if (count($ids) == 0) {
-            return $this->returnError($request, 'ids-not-found');
-        }
-
-        if ( !method_exists($this->getEntityNewObj($entity), 'setPosition') ) {
-            return $this->returnError($request, 'method-not-found');
+        if (!count($this->request->files)) {
+            return array('success' => false, 'error' => 'No file(s).');
         }
 
         $repo = $this->getEntityRepository($entity);
 
-        $counter = 0;
+        $name = $this->request->files->keys()[0];
+        $file = $this->request->files->get($name);
 
-        foreach ($ids as $id) {
-            $item = $repo->findOneById($id);
-            if ( $item ) {
-                $item->setPosition($counter);
-            }
-            $counter++;
+        if(!$file->isValid()) {
+            return array('success' => false, 'error' => 'Upload failed.');
         }
-
-        $this->getDoctrine()->getManager()->flush();
-
-        return new JsonResponse(array('success' => true), 200);
-    }
-
-    public function fileUploadAction(Request $request, $section, $entity, $id)
-    {
-        if (!$request->isXmlHttpRequest()) {
-            return $this->returnError($request, 'action-denied');
-        }
-
-        $entity = $this->getEntity($entity);
-
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        if (!count($request->files)) {
-            return $this->renderTemplate($request, $entity, 'uploader', array(
-                'entity' => $entity['name']
-            ));
-        }
-
-        $em = $this->getDoctrine()->getManager();
-
-        $repo = $this->getEntityRepository($entity);
-
-        $item = $this->getEntityNewObj($entity);
 
         if ($id) {
             $item = $repo->findOneById($id);
             if (!$item) {
-                return $this->returnError($request, 'item-not-found');
+                return array('success' => false, 'error' => 'Item not found.');
             }
-            $name = $request->files->keys()[0];
-            $file = $request->files->get($name);
-            if($file->isValid()) {
-                $item->setFile($file);
-                $em->persist($item);
-            } else {
-                return $this->returnError($request, 'on-upload');
-            }
+            $item->setFile($file);
         } else {
-            $name = $request->files->keys()[0];
-            $file = $request->files->get($name);
-            if($file->isValid()) {
-                if (method_exists($item, 'getTranslations')) {
-                    $locs = $this->container->getParameter('a2lix_translation_form.locales');
-                    foreach ($locs as $loc) {
-                        $clnm = ($this->getEntityClass($entity) . 'Translation');
-                        $tran = new $clnm;
-                        $tran->setLocale($loc);
-                        $tran->setName( explode('.',$file->getClientOriginalName())[0] );
-                        $item->addTranslation($tran);
-                        $em->persist($tran);
-                    }
-                }
-                $item->setFile($file);
-                $em->persist($item);
-            } else {
-                return $this->returnError($request, 'on-upload');
-            }
+            $item = $this->getEntityNewObj($entity);
+            $item->setFile($file);
+            $this->em->persist($item);
         }
 
-        $em->flush();
+        $this->em->flush();
 
-        return $this->renderTemplate($request, $entity, 'show', array(
-            'entity' => $entity['name'],
-            'item' => $item,
-            'details' => $this->getEntityDetails($entity, $item)
-        ));
-    }
-
-    public function renderTemplate(Request $request, $entity, $action, $params)
-    {
-        if (is_string($entity)) {
-            $entity = $this->getEntity($entity);
-            if (!$entity) {
-                return false;
-            }
-        }
-
-        if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates'])) {
-            $template = $entity['templates'][$action];
-        } else {
-            $template = 'MaciAdminBundle:Default:_' . $action .'.html.twig';
-        }
-
-        if ($request->isXmlHttpRequest()) {
-            $id = 0;
-            if (array_key_exists('item', $params)) {
-                $item = $params['item'];
-                $id = $item->getId();
-            }
-            if ($request->get('modal')) {
-                return new JsonResponse(array(
-                    'success' => true,
-                    'id' => $id,
-                    'entity' => $entity['name'],
-                    'template' => $this->renderView('MaciAdminBundle:Default:async.html.twig', array(
-                        'params' => $params,
-                        'template' => $template
-                    ))
-                ), 200);
-            } else {
-                return new JsonResponse(array(
-                    'success' => true,
-                    'id' => $id,
-                    'entity' => $entity['name'],
-                    'template' => $this->renderView($template, $params)
-                ), 200);
-            }
-        } else {
-            return $this->render('MaciAdminBundle:Default:' . $action .'.html.twig', array(
-                'entity_label' => $entity['label'],
-                'entity' => $entity['name'],
-                'params' => $params,
-                'template' => $template
-            ));
-        }
-    }
-
-    public function cloneItem($entity, $result)
-    {
-        $cnm = $this->getEntityClass($entity);
-        $item = new $cnm;
-        $fields = $this->getEntityFields($entity);
-        foreach ($fields as $field) {
-            if (method_exists($item, 'set'.ucfirst($field))) {
-                call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
-            }
-        }
-        if (method_exists($item, 'getTranslations')) {
-            $translatons = $result->getTranslations();
-            $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
-            $tcname = $item->getTranslationEntityClass();
-            foreach ($translatons as $translaton) {
-                $tc = new $tcname;
-                foreach ($fields as $field) {
-                    if (method_exists($tc, 'set'.ucfirst($field))) {
-                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
-                    }
-                }
-                $item->addTranslation($tc);
-                $tc->setTranslatable($item);
-            }
-        }
-        return $item;
-    }
-
-    public function cloneItemChildren($entity, $item, $result)
-    {
-        $em = $this->getDoctrine()->getManager();
-        if (method_exists($item, 'getChildren')) {
-            $children = $result->getChildren();
-            foreach ($children as $child) {
-                $cc = clone $child;
-                $item->addChild($cc);
-                $cc->setParent($item);
-                $em->persist($cc);
-                if (method_exists($cc, 'getTranslations')) {
-                    $translatons = $child->getTranslations();
-                    $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
-                    $tcname = $cc->getTranslationEntityClass();
-                    foreach ($translatons as $translaton) {
-                        $tc = new $tcname;
-                        foreach ($fields as $field) {
-                            if (method_exists($tc, 'set'.ucfirst($field))) {
-                                call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
-                            }
-                        }
-                        $cc->addTranslation($tc);
-                        $tc->setTranslatable($cc);
-                        $em->persist($tc);
-                    }
-                }
-            }
-        }
-    }
-
-/*
-    ---> List Filters
-*/
-
-    public function setFiltersAction(Request $request, $entity)
-    {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        $filters = array();
-        $filters_fields = $this->getEntityFilterFields($entity);
-
-        if ( !count($filters_fields) ) {
-            return $this->returnError($request, 'no-filters');
-        }
-
-        $form = $this->getEntityFiltersForm($entity);
-        $form->handleRequest($request);
-
-        if ($form->isValid()) {
-            $new = $this->getEntityNewObj($entity);
-            foreach ($filters_fields as $filter) {
-                $value = $form[$filter]->getData();
-                $method = false;
-                if (method_exists($new, 'get'.ucfirst($filter))) {
-                    $method = 'get'.ucfirst($filter);
-                } else if (method_exists($new, 'get'.ucfirst($filter))) {
-                    $method = 'get'.ucfirst($filter);
-                }
-                if ($method) {
-                    $default = call_user_method($method, $new);
-                    if ( $value !== $default) {
-                        $filters[$filter] = $value;
-                    }
-                }
-            }
-            $this->setEntityFilters($entity, $filters);
-        }
-
-        return $this->redirect($this->generateUrl('maci_admin_entity', array(
-            'entity' => $entity['name']
-        )));
-    }
-
-    public function removeFiltersAction(Request $request, $entity)
-    {
-        $entity = $this->getEntity($entity);
-        if (!$entity) {
-            return $this->returnError($request, 'entity-not-found');
-        }
-
-        $this->removeEntityFilters($entity);
-
-        return $this->redirect($this->generateUrl('maci_admin_entity', array(
-            'entity' => $entity['name']
-        )));
+        return array('success' => true);
     }
 
 }

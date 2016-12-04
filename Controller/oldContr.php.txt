@@ -1,0 +1,295 @@
+<?php
+
+
+    public function objectAction($section, $entity, $id)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $item = $this->getEntityNewObj($entity);
+        $clone = $request->get('clone');
+
+        if ($id) {
+            $item = $this->getEntityRepository($entity)->findOneById($id);
+            if (!$item) {
+                return $this->returnError($request, 'item-not-found');
+            }
+        } elseif ($clone) {
+            $result = $this->getEntityRepository($entity)->findOneById($id = $clone);
+            if (!$result) {
+                return $this->returnError($request, 'item-not-found');
+            }
+            $item = $this->cloneItem($entity, $result);
+        }
+
+        $save = false;
+
+        $setfields = $request->get('setfields');
+
+        if (is_array($setfields) && count($setfields)) {
+            foreach ($setfields as $set) {
+                if ($set) {
+                    $key = $set['set'];
+                    $type = false;
+                    $value = $set['val'];
+                    if (array_key_exists('type', $set)) {
+                        $type = $set['type'];
+                    }
+                    if (!$type || $type == 'default') {
+                        $mth = ( method_exists($item, $key) ?  $key : false );
+                        if ($mth) {
+                            call_user_method($mth, $item, $value);
+                            $save = true;
+                        }
+                    } else if ($rel = $this->getEntity($type)) {
+                        $mth = false;
+                        if ( method_exists($item, $key) ) { $mth = $key; }
+                        else if ( method_exists($item, ('set' . ucfirst($key))) ) { $mth = 'set' . ucfirst($key); }
+                        else if ( method_exists($item, ('add' . ucfirst($key))) ) { $mth = 'add' . ucfirst($key); }
+                        if ($mth) {
+                            $rob = $this->getEntityRepository($rel)->findOneById(intval($value));
+                            if ($rob) {
+                                call_user_method($mth, $item, $rob);
+                                $save = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($save) {
+            $em = $this->getDoctrine()->getManager();
+
+            if ($clone) {
+                $this->cloneItemChildren($entity, $item, $result);
+            }
+
+            if (!$item->getId() && method_exists($item, 'getTranslations') && !count($item->getTranslations())) {
+                $locs = $this->container->getParameter('a2lix_translation_form.locales');
+                foreach ($locs as $loc) {
+                    $clnm = $this->getEntityClass($entity).'Translation';
+                    $tran = new $clnm;
+                    $tran->setLocale($loc);
+                    $item->addTranslation($tran);
+                    $em->persist($tran);
+                }
+            }
+
+            $em->persist($item);
+            $em->flush();
+
+            return $this->renderTemplate($request, $entity, 'show', array(
+                'entity' => $entity['name'],
+                'item' => $item,
+                'details' => $this->getEntityDetails($entity, $item)
+            ));
+        }
+
+        return $this->returnError($request, 'nothing-done');
+    }
+
+    public function reorderAction(Request $request, $section, $entity, $id)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $ids = $request->get('ids');
+
+        if (count($ids) == 0) {
+            return $this->returnError($request, 'ids-not-found');
+        }
+
+        if ( !method_exists($this->getEntityNewObj($entity), 'setPosition') ) {
+            return $this->returnError($request, 'method-not-found');
+        }
+
+        $repo = $this->getEntityRepository($entity);
+
+        $counter = 0;
+
+        foreach ($ids as $id) {
+            $item = $repo->findOneById($id);
+            if ( $item ) {
+                $item->setPosition($counter);
+            }
+            $counter++;
+        }
+
+        $this->getDoctrine()->getManager()->flush();
+
+        return new JsonResponse(array('success' => true), 200);
+    }
+
+    public function renderTemplate(Request $request, $entity, $action, $params)
+    {
+        if (is_string($entity)) {
+            $entity = $this->getEntity($entity);
+            if (!$entity) {
+                return false;
+            }
+        }
+
+        if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates'])) {
+            $template = $entity['templates'][$action];
+        } else {
+            $template = 'MaciAdminBundle:Default:_' . $action .'.html.twig';
+        }
+
+        if ($request->isXmlHttpRequest()) {
+            $id = 0;
+            if (array_key_exists('item', $params)) {
+                $item = $params['item'];
+                $id = $item->getId();
+            }
+            if ($request->get('modal')) {
+                return new JsonResponse(array(
+                    'success' => true,
+                    'id' => $id,
+                    'entity' => $entity['name'],
+                    'template' => $this->renderView('MaciAdminBundle:Default:async.html.twig', array(
+                        'params' => $params,
+                        'template' => $template
+                    ))
+                ), 200);
+            } else {
+                return new JsonResponse(array(
+                    'success' => true,
+                    'id' => $id,
+                    'entity' => $entity['name'],
+                    'template' => $this->renderView($template, $params)
+                ), 200);
+            }
+        } else {
+            return $this->render('MaciAdminBundle:Default:' . $action .'.html.twig', array(
+                'entity_label' => $entity['label'],
+                'entity' => $entity['name'],
+                'params' => $params,
+                'template' => $template
+            ));
+        }
+    }
+
+    public function cloneItem($entity, $result)
+    {
+        $cnm = $this->getEntityClass($entity);
+        $item = new $cnm;
+        $fields = $this->getEntityFields($entity);
+        foreach ($fields as $field) {
+            if (method_exists($item, 'set'.ucfirst($field))) {
+                call_user_method('set'.ucfirst($field), $item, call_user_method('get'.ucfirst($field), $result));
+            }
+        }
+        if (method_exists($item, 'getTranslations')) {
+            $translatons = $result->getTranslations();
+            $fields = $this->getEntityTranslationFields($this->getEntityClass($entity) . 'Translation');
+            $tcname = $item->getTranslationEntityClass();
+            foreach ($translatons as $translaton) {
+                $tc = new $tcname;
+                foreach ($fields as $field) {
+                    if (method_exists($tc, 'set'.ucfirst($field))) {
+                        call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                    }
+                }
+                $item->addTranslation($tc);
+                $tc->setTranslatable($item);
+            }
+        }
+        return $item;
+    }
+
+    public function cloneItemChildren($entity, $item, $result)
+    {
+        $em = $this->getDoctrine()->getManager();
+        if (method_exists($item, 'getChildren')) {
+            $children = $result->getChildren();
+            foreach ($children as $child) {
+                $cc = clone $child;
+                $item->addChild($cc);
+                $cc->setParent($item);
+                $em->persist($cc);
+                if (method_exists($cc, 'getTranslations')) {
+                    $translatons = $child->getTranslations();
+                    $fields = $this->getEntityTranslationFields(get_class($cc) . 'Translation');
+                    $tcname = $cc->getTranslationEntityClass();
+                    foreach ($translatons as $translaton) {
+                        $tc = new $tcname;
+                        foreach ($fields as $field) {
+                            if (method_exists($tc, 'set'.ucfirst($field))) {
+                                call_user_method('set'.ucfirst($field), $tc, call_user_method('get'.ucfirst($field), $translaton));
+                            }
+                        }
+                        $cc->addTranslation($tc);
+                        $tc->setTranslatable($cc);
+                        $em->persist($tc);
+                    }
+                }
+            }
+        }
+    }
+
+/*
+    ---> List Filters
+*/
+
+    public function setFiltersAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $filters = array();
+        $filters_fields = $this->getEntityFilterFields($entity);
+
+        if ( !count($filters_fields) ) {
+            return $this->returnError($request, 'no-filters');
+        }
+
+        $form = $this->getEntityFiltersForm($entity);
+        $form->handleRequest($request);
+
+        if ($form->isValid()) {
+            $new = $this->getEntityNewObj($entity);
+            foreach ($filters_fields as $filter) {
+                $value = $form[$filter]->getData();
+                $method = false;
+                if (method_exists($new, 'get'.ucfirst($filter))) {
+                    $method = 'get'.ucfirst($filter);
+                } else if (method_exists($new, 'get'.ucfirst($filter))) {
+                    $method = 'get'.ucfirst($filter);
+                }
+                if ($method) {
+                    $default = call_user_method($method, $new);
+                    if ( $value !== $default) {
+                        $filters[$filter] = $value;
+                    }
+                }
+            }
+            $this->setEntityFilters($entity, $filters);
+        }
+
+        return $this->redirect($this->generateUrl('maci_admin_entity', array(
+            'entity' => $entity['name']
+        )));
+    }
+
+    public function removeFiltersAction(Request $request, $entity)
+    {
+        $entity = $this->getEntity($entity);
+        if (!$entity) {
+            return $this->returnError($request, 'entity-not-found');
+        }
+
+        $this->removeEntityFilters($entity);
+
+        return $this->redirect($this->generateUrl('maci_admin_entity', array(
+            'entity' => $entity['name']
+        )));
+    }
+
+
