@@ -277,6 +277,17 @@ class AdminController extends Controller
         return false;
     }
 
+    public function getEntityBridge($entity, $bridge)
+    {
+        if (!array_key_exists('bridges', $entity)) {
+            return false;
+        }
+        if (array_key_exists($bridge, $entity['bridges'])) {
+            return $entity['bridges'][$bridge]['relation'];
+        }
+        return false;
+    }
+
     public function getEntityBundle($entity)
     {
         return $this->kernel->getBundle(split(':', $entity['class'])[0]);
@@ -284,8 +295,14 @@ class AdminController extends Controller
 
     public function getEntityClass($entity)
     {
+        if (class_exists($entity['class'])) {
+            return $entity['class'];
+        }
         $repo = $this->getEntityRepository($entity);
-        return $repo->getClassName();
+        if ($repo) {
+            return $repo->getClassName();
+        }
+        return false;
     }
 
     public function getEntityClassList()
@@ -549,14 +566,18 @@ class AdminController extends Controller
         return $map;
     }
 
-    public function getCurrentRelation($entity)
+    public function getRelation($entity, $relationName)
     {
-        $relationName = $this->request->get('relation');
         $relationMetadata = $this->getEntityAssociationMetadata($entity, $relationName);
         if (!$relationMetadata) {
             return false;
         }
         return $this->getMapForRelation($relationMetadata);
+    }
+
+    public function getCurrentRelation($entity)
+    {
+        return $this->getRelation($entity, $this->request->get('relation'));
     }
 
     public function getRelationActions($section, $entity)
@@ -651,13 +672,23 @@ class AdminController extends Controller
 
     public function getItemsForRelation($entity, $relation, $item)
     {
+        $relation_items = $this->getRelationItems($relation, $item);
         $inverseField = $this->getRelationInverseField($entity, $relation);
+        $relation_query = $relation;
+
+        $bridgeName = $this->getEntityBridge($entity, $relation['name']);
+        if ($bridgeName) {
+            $bridgeMetadata = $this->getEntityAssociationMetadata($relation, $bridgeName);
+            if (!$bridgeMetadata) {
+                return false;
+            }
+            $bridgeRelation = $this->getMapForRelation($bridgeMetadata);
+            // var_dump($bridgeRelation); die();
+        }
 
         $repo = $this->getEntityRepository($relation);
         $query = $repo->createQueryBuilder('r');
         $root = $query->getRootAlias();
-
-        $relation_items = $this->getRelationItems($relation, $item);
 
         $index = 0;
         foreach ($relation_items as $obj) {
