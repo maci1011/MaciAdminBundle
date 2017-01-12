@@ -3,32 +3,24 @@
 namespace Maci\AdminBundle\Menu;
 
 use Knp\Menu\FactoryInterface;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\SecurityContext;
-use Doctrine\Common\Persistence\ObjectManager;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class AdminMenuBuilder
 {
 	private $factory;
 
-	private $securityContext;
-
-	private $user;
-
-    private $om;
+    private $request;
 
     private $mcm;
 
-	public function __construct(FactoryInterface $factory, SecurityContext $securityContext, ObjectManager $om, $mcm)
+	public function __construct(FactoryInterface $factory, RequestStack $requestStack, $mcm)
 	{
 	    $this->factory = $factory;
-	    $this->securityContext = $securityContext;
-	    $this->user = $securityContext->getToken()->getUser();
-        $this->om = $om;
+	    $this->request = $requestStack->getCurrentRequest();
         $this->mcm = $mcm;
 	}
 
-    public function createSectionsMenu(Request $request)
+    public function createSectionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
@@ -42,7 +34,7 @@ class AdminMenuBuilder
 				$label = str_replace('_', ' ', $name);
         		$label = ucwords($label);
 			}
-			if ($name != $request->get('section')) {
+			if ($name != $this->request->get('section')) {
 				$menu->addChild($label, array(
 				    'route' => 'maci_admin_view',
 				    'routeParameters' => array('section' => $name)
@@ -56,7 +48,7 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createEntitiesMenu(Request $request)
+    public function createEntitiesMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
@@ -64,7 +56,7 @@ class AdminMenuBuilder
 
 		$sections = $this->mcm->getSections();
 
-		$section = $request->get('section');
+		$section = $this->request->get('section');
 
 		if ( $section && in_array($section, $sections) ) {
 
@@ -86,7 +78,7 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createActionsMenu(Request $request)
+    public function createActionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
@@ -94,9 +86,9 @@ class AdminMenuBuilder
 
 		$sections = $this->mcm->getSections();
 
-		$section = $request->get('section');
+		$section = $this->request->get('section');
 
-		$entity = $request->get('entity');
+		$entity = $this->request->get('entity');
 
 		if ( $section && in_array($section, $sections) ) {
 
@@ -113,7 +105,7 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createItemActionsMenu(Request $request)
+    public function createItemActionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
@@ -121,17 +113,17 @@ class AdminMenuBuilder
 
 		$sections = $this->mcm->getSections();
 
-		$section = $request->get('section');
+		$section = $this->request->get('section');
 
-		$entity = $request->get('entity');
+		$entity = $this->request->get('entity');
 
         $entity = $this->mcm->getEntity($section, $entity);
 
 		$associations = $this->mcm->getEntityAssociations($entity);
 
-		$action = $request->get('action');
+		$action = $this->request->get('action');
 
-		$id = $request->get('id');
+		$id = $this->request->get('id');
 
 		$single_actions = $this->mcm->getSingleActions($section, $entity);
 

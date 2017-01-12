@@ -2,7 +2,6 @@
 
 namespace Maci\AdminBundle\Controller;
 
-use A2lix\I18nDoctrineBundle\Annotation\I18nDoctrine;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
@@ -13,8 +12,9 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Core\SecurityContext;
-use Doctrine\ORM\EntityManager;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 use Maci\AdminBundle\MaciPager;
@@ -29,7 +29,11 @@ class AdminController extends Controller
 
     private $config;
 
-    private $em;
+    private $om;
+
+    private $authorizationChecker;
+
+    private $user;
 
     private $last;
 
@@ -43,11 +47,10 @@ class AdminController extends Controller
 
     private $router;
 
-    public function __construct(EntityManager $em, SecurityContext $securityContext, Session $session, RequestStack $requestStack, \AppKernel $kernel, FormFactory $formFactory, FormRegistry $formRegistry, Router $router, Array $config)
+    public function __construct(ObjectManager $objectManager, AuthorizationCheckerInterface $authorizationChecker, Session $session, RequestStack $requestStack, \AppKernel $kernel, FormFactory $formFactory, FormRegistry $formRegistry, Router $router, Array $config)
     {
-        $this->em = $em;
-        $this->securityContext = $securityContext;
-        $this->user = $securityContext->getToken()->getUser();
+        $this->om = $objectManager;
+        $this->authorizationChecker = $authorizationChecker;
         $this->session = $session;
         $this->request = $requestStack->getCurrentRequest();
         $this->kernel = $kernel;
@@ -123,7 +126,7 @@ class AdminController extends Controller
             foreach ($this->config['sections'] as $name => $section) {
                 $roles = $section['config']['roles'];
                 foreach ($roles as $role) {
-                    if ($this->securityContext->isGranted($role)) {
+                    if ($this->authorizationChecker->isGranted($role)) {
                         $sections[] = $name;
                         break;
                     }
@@ -308,7 +311,7 @@ class AdminController extends Controller
     public function getEntityClassList()
     {
         if (!is_array($this->_list)) {
-            $list = $this->em->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
+            $list = $this->om->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
             foreach ($list as $key => $value) {
                 $reflcl = new \ReflectionClass($value);
                 if ($reflcl->isAbstract()) {
@@ -527,7 +530,7 @@ class AdminController extends Controller
 
     public function getEntityMetadata($entity)
     {
-        return $this->em->getClassMetadata( $this->getEntityClass($entity) );
+        return $this->om->getClassMetadata( $this->getEntityClass($entity) );
     }
 
     public function getEntityNewObj($entity)
@@ -538,7 +541,7 @@ class AdminController extends Controller
 
     public function getEntityRepository($entity)
     {
-        return $this->em->getRepository($entity['class']);
+        return $this->om->getRepository($entity['class']);
     }
 
     public function hasEntityTrash($entity)
@@ -764,7 +767,7 @@ class AdminController extends Controller
             }
             $this->session->getFlashBag()->add('success', 'Item [' . $_id . '] ' . $successMessage . '.');
         }
-        $this->em->flush();
+        $this->om->flush();
     }
 
     public function addRelationItems($entity, $relation, $item, $list, $ids)
@@ -1073,14 +1076,14 @@ class AdminController extends Controller
 
             $isNew = (bool) ( $item->getId() === null );
             if ($isNew) {
-                $this->em->persist($item);
+                $this->om->persist($item);
             }
 
             // if ($clone) {
             //     $this->cloneItemChildren($entity, $item, $item);
             // }
 
-            $this->em->flush();
+            $this->om->flush();
 
             if ($isNew) {
                 $this->session->getFlashBag()->add('success', 'Item Added.');
@@ -1138,10 +1141,10 @@ class AdminController extends Controller
             if (method_exists($item, 'setRemoved')) {
                 $item->setRemoved(true);
             } else {
-                $this->em->remove($item);
+                $this->om->remove($item);
             }
 
-            $this->em->flush();
+            $this->om->flush();
 
             $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for ' . $this->getEntityClass($entity) . ' removed.');
 
@@ -1328,10 +1331,10 @@ class AdminController extends Controller
         } else {
             $item = $this->getEntityNewObj($entity);
             $item->setFile($file);
-            $this->em->persist($item);
+            $this->om->persist($item);
         }
 
-        $this->em->flush();
+        $this->om->flush();
 
         return array('success' => true);
     }

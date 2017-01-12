@@ -4,12 +4,12 @@ MaciAdminBundle
 
 <img src="https://github.com/maci1011/MaciAdminBundle/raw/master/Resources/doc/images/maciadmin-promo.png" alt="Symfony Backends created with MaciAdmin" />
 
-MaciAdminBundle lets you simply create administration backends for Symfony 2.5.* applications.
+MaciAdminBundle lets you simply create administration backends for Symfony 2.7.* & 3.* applications.
 
 **Requirements**
 ----------------
 
-  * SUPPORTS SYMFONY 2.5.x
+  * SUPPORTS SYMFONY 2.7.x & 3.x
   * Doctrine ORM entities (Doctrine ODM and Propel not supported).
 
 > **❮ NOTE ❯** you are reading the documentation of the bundle's **development** version.
@@ -61,8 +61,10 @@ maci_admin:
 ### Step 4: Prepare the Web Assets of the Bundle
 
 ```cli
-# Symfony 2
+# Symfony 2.7
 php app/console assets:install --symlink
+# Symfony 3
+php bin/console assets:install --symlink
 ```
 
 That's it! Now everything is ready to create your first admin backend.
