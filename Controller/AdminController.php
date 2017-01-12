@@ -5,6 +5,11 @@ namespace Maci\AdminBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\ResetType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -429,7 +434,7 @@ class AdminController extends Controller
         return false;
     }
 
-    public function getEntityFiltersForm($entity)
+    public function getEntityFiltersForm($section, $entity)
     {
         $form = $entity['name'];
         $object = $this->getEntityNewObj($entity);
@@ -440,10 +445,10 @@ class AdminController extends Controller
                 call_user_method_array($method, $object, array($filter));
             }
         }
-        return $this->generateEntityForm($entity, $object);
+        return $this->generateEntityForm($section, $entity, $object);
     }
 
-    public function getEntityForm($entity, $object = false)
+    public function getEntityForm($section, $entity, $object = false)
     {
         $form = $entity['name'];
         if (!$object) {
@@ -457,19 +462,29 @@ class AdminController extends Controller
         } else if ($this->formRegistry->hasType($form)) {
             return $this->createForm($form, $object);
         }
-        return $this->generateEntityForm($entity, $object);
+        return $this->generateEntityForm($section, $entity, $object);
     }
 
-    public function generateEntityForm($entity, $object)
+    public function generateEntityForm($section, $entity, $object)
     {
         $fields = $this->getEntityFields($entity);
         $form = $this->createFormBuilder($object);
+        $isNew = (bool) $object->getId();
+
+        if ($isNew) {
+            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$section, 'entity'=>$entity['name'], 'action'=>'edit', 'id'=>$object->getId())));
+        } else {
+            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$section, 'entity'=>$entity['name'], 'action'=>'new')));
+        }
 
         foreach ($fields as $field) {
+            if (in_array($field, array('created','updated'))) {
+                continue;
+            }
             $method = ('get' . ucfirst($field) . 'Array');
             if ( method_exists($object, $method) ) {
-                $form->add($field, 'choice', array(
-                    'empty_value' => '',
+                $form->add($field, ChoiceType::class, array(
+                    'empty_data' => '',
                     'choices' => call_user_method($method, $object)
                 ));
             } else {
@@ -477,13 +492,11 @@ class AdminController extends Controller
             }
         }
 
-        $form->add('reset', 'reset');
+        $form->add('reset', ResetType::class);
 
-        if ( $this->request->get('action') === 'new' ) {
-            $form->add('add', 'submit');
-        } else {
-            $form->add('save', 'submit');
-        }
+        $form->add(( $isNew ? 'add' : 'save'), SubmitType::class, array(
+            'attr'=>array('class'=>'btn btn-primary')
+        ));
 
         return $form->getForm();
     }
@@ -816,7 +829,7 @@ class AdminController extends Controller
         return $ids;
     }
 
-    public function getPager($entity, $result)
+    public function getPager($section, $entity, $result)
     {
         if (is_string($entity)) {
             $entity = $this->getEntity($entity);
@@ -839,7 +852,7 @@ class AdminController extends Controller
         $form = false;
 
         if ($this->hasEntityFilterFields($entity)) {
-            $form = $this->getEntityFiltersForm($entity);
+            $form = $this->getEntityFiltersForm($section, $entity);
             $form = $form->createView();
         }
 
@@ -987,7 +1000,7 @@ class AdminController extends Controller
 
     public function createFormBuilder($data = null, array $options = array())
     {
-        return $this->formFactory->createBuilder('form', $data, $options);
+        return $this->formFactory->createBuilder(FormType::class, $data, $options);
     }
 
     public function generateUrl($route, $parameters = array(), $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
@@ -1010,7 +1023,7 @@ class AdminController extends Controller
 
         $list = $this->getEntityItems($section, $entity);
 
-        $pager = $this->getPager($entity, $list);
+        $pager = $this->getPager($section, $entity, $list);
 
         if (!$pager) {
             return false;
@@ -1067,7 +1080,7 @@ class AdminController extends Controller
             $item = $this->getEntityNewObj($entity);
         }
 
-        $form = $this->getEntityForm($entity, $item);
+        $form = $this->getEntityForm($section, $entity, $item);
         $form->handleRequest($this->request);
 
         $params = array();
@@ -1200,7 +1213,7 @@ class AdminController extends Controller
 
         $list = $this->getRelationItems($relation, $item);
 
-        $pager = $this->getPager($entity, $list);
+        $pager = $this->getPager($section, $entity, $list);
 
         if (!$pager) {
             return false;
@@ -1250,7 +1263,7 @@ class AdminController extends Controller
 
         }
 
-        $pager = $this->getPager($entity, $list);
+        $pager = $this->getPager($section, $entity, $list);
 
         if (!$pager) {
             return false;

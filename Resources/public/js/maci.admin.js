@@ -486,8 +486,6 @@ $(document).ready(function(e) {
     	admin.setRichTextEditor( $(this) );
     });
 
-    console.log( $('#bodyAdministration .maci-form textarea').not('.noeditor').length );
-
 
 });
 

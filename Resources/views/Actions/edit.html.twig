@@ -1,10 +1,10 @@
 
 {% if form is defined and form %}
 
-<form class="admin-form container-fluid" action="{{ path("maci_admin_view", {'section': section, 'entity': entity, 'action': 'edit', 'id': item.id}) }}" method="post" role="form" {{ form_enctype(form) }}>
+{{ form_start(form, {'attr':{'class':'admin-form container-fluid'}}) }}
 
 {{ form_rest(form) }}
 
-</form>
+{{ form_end(form) }}
 
 {% endif %}
