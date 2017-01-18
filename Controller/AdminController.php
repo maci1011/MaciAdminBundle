@@ -301,6 +301,15 @@ class AdminController extends Controller
         return $this->kernel->getBundle(split(':', $entity['class'])[0]);
     }
 
+    public function getEntityBundleNamespace($entity)
+    {
+        $bundle = get_class($this->getEntityBundle($entity));
+        $bundle = split("\\\\", $bundle);
+        unset($bundle[(count($bundle)-1)]);
+        $bundle = join("\\", $bundle);
+        return ("\\" . $bundle);
+    }
+
     public function getEntityClass($entity)
     {
         if (class_exists($entity['class'])) {
@@ -377,27 +386,6 @@ class AdminController extends Controller
         return $fields;
     }
 
-    public function getEntityTranslationFields($entity)
-    {
-        $metadata = $this->getDoctrine()->getManager()
-            ->getClassMetadata( $entity );
-
-        $fields = (array) $metadata->fieldNames;
-
-        // Remove the primary key field if it's not managed manually
-        if (!$metadata->isIdentifierNatural()) {
-            $fields = array_diff($fields, $metadata->identifier);
-        }
-
-        foreach ($metadata->associationMappings as $fieldName => $relation) {
-            if ($relation['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
-                $fields[] = $fieldName;
-            }
-        }
-
-        return $fields;
-    }
-
     public function getEntityFilters($entity)
     {
         return $this->session->get('admin_filters_'.$entity['name'], array());
@@ -457,12 +445,19 @@ class AdminController extends Controller
         if (array_key_exists('form', $entity)) {
             $form = $entity['form'];
         }
-        if (strpos($form,'\\') && class_exists($form)) {
+        if (class_exists($form)) {
             return $this->createForm(new $form, $object);
-        } else if ($this->formRegistry->hasType($form)) {
+        }
+        $form = $this->getEntityFormDefautPath($entity);
+        if (class_exists($form)) {
             return $this->createForm($form, $object);
         }
         return $this->generateEntityForm($section, $entity, $object);
+    }
+
+    public function getEntityFormDefautPath($entity)
+    {
+        return ( $this->getEntityBundleNamespace($entity) . "\\Form\\Mcm\\" . $this->getCamel($entity['name']) . "Type" );
     }
 
     public function generateEntityForm($section, $entity, $object)
@@ -478,7 +473,7 @@ class AdminController extends Controller
         }
 
         foreach ($fields as $field) {
-            if (in_array($field, array('created','updated'))) {
+            if (in_array($field, array('created','updated',$entity['trash_attr']))) {
                 continue;
             }
             $method = ('get' . ucfirst($field) . 'Array');
@@ -538,7 +533,14 @@ class AdminController extends Controller
         if (array_key_exists('list', $entity) && count($entity['list'])) {
             return array_merge(array('_id'), $entity['list'], array('_actions'));
         }
-        return array('_id', '_string', '_actions');
+        $fields = array_keys($this->getEntityFields($entity));
+        $list = array('_id');
+        foreach ($fields as $field) {
+            if ($field == $entity['trash_attr']) continue;
+            $list[] = lcfirst($this->getCamel($field));
+        }
+        $list[] = '_actions';
+        return $list;
     }
 
     public function getEntityMetadata($entity)
@@ -555,6 +557,25 @@ class AdminController extends Controller
     public function getEntityRepository($entity)
     {
         return $this->om->getRepository($entity['class']);
+    }
+
+    public function getEntityTemplate($section,$entity,$action)
+    {
+        if (is_string($entity)) {
+            $entity = $this->getEntity($section,$entity);
+            if (!$entity) {
+                return false;
+            }
+        }
+        if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates']) ) {
+            return $entity['templates'][$action];
+        }
+        return $this->getEntitytTemplateDefault($action);
+    }
+
+    public function getEntitytTemplateDefault($action)
+    {
+        return 'MaciAdminBundle:Actions:' . $action .'.html.twig';
     }
 
     public function hasEntityTrash($entity)
@@ -578,7 +599,7 @@ class AdminController extends Controller
         $map['label'] = $this->generateLabel( $relation['fieldName'] );
         $map['list'] = array();
         $map['filters'] = array();
-        $map['template'] = array();
+        $map['templates'] = array();
         return $map;
     }
 
@@ -976,6 +997,14 @@ class AdminController extends Controller
             return $methodName;
         }
         return false;
+    }
+
+    public function getCamel($name)
+    {
+        $str = str_replace('_', ' ', $name);
+        $str = ucwords($str);
+        $str = str_replace(' ', '', $str);
+        return $str;
     }
 
     public function generateLabel($name)

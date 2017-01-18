@@ -1,6 +1,27 @@
 <?php
 
 
+    public function getEntityTranslationFields($entity)
+    {
+        $metadata = $this->getDoctrine()->getManager()
+            ->getClassMetadata( $entity );
+
+        $fields = (array) $metadata->fieldNames;
+
+        // Remove the primary key field if it's not managed manually
+        if (!$metadata->isIdentifierNatural()) {
+            $fields = array_diff($fields, $metadata->identifier);
+        }
+
+        foreach ($metadata->associationMappings as $fieldName => $relation) {
+            if ($relation['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
+                $fields[] = $fieldName;
+            }
+        }
+
+        return $fields;
+    }
+
     public function objectAction($section, $entity, $id)
     {
         $entity = $this->getEntity($entity);

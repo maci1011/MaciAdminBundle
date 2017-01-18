@@ -41,8 +41,6 @@ class AdminMenuBuilder
 				));
 			}
 		}
-
-		// $menu->addChild('Dashboard', array('route' => 'maci_admin'));
 		$menu->addChild('Homepage', array('route' => 'homepage'));
 
 		return $menu;
@@ -59,6 +57,11 @@ class AdminMenuBuilder
 		$section = $this->request->get('section');
 
 		if ( $section && in_array($section, $sections) ) {
+
+			$menu->addChild('Dashboard', array(
+				'route' => 'maci_admin_dashboard',
+				'routeParameters' => array('section' => $section)
+			));
 
 			foreach ($this->mcm->getEntities($section) as $name => $entity) {
 				if (array_key_exists('label', $entity)) {

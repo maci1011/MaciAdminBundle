@@ -10,6 +10,10 @@ maci_admin_view:
     path:  /view/{section}/{entity}/{action}/{id}
     defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: false, id: false }
 
+maci_admin_dashboard:
+    path:  /view/{section}
+    defaults: { _controller: MaciAdminBundle:Default:view }
+
 maci_admin_not_found:
     path:  /not-found
     defaults: { _controller: MaciAdminBundle:Default:notFound }

@@ -11,6 +11,7 @@
     $("#menu-toggle").click(function(e) {
         e.preventDefault();
         $("#wrapper").toggleClass("toggled");
+        $(this).toggleClass('active');
     });
 
     </script>
@@ -33,16 +34,16 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
         </button>
+        <span id="menu-toggle">
+            <span class="glyphicon glyphicon-th-list"></span>
+            {{ app.request.get('section')|upper }}
+        </span>
     </div>
     <div class="collapse navbar-collapse">
         {% block top_menu %}
         <nav>
             <ul class="nav navbar-nav">
                 <li class="active">
-                    <a id="menu-toggle" href="#">
-                        <span class="glyphicon glyphicon-menu-hamburger"></span>
-                        {{ app.request.get('section')|upper }}
-                    </a>
                 </li>
             </ul>
             {{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}

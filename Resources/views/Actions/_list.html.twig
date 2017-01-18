@@ -3,8 +3,8 @@
 
 {% if list|length %}
 
-<div class="table-responsive">
-<table class="table table-striped list-default{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
+<div class="list-default">
+<table class="table table-striped{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
 
 <thead>
 <tr class="list-header">

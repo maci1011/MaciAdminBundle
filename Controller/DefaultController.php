@@ -71,9 +71,6 @@ class DefaultController extends Controller
         $params = call_user_method($callAction, $admin, $section, $entity, $id);
 
         if ($params===false) {
-            // if ($request->isXmlHttpRequest()) {
-            //     return new JsonResponse(array('error' => true), 200);
-            // }
             $request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');
             return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
@@ -84,7 +81,7 @@ class DefaultController extends Controller
 
         $view_params = array_merge($admin->getDefaultParams($section, $entity, $action, $id), $params);
 
-        $template = 'MaciAdminBundle:Actions:' . $action .'.html.twig';
+        $template = $admin->getEntityTemplate($section,$entity,$action);
 
         if ($request->isXmlHttpRequest()) {
             if ($request->getMethod() === 'POST') {

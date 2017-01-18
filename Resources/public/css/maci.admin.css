@@ -37,6 +37,22 @@ h4 {
 .navbar-inverse .navbar-nav > li > a {
     color: #999;
 }
+#menu-toggle {
+    padding: 15px;
+    line-height: 20px;
+    cursor: pointer;
+    color: #ccc;
+    display: block;
+}
+#menu-toggle:hover {
+    color: #fff;
+}
+#menu-toggle > span {
+    padding-right: 4px;
+}
+#menu-toggle.active {
+    background-color: #444;
+}
 
 /*   -----> Main Menu <-----   */
 
@@ -113,15 +129,32 @@ h4 {
 
 /*   -----> List <-----   */
 
-.list-default .list-title {
-    padding: 10px 0;
+.list-default {
+    padding-bottom: 5px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+}
+
+.list-default tr.list-header .list-title {
+    padding: 0 0 0 5px;
     text-transform: uppercase;
     font-size: 10pt;
     display: block;
 }
 
-.list-default .list-item > div > a,
-.list-default .list-item > div > p {
+.list-default tr.list-header > th.list-header-id > span {
+    padding: 0;
+    text-align: center;
+    width: 50px;
+}
+
+.list-default tr.list-header > th.list-header-actions > span {
+    width: 140px;
+}
+
+.list-default tr.list-item > td > a,
+.list-default tr.list-item > td > p {
     padding: 5px;
     font-size: 10pt;
     line-height: 20px;
@@ -129,21 +162,14 @@ h4 {
     border: 0;
 }
 
-.list-default .list-item.even {
-    background-color: #eee;
-}
-
-.list-default .tab-hd-id {
-    text-align: center;
-}
-
-.list-default .tab-td-id > a,
-.list-default .tab-td-id > p {
+.list-default tr.list-item > td.list-item-id > a,
+.list-default tr.list-item > td.list-item-id > p {
+    width: 50px;
     text-align: center;
     display: block;
 }
 
-.list-default .tab-td-id > a:hover {
+.list-default tr.list-item > td.list-item-id > a:hover {
     background-color: #ccc;
 }
 
