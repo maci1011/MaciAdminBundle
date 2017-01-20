@@ -5,6 +5,7 @@ namespace Maci\AdminBundle\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\TwigBundle\TwigEngine;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -1015,12 +1016,9 @@ class AdminController extends Controller
         return false;
     }
 
-    public function getCamel($name)
+    public function getCamel($str)
     {
-        $str = str_replace('_', ' ', $name);
-        $str = ucwords($str);
-        $str = str_replace(' ', '', $str);
-        return $str;
+        return Container::camelize($str);
     }
 
     public function generateLabel($name)

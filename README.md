@@ -2,9 +2,27 @@
 MaciAdminBundle
 ===============
 
+
 <img src="https://github.com/maci1011/MaciAdminBundle/raw/master/Resources/doc/images/maciadmin-promo.png" alt="Symfony Backends created with MaciAdmin" />
 
+
 MaciAdminBundle lets you simply create administration backends for Symfony 2.7.* & 3.* applications.
+
+
+### Warning: this is an alpha version under development.
+
+
+### Missing:
+ - tests
+ - documentation with examples
+ - some other thing
+
+
+### Features:
+ - sections with differents auths
+ - entities actions: list, show, new, edit, trash, remove
+ - entities relations: add and remove
+
 
 **Requirements**
 ----------------
