@@ -86,8 +86,11 @@ maci_admin:
             entities:
                 product: 'AppEntityBundle:Product'
                 category: 'AppEntityBundle:Category'
+                page:
+                    class: 'MaciPageBundle:Page'
+                    list: ['title', 'path', 'template', 'locale']
             config:
-                roles: [ROLE_SUPER_ADMIN]
+                roles: [ROLE_ADMIN]
 ```
 
 **Congratulations! You've just created your first fully-featured backend!**

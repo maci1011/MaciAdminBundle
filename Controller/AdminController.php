@@ -4,6 +4,7 @@ namespace Maci\AdminBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
+use Symfony\Bundle\TwigBundle\TwigEngine;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
@@ -50,9 +51,11 @@ class AdminController extends Controller
 
     private $formRegistry;
 
+    private $templating;
+
     private $router;
 
-    public function __construct(ObjectManager $objectManager, AuthorizationCheckerInterface $authorizationChecker, Session $session, RequestStack $requestStack, \AppKernel $kernel, FormFactory $formFactory, FormRegistry $formRegistry, Router $router, Array $config)
+    public function __construct(ObjectManager $objectManager, AuthorizationCheckerInterface $authorizationChecker, Session $session, RequestStack $requestStack, \AppKernel $kernel, FormFactory $formFactory, FormRegistry $formRegistry, Router $router, TwigEngine $templating, Array $config)
     {
         $this->om = $objectManager;
         $this->authorizationChecker = $authorizationChecker;
@@ -61,6 +64,7 @@ class AdminController extends Controller
         $this->kernel = $kernel;
         $this->formFactory = $formFactory;
         $this->formRegistry = $formRegistry;
+        $this->templating = $templating;
         $this->router = $router;
         $this->config = $config;
     }
@@ -301,6 +305,13 @@ class AdminController extends Controller
         return $this->kernel->getBundle(split(':', $entity['class'])[0]);
     }
 
+    public function getEntityBundleName($entity)
+    {
+        $bundle = get_class($this->getEntityBundle($entity));
+        $bundle = split("\\\\", $bundle);
+        return $bundle[(count($bundle)-1)];
+    }
+
     public function getEntityBundleNamespace($entity)
     {
         $bundle = get_class($this->getEntityBundle($entity));
@@ -448,16 +459,15 @@ class AdminController extends Controller
         if (class_exists($form)) {
             return $this->createForm(new $form, $object);
         }
-        $form = $this->getEntityFormDefautPath($entity);
+        $form = ( $this->getEntityBundleNamespace($entity) . "\\Form\\Mcm" . $this->getCamel($section) . "\\" . $this->getCamel($entity['name']) . "Type" );
+        if (class_exists($form)) {
+            return $this->createForm($form, $object);
+        }
+        $form = ( $this->getEntityBundleNamespace($entity) . "\\Form\\Mcm\\" . $this->getCamel($entity['name']) . "Type" );
         if (class_exists($form)) {
             return $this->createForm($form, $object);
         }
         return $this->generateEntityForm($section, $entity, $object);
-    }
-
-    public function getEntityFormDefautPath($entity)
-    {
-        return ( $this->getEntityBundleNamespace($entity) . "\\Form\\Mcm\\" . $this->getCamel($entity['name']) . "Type" );
     }
 
     public function generateEntityForm($section, $entity, $object)
@@ -481,6 +491,10 @@ class AdminController extends Controller
                 $form->add($field, ChoiceType::class, array(
                     'empty_data' => '',
                     'choices' => call_user_method($method, $object)
+                ));
+            } else if ($field === 'locale') {
+                $form->add($field,null,array(
+                    'data' => $this->request->getLocale()
                 ));
             } else {
                 $form->add($field);
@@ -563,18 +577,20 @@ class AdminController extends Controller
     {
         if (is_string($entity)) {
             $entity = $this->getEntity($section,$entity);
-            if (!$entity) {
-                return false;
-            }
+            if (!$entity) { return false; }
         }
-        if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates']) ) {
+        if ( array_key_exists('templates', $entity) && array_key_exists($action, $entity['templates']) && $this->templating->exists($entity['templates'][$action]) ) {
             return $entity['templates'][$action];
         }
-        return $this->getEntitytTemplateDefault($action);
-    }
-
-    public function getEntitytTemplateDefault($action)
-    {
+        $bundleName = $this->getEntityBundleName($entity);
+        $template = $bundleName . ':Mcm' . $this->getCamel($entity['name']) . ':_' . $action . '.html.twig';
+        if ( $this->templating->exists($template) ) {
+            return $template;
+        }
+        $template = $bundleName . ':Mcm:_' . $action . '.html.twig';
+        if ( $this->templating->exists($template) ) {
+            return $template;
+        }
         return 'MaciAdminBundle:Actions:' . $action .'.html.twig';
     }
 
@@ -1168,7 +1184,7 @@ class AdminController extends Controller
             ->setAction($this->generateUrl('maci_admin_view', array(
                 'section'=>$section, 'entity'=>$entity['name'], 'action'=>'remove', 'id'=>$item->getId(), 'redirect'=>$redirect
             )))
-            ->add('remove', 'submit', array(
+            ->add('remove', SubmitType::class, array(
                 'attr' => array('class' => 'btn-danger')
             ))
             ->getForm()

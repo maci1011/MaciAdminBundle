@@ -3,7 +3,7 @@ services:
 
     maci.admin:
         class: Maci\AdminBundle\Controller\AdminController
-        arguments: ["@doctrine.orm.entity_manager","@security.authorization_checker","@session","@request_stack","@kernel","@form.factory","@form.registry","@router","%maci.admin.config%"]
+        arguments: ["@doctrine.orm.entity_manager","@security.authorization_checker","@session","@request_stack","@kernel","@form.factory","@form.registry","@router","@templating","%maci.admin.config%"]
 
     maci_admin.menu_builder:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder

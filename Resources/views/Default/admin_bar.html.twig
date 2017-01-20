@@ -1,16 +1,17 @@
 
 {% if section and actions %}
 
-<div class="btn-group">
-
-<span class="btn btn-default">{% if id %}{{ entity_label }} [{{ id }}]{% else %}{{ entity_label }} Actions{% endif %}:</span>
-
+<nav>
+<ul class="nav navbar-nav">
+<li>
+<span class="navbar-text">{% if id %}{{ entity_label }} [{{ id }}]{% else %}{{ entity_label }} Actions{% endif %}:</span>
+</li>
 {% for acn_name, acn_label in actions %}
-
-<a class="btn btn-primary" href="{{ path('maci_admin_view', {'section': section,'entity': entity,'action': acn_name,'id': id}) }}">{{ acn_label }}</a>
-
+<li>
+<a href="{{ path('maci_admin_view', {'section': section,'entity': entity,'action': acn_name,'id': id}) }}">{{ acn_label }}</a>
+</li>
 {% endfor %}
-
-</div>
+</ul>
+</nav>
 
 {% endif %}
