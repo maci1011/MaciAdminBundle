@@ -158,6 +158,26 @@ h4 {
     width: 100px;
 }
 
+.list-default tr.list-item.add-item td {
+    background-color: #FEEBA9;
+}
+
+.list-default tr.list-item .list-item-add {
+    display: block;
+}
+
+.list-default tr.list-item .list-item-remove {
+    display: none;
+}
+
+.list-default tr.list-item.add-item .list-item-add {
+    display: none;
+}
+
+.list-default tr.list-item.add-item .list-item-remove {
+    display: block;
+}
+
 .list-default tr.list-item > td > a,
 .list-default tr.list-item > td > p {
     padding: 5px;

@@ -498,13 +498,14 @@ class AdminController extends Controller
                     'empty_data' => '',
                     'choices' => call_user_method($method, $object)
                 ));
-            } else if ($field === 'locale') {
-                $form->add($field,null,array(
-                    'data' => $this->request->getLocale()
-                ));
             } else {
                 $form->add($field);
             }
+            // else if ($field === 'locale') {
+            //     $form->add($field,null,array(
+            //         'data' => $this->request->getLocale()
+            //     ));
+            // }
         }
 
         $form->add('reset', ResetType::class);
@@ -571,7 +572,11 @@ class AdminController extends Controller
     public function getEntityNewObj($entity)
     {
         $class = $this->getEntityClass($entity);
-        return new $class;
+        $item = new $class;
+        if (method_exists($item, 'setLocale')) {
+            call_user_method('setLocale', $item, $this->request->getLocale());
+        }
+        return $item;
     }
 
     public function getEntityRepository($entity)
@@ -726,6 +731,14 @@ class AdminController extends Controller
         $repo = $relation;
 
         if ($bridge) {
+            $bridge_items = array();
+            foreach ($relation_items as $obj) {
+                $brcall = call_user_method($this->getGetterMethod($obj, $bridge['name']), $obj);
+                $brcall = is_array($brcall) ? $brcall : array($brcall);
+                $bridge_items = array_merge($bridge_items, $brcall);
+            }
+            $relation_items = $bridge_items;
+            // todo: same option as below
             $inverseField = $this->getRelationInverseField($relation, $bridge);
             $repo = $bridge;
         }
@@ -753,75 +766,106 @@ class AdminController extends Controller
         return $query->getResult();
     }
 
-    public function relationItemsManager($entity, $relation, $item, $list, $ids, $action)
+    public function setRelation($managerMethod, $entity, $field, $item, $obj)
     {
-        if ($action === 'remove') {
-            $managerMethod = 'getRemoverOrSetterMethod';
-            $successMessage = 'Removed';
-            $errorMessage = 'Remover or Setter';
-        } else if ($action === 'add') {
-            $managerMethod = 'getSetterOrAdderMethod';
-            if ($this->getRelationDefaultAction($entity, $relation['name']) === 'show') {
-                $successMessage = 'Setted';
-            } else {
-                $successMessage = 'Added';
-            }
-            $errorMessage = 'Setter or Adder';
-        } else {
+        $manager = call_user_method($managerMethod, $this, $item, $field);
+        if (!$manager) {
+            $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getEntityClass($entity) . ' not found.');
             return false;
         }
+        call_user_method($manager, $item, ((strpos($managerMethod, 'Remover') && !$this->getRemoverMethod($item, $field)) ? null : $obj));
+        return true;
+    }
+
+    public function manageRelation($managerMethod, $entity, $relation, $item, $obj)
+    {
+        $managerMethod = 'get' . $managerMethod . 'Method';
+        if (!$this->setRelation($managerMethod, $entity, $relation['name'], $item, $obj)) {
+            return false;
+        }
+        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+        $isOwningSide = $relationMetadata['isOwningSide'];
+        $mappedBy = $relationMetadata['mappedBy'];
+        if (!$isOwningSide && 0<strlen($mappedBy) && !$this->setRelation($managerMethod, $relation, $mappedBy, $obj, $item)) {
+            return false;
+        }
+        return true;
+    }
+
+    public function getManagerSuccessMessage($managerMethod, $entity, $relation, $item)
+    {
+        $message = 'Item [' . $item . '] ';
+        if (strpos($managerMethod, 'Remover')) {
+            return $message . 'Removed.';
+        } else if (strpos($managerMethod, 'Adder')) {
+            return $message . ( $this->getRelationDefaultAction($entity, $relation['name']) === 'show' ? 'Setted.' : 'Added.' );
+        } else {
+            return $message . 'Setted.';
+        }
+    }
+
+    public function relationItemsManager($entity, $relation, $item, $list, $ids, $managerMethod)
+    {
         if (!count($ids)) {
             return false;
         }
         $repo = $this->getEntityRepository($relation);
         foreach ($ids as $_id) {
-            if (!$_id or !in_array($_id, $this->getListIds($list))) {
+            $_id = (int) $_id;
+            if (!$_id || !in_array($_id, $this->getListIds($list))) {
                 $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getEntityClass($relation) . ' not found.');
                 continue;
             }
             $obj = $list[array_search($_id, $this->getListIds($list))];
-            $manager = call_user_method($managerMethod, $this, $item, $relation['name']);
-            if ($manager) {
-                call_user_method($manager, $item, (($action === 'remove' && !$this->getRemoverMethod($item, $relation['name'])) ? null : $obj));
-            } else {
-                $this->session->getFlashBag()->add('error', $errorMessage . ' Method for ' . $relation['name'] . ' in ' . $this->getEntityClass($entity) . ' not found.');
-                continue;
+            if ($this->manageRelation($managerMethod, $entity, $relation, $item, $obj)) {
+                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $_id));
             }
-            $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
-            $isOwningSide = $relationMetadata['isOwningSide'];
-            $mappedBy = $relationMetadata['mappedBy'];
-            if (!$isOwningSide && 0<strlen($mappedBy)) {
-                $manager = call_user_method($managerMethod, $this, $obj, $mappedBy);
-                if ($manager) {
-                    call_user_method($manager, $obj, (($action === 'remove' && !$this->getRemoverMethod($item, $relation['name'])) ? null : $item));
-                } else {
-                    $this->session->getFlashBag()->add('error', $errorMessage . ' Method for ' . $mappedBy . ' in ' . $this->getEntityClass($relation) . ' not found.');
-                    continue;
-                }
-            }
-            $this->session->getFlashBag()->add('success', 'Item [' . $_id . '] ' . $successMessage . '.');
         }
         $this->om->flush();
+        return true;
     }
 
     public function addRelationItems($entity, $relation, $item, $list, $ids)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, $ids, 'add');
+        $this->relationItemsManager($entity, $relation, $item, $list, $ids, 'SetterOrAdder');
     }
 
     public function removeRelationItems($entity, $relation, $item, $list, $ids)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, $ids, 'remove');
+        $this->relationItemsManager($entity, $relation, $item, $list, $ids, 'RemoverOrSetter');
     }
 
     public function addRelationItemsFromRequestIds($entity, $relation, $item, $list)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, split(',', $this->request->get('ids', '')), 'add');
+        $this->addRelationItems($entity, $relation, $item, $list, split(',', $this->request->get('ids', '')));
     }
 
     public function removeRelationItemsFromRequestIds($entity, $relation, $item, $list)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, split(',', $this->request->get('ids', '')), 'remove');
+        $this->removeRelationItems($entity, $relation, $item, $list, split(',', $this->request->get('ids', '')));
+    }
+
+    public function addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list)
+    {
+        $ids = split(',', $this->request->get('ids', ''));
+        if (!count($ids)) {
+            return false;
+        }
+        $repo = $this->getEntityRepository($bridge);
+        foreach ($ids as $_id) {
+            $_id = (int) $_id;
+            if (!$_id || !in_array($_id, $this->getListIds($list))) {
+                continue;
+            }
+            $newItem = $this->getEntityNewObj($relation);
+            $obj = $list[array_search($_id, $this->getListIds($list))];
+            if ($this->manageRelation('SetterOrAdder', $entity, $relation, $item, $newItem) && $this->manageRelation('SetterOrAdder', $relation, $bridge, $newItem, $obj)) {
+                $this->om->persist($newItem);
+                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage('SetterOrAdder', $entity, $relation, $_id));
+            }
+        }
+        $this->om->flush();
+        return true;
     }
 
 /*
@@ -1423,7 +1467,7 @@ class AdminController extends Controller
 
         if ($this->request->getMethod() === 'POST') {
 
-            // $this->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
+            $this->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 
             $params['redirect'] = 'maci_admin_view_relations';
             $params['redirect_params'] = array(
