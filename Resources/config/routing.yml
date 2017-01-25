@@ -1,5 +1,11 @@
 
 
+maci_admin_view_relations_bridge:
+    path:  /view/{section}/{entity}/relations/{id}/{relation}/bridge/{bridge}
+    defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: 'relations', relAction: 'bridge', bridge: false }
+    requirements:
+      id: \d+
+
 maci_admin_view_relations:
     path:  /view/{section}/{entity}/relations/{id}/{relation}/{relAction}
     defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: 'relations', relAction: false }

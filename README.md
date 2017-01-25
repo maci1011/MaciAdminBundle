@@ -15,7 +15,7 @@ MaciAdminBundle lets you simply create administration backends for Symfony 2.7.*
 ### Missing:
  - tests
  - documentation with examples
- - some other thing
+ - some other things
 
 
 ### Features:

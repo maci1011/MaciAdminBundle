@@ -3,29 +3,33 @@
 <h3>{{ relation_label }}: {{ relation_action_label }}</h3>
 
 
-{% if relation_action == 'show' and pager is defined %}
+{% if relation_action in ['show', 'list'] %}
 
 {% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'relation' } %}
 
 <div class="container-fluid">
-<a class="btn btn-primary" href="{{ path('maci_admin_view_relations', { 'section': section, 'entity': entity, 'action': action, 'id': item.id, 'relation': relation, 'relAction': 'set' }) }}">Set</a>
+
+<a class="btn btn-primary" href="{{ path('maci_admin_view_relations', { 'section': section, 'entity': entity, 'action': action, 'id': item.id, 'relation': relation, 'relAction': ( relation_action == 'show' ? 'set' : 'add' ) }) }}">
+	{% if relation_action == 'show' %}Set{% else %}Add{% endif %}
+</a>
+
+
+{% for bridge in bridges %}
+
+<a class="btn btn-primary" href="{{ path('maci_admin_view_relations_bridge', { 'section': section, 'entity': entity, 'action': action, 'id': item.id, 'relation': relation, 'relAction': 'bridge', 'bridge': bridge }) }}">
+	{{ bridge|capitalize }}
+</a>
+
+{% endfor %}
+
+
 </div>
 
 {% endif %}
 
 
-{% if relation_action == 'list' and pager is defined %}
 
-{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'relation' } %}
-
-<div class="container-fluid">
-<a class="btn btn-primary" href="{{ path('maci_admin_view_relations', { 'section': section, 'entity': entity, 'action': action, 'id': item.id, 'relation': relation, 'relAction': 'add' }) }}">Add</a>
-</div>
-
-{% endif %}
-
-
-{% if relation_action == 'add' and pager is defined %}
+{% if relation_action == 'add' %}
 
 {% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'add' } %}
 
@@ -41,7 +45,7 @@
 {% endif %}
 
 
-{% if relation_action == 'set' and pager is defined %}
+{% if relation_action == 'set' %}
 
 {% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'set' } %}
 

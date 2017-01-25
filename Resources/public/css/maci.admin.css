@@ -153,6 +153,11 @@ h4 {
     width: 140px;
 }
 
+.list-default tr.list-header > th.list-header-add > span,
+.list-default tr.list-header > th.list-header-remove > span {
+    width: 100px;
+}
+
 .list-default tr.list-item > td > a,
 .list-default tr.list-item > td > p {
     padding: 5px;

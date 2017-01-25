@@ -81,7 +81,7 @@ class DefaultController extends Controller
 
         $view_params = array_merge($admin->getDefaultParams($section, $entity, $action, $id), $params);
 
-        $template = $admin->getEntityTemplate($section,$entity,$action);
+        $template = $admin->getTemplate($section,$entity,$action);
 
         if ($request->isXmlHttpRequest()) {
             if ($request->getMethod() === 'POST') {
@@ -134,16 +134,6 @@ class DefaultController extends Controller
 
     public function notFoundAction(Request $request)
     {
-        // var_dump( $this->getDoctrine()->getManager()->getMetadataFactory()->getAllMetadata() ); die();
-        // var_dump( $this->container->getParameter('maci.admin.config') ); die();
-        // foreach ($this->get('kernel')->getBundles() as $key => $value) {
-        //     echo get_class($value)."<br>\n";
-        // } die();
-        // var_dump( $this->container->get('maci.admin')->getEntityMetadata($this->container->get('maci.admin')->getEntity('blog_post'))); die();
-        // var_dump( $this->getDoctrine()->getManager()->getConfiguration()->getMetadataDriverImpl()->getAllClassNames() ); die();
-        // var_dump( $this->getDoctrine()->getManager()->getClassMetadata('Maci\BlogBundle\Entity\Post') ); die();
-        // var_dump( $this->container->get('maci.admin')->getSections() ); die();
-        // var_dump( get_class($this->container->get('router')) ); die();
         return $this->render('MaciAdminBundle:Default:not_found.html.twig');
     }
 }
