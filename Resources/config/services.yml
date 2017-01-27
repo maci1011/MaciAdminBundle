@@ -5,6 +5,10 @@ services:
         class: Maci\AdminBundle\Controller\AdminController
         arguments: ["@doctrine.orm.entity_manager","@security.authorization_checker","@session","@request_stack","@kernel","@form.factory","@form.registry","@router","@templating","%maci.admin.config%"]
 
+    maci.admin.default:
+        class: Maci\AdminBundle\Controller\DefaultController
+        arguments: ["@session","@request_stack","@maci.admin"]
+
     maci_admin.menu_builder:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder
         arguments: ["@knp_menu.factory","@request_stack","@maci.admin"]

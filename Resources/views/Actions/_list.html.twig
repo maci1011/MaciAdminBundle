@@ -69,15 +69,15 @@
 <div class="container-fluid">
 <ul class="pagination">
 	<li {% if not pager.hasPrev() %}class="disabled"{% endif %}>
-		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.prev }) }}">«</a>
+		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge({ "page": pager.prev })) }}">«</a>
 	</li>
 	{% for page in pager.getPageRange() %}
     	<li {% if pager.current(page) %}class="active"{% endif %}>
-    		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": page }) }}">{{ page }}</a>
+    		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge({ "page": page })) }}">{{ page }}</a>
     	</li>
 	{% endfor %}
 	<li {% if not pager.hasNext() %}class="disabled"{% endif %}>
-		<a href="{{ path('maci_admin_entity', { "entity": entity, "page": pager.next() }) }}">»</a>
+		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge({ "page": pager.next })) }}">»</a>
 	</li>
 </ul>
 </div>

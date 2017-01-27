@@ -2,31 +2,31 @@
 
 maci_admin_view_relations_bridge:
     path:  /view/{section}/{entity}/relations/{id}/{relation}/bridge/{bridge}
-    defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: 'relations', relAction: 'bridge', bridge: false }
+    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: 'relations', relAction: 'bridge', bridge: false }
     requirements:
       id: \d+
 
 maci_admin_view_relations:
     path:  /view/{section}/{entity}/relations/{id}/{relation}/{relAction}
-    defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: 'relations', relAction: false }
+    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: 'relations', relAction: false }
     requirements:
       id: \d+
 
 maci_admin_view:
     path:  /view/{section}/{entity}/{action}/{id}
-    defaults: { _controller: MaciAdminBundle:Default:view, section: false, entity: false, action: false, id: false }
+    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: false, id: false }
 
 maci_admin_dashboard:
     path:  /view/{section}
-    defaults: { _controller: MaciAdminBundle:Default:view }
+    defaults: { _controller: MaciAdminBundle:View:view }
 
 maci_admin_not_found:
     path:  /not-found
-    defaults: { _controller: MaciAdminBundle:Default:notFound }
+    defaults: { _controller: MaciAdminBundle:View:notFound }
 
 maci_admin:
     path:  /
-    defaults: { _controller: MaciAdminBundle:Default:index }
+    defaults: { _controller: MaciAdminBundle:View:index }
 
 
 # maci_admin_entity_form:

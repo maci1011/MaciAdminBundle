@@ -78,16 +78,6 @@ class MaciPager
 		$this->fields_list = $fields_list;
 	}
 
-	public function getFiltersForm()
-	{
-		return $this->filters_form;
-	}
-
-	public function setFiltersForm($filters_form)
-	{
-		$this->filters_form = $filters_form;
-	}
-
 	/* Utils */
 
 	public function getLength()

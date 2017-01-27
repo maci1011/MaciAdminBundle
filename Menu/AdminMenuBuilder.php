@@ -26,8 +26,8 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-		foreach ($this->mcm->getSections() as $name) {
-			$config = $this->mcm->getConfig($name);
+		foreach ($this->mcm->getAuthSections() as $name) {
+			$config = $this->mcm->getSectionConfig($name);
 			if (array_key_exists('label', $config)) {
 				$label = $config['label'];
 			} else {
@@ -52,16 +52,18 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav');
 
-		$sections = $this->mcm->getSections();
+		$sections = $this->mcm->getAuthSections();
 
 		$section = $this->request->get('section');
 
 		if ( $section && in_array($section, $sections) ) {
 
-			$menu->addChild('Dashboard', array(
-				'route' => 'maci_admin_dashboard',
-				'routeParameters' => array('section' => $section)
-			));
+			if ($this->mcm->hasSectionDashboard($section)) {
+				$menu->addChild('Dashboard', array(
+					'route' => 'maci_admin_dashboard',
+					'routeParameters' => array('section' => $section)
+				));
+			}
 
 			foreach ($this->mcm->getEntities($section) as $name => $entity) {
 				if (array_key_exists('label', $entity)) {
@@ -87,7 +89,7 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-		$sections = $this->mcm->getSections();
+		$sections = $this->mcm->getAuthSections();
 
 		$section = $this->request->get('section');
 
@@ -114,7 +116,7 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-		$sections = $this->mcm->getSections();
+		$sections = $this->mcm->getAuthSections();
 
 		$section = $this->request->get('section');
 
