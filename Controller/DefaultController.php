@@ -134,7 +134,7 @@ class DefaultController extends Controller
         if ($id) {
             $item = $this->mcm->getRepository($entity)->findOneById($id);
             if (!$item) {
-                $this->session->getFlashBag()->add('error', 'Item [' . $id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
+                $this->session->getFlashBag()->add('error', 'Item [' . $id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
                 return false;
             }
             // if ($clone) {
@@ -215,7 +215,7 @@ class DefaultController extends Controller
 
             $this->om->flush();
 
-            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for ' . $this->mcm->getEntityClass($entity) . ' removed.');
+            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for ' . $this->mcm->getClass($entity) . ' removed.');
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
@@ -302,13 +302,13 @@ class DefaultController extends Controller
 
         $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
         $relation = $this->mcm->getCurrentRelation($entity);
         if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
@@ -336,13 +336,13 @@ class DefaultController extends Controller
 
         $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
         $relation = $this->mcm->getCurrentRelation($entity);
         if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
@@ -359,21 +359,20 @@ class DefaultController extends Controller
                 'section' => $section,
                 'entity' => $entity['name'],
                 'id' => $id,
-                'relation' => $relation['name'],
-                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['name'])
+                'relation' => $relation['association'],
+                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
             );
 
         }
 
-        $pager = $this->mcm->getPager($section, $relation, $list);
+        $pager = $this->mcm->getPager($list);
 
         if (!$pager) {
             return false;
         }
 
         $params['pager'] = $pager;
-        $params['fields'] = $this->mcm->getListFields($entity);
-        $params['form'] = $pager->getFiltersForm();
+        $params['fields'] = $this->mcm->getListFields($relation);
 
         return $params;
     }
@@ -384,19 +383,19 @@ class DefaultController extends Controller
 
         $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
         $relation = $this->mcm->getCurrentRelation($entity);
         if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
         $bridge = $this->mcm->getRelation($relation, $this->request->get('bridge'));
         if (!$bridge) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $bridge . ' in ' . $this->mcm->getEntityClass($relation) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $bridge . ' in ' . $this->mcm->getClass($relation) . ' not found.');
             return false;
         }
 
@@ -413,24 +412,23 @@ class DefaultController extends Controller
                 'section' => $section,
                 'entity' => $entity['name'],
                 'id' => $id,
-                'relation' => $relation['name'],
-                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['name'])
+                'relation' => $relation['association'],
+                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
             );
 
         }
 
-        $pager = $this->mcm->getPager($section, $bridge, $list);
+        $pager = $this->mcm->getPager($list);
 
         if (!$pager) {
             return false;
         }
 
         $params['relation_action_label'] .= ' ' . $bridge['label'] ;
-        $params['relation_action'] = ( $this->mcm->getRelationDefaultAction($entity, $relation['name']) === 'show' ? 'set' : 'add' );
+        $params['relation_action'] = ( $this->mcm->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'set' : 'add' );
 
         $params['pager'] = $pager;
-        $params['fields'] = $this->mcm->getListFields($entity);
-        $params['form'] = $pager->getFiltersForm();
+        $params['fields'] = $this->mcm->getListFields($bridge);
 
         return $params;
     }
@@ -441,13 +439,13 @@ class DefaultController extends Controller
 
         $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
         $relation = $this->mcm->getCurrentRelation($entity);
         if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
@@ -457,15 +455,15 @@ class DefaultController extends Controller
 
         if ($this->request->getMethod() === 'POST') {
 
-            $this->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
+            $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
 
             $params['redirect'] = 'maci_admin_view_relations';
             $params['redirect_params'] = array(
                 'section' => $section,
                 'entity' => $entity['name'],
                 'id' => $id,
-                'relation' => $relation['name'],
-                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['name'])
+                'relation' => $relation['association'],
+                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
             );
 
         }

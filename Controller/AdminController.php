@@ -202,6 +202,20 @@ class AdminController extends Controller
         return false;
     }
 
+    public function getEntityByClass($section, $className)
+    {
+        $entities = $this->getEntities($section);
+        if (!$entities) {
+            return false;
+        }
+        foreach ($entities as $name => $map) {
+            if ($className === $this->getClass($map)) {
+                return $map;
+            }
+        }
+        return false;
+    }
+
     public function hasEntity($section, $entity)
     {
         if ($this->hasEntities($section)) {
@@ -557,19 +571,86 @@ class AdminController extends Controller
         return $map;
     }
 
+    public function getRemoveForm($map,$item)
+    {
+        return $this->createFormBuilder($item)
+            ->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'remove', 'id'=>$item->getId()
+            )))
+            ->add('remove', SubmitType::class, array(
+                'attr' => array('class' => 'btn-danger')
+            ))
+            ->getForm()
+        ;
+    }
+
+    public function getRepository($map)
+    {
+        return $this->om->getRepository($map['class']);
+    }
+
+    public function hasTrash($map)
+    {
+        if (in_array($map['trash_attr'], $this->getFields($map))) {
+            return true;
+        }
+        return false;
+    }
+
+    public function isUploadable($map)
+    {
+        return (bool) $map['uploadable'];
+    }
+
+/*
+    ---> Relations Functions
+*/
+
+    public function getRelationActions($section, $entity)
+    {
+        return array('list', 'show', 'add', 'set', 'bridge', 'remove');
+    }
+
+    public function getRelationDefaultAction($entity, $relation)
+    {
+        $relationMetadata = $this->getAssociationMetadata($entity, $relation);
+
+        if (!$relationMetadata) {
+            return false;
+        }
+
+        if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY) {
+            return 'list';
+        }
+
+        return 'show';
+
+    }
+
     public function getRelation($map,$association)
     {
         if (!$this->isRelationEnable($map,$association)) {
             return false;
         }
+
         $metadata = $this->getAssociationMetadata($map, $association);
         if (!$metadata) {
             return false;
         }
+
         $relation = $this->getNewMap($metadata);
+
+        $entity = $this->getEntityByClass($map['section'], $this->getClass($relation));
+        if ($entity) {
+            $relation = $entity;
+        }
+
+        $relation['association'] = $association;
+
         if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
             $relation = array_merge($relation, $map['relations'][$association]);
         }
+
         return $relation;
     }
 
@@ -583,7 +664,7 @@ class AdminController extends Controller
 
     public function getRelationInverseField($map, $relation)
     {
-        $relationMetadata = $this->getAssociationMetadata($map, $relation['name']);
+        $relationMetadata = $this->getAssociationMetadata($map, $relation['association']);
 
         $joinTable = false;
         $joinColumns = false;
@@ -619,7 +700,7 @@ class AdminController extends Controller
 
     public function getRelationItems($relation, $object)
     {
-        $getted = $this->getFieldValue($relation['name'], $object);
+        $getted = $this->getFieldValue($relation['association'], $object);
 
         if (is_object($getted)) {
             if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection') {
@@ -631,66 +712,6 @@ class AdminController extends Controller
 
         return array();
     }
-
-    public function getRemoveForm($map,$item)
-    {
-        return $this->createFormBuilder($item)
-            ->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'remove', 'id'=>$item->getId()
-            )))
-            ->add('remove', SubmitType::class, array(
-                'attr' => array('class' => 'btn-danger')
-            ))
-            ->getForm()
-        ;
-    }
-
-    public function getRepository($map)
-    {
-        return $this->om->getRepository($map['class']);
-    }
-
-    public function hasTrash($map)
-    {
-        if (in_array($map['trash_attr'], $this->getFields($map))) {
-            return true;
-        }
-        return false;
-    }
-
-    public function isUploadable($map)
-    {
-        return (bool) $map['uploadable'];
-    }
-
-/*
-    ---> TODO - EDIT  V V V V V V V
-*/
-
-    public function getRelationActions($section, $entity)
-    {
-        return array('list', 'show', 'add', 'set', 'bridge', 'remove');
-    }
-
-    public function getRelationDefaultAction($entity, $relation)
-    {
-        $relationMetadata = $this->getAssociationMetadata($entity, $relation);
-
-        if (!$relationMetadata) {
-            return false;
-        }
-
-        if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY) {
-            return 'list';
-        }
-
-        return 'show';
-
-    }
-
-/*
-    ---> Relations Functions
-*/
 
     public function getItemsForRelation($entity, $relation, $item, $bridge = false)
     {
@@ -748,10 +769,10 @@ class AdminController extends Controller
     public function manageRelation($managerMethod, $entity, $relation, $item, $obj)
     {
         $managerMethod = 'get' . $managerMethod . 'Method';
-        if (!$this->setRelation($managerMethod, $entity, $relation['name'], $item, $obj)) {
+        if (!$this->setRelation($managerMethod, $entity, $relation['association'], $item, $obj)) {
             return false;
         }
-        $relationMetadata = $this->getAssociationMetadata($entity, $relation['name']);
+        $relationMetadata = $this->getAssociationMetadata($entity, $relation['association']);
         $isOwningSide = $relationMetadata['isOwningSide'];
         $mappedBy = $relationMetadata['mappedBy'];
         if (!$isOwningSide && 0<strlen($mappedBy) && !$this->setRelation($managerMethod, $relation, $mappedBy, $obj, $item)) {
@@ -763,10 +784,10 @@ class AdminController extends Controller
     public function getManagerSuccessMessage($managerMethod, $entity, $relation, $item)
     {
         $message = 'Item [' . $item . '] ';
-        if (strpos($managerMethod, 'Remover')) {
+        if (strpos($managerMethod, 'Remover') !== false) {
             return $message . 'Removed.';
         } else if (strpos($managerMethod, 'Adder')) {
-            return $message . ( $this->getRelationDefaultAction($entity, $relation['name']) === 'show' ? 'Setted.' : 'Added.' );
+            return $message . ( $this->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'Setted.' : 'Added.' );
         } else {
             return $message . 'Setted.';
         }
@@ -845,6 +866,7 @@ class AdminController extends Controller
         return array(
             'section' => $section,
             'section_label' => $this->getSectionLabel($section),
+            'section_has_dashboard' => $this->hasSectionDashboard($section),
             'entity' => $entity,
             'entity_label' => $this->getEntityLabel($section, $entity),
             'action' => $action,
@@ -861,7 +883,7 @@ class AdminController extends Controller
     {
         $relAction = $this->request->get('relAction');
         return array(
-            'relation' => $relation['name'],
+            'relation' => $relation['association'],
             'relation_label' => $relation['label'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
@@ -914,9 +936,6 @@ class AdminController extends Controller
     public function getDefaultMap()
     {
         $map = array();
-        $map['class'] = false;
-        $map['name'] = false;
-        $map['label'] = false;
         $map['list'] = array();
         $map['filters'] = array();
         $map['templates'] = array();

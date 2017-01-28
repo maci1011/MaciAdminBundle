@@ -5,7 +5,7 @@
 <ul class="nav navbar-nav">
 
     <li class="pathbar-parent">
-		{% if params.entity is defined and params.entity %}
+		{% if params.section_has_dashboard and params.entity is defined and params.entity %}
 		<a href="{{ path('maci_admin_view', {'section': params.section}) }}">
     		{{ params.section_label }}
 			<span class="glyphicon glyphicon-chevron-right"></span>
