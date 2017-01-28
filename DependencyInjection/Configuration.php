@@ -37,6 +37,7 @@ class Configuration implements ConfigurationInterface
                                         ->scalarNode('class')->isRequired()->end()
                                         ->scalarNode('trash_attr')->defaultValue('removed')->end()
                                         ->booleanNode('uploadable')->defaultValue(false)->end()
+                                        ->booleanNode('enabled')->defaultValue(true)->end()
                                         ->arrayNode('templates')
                                             ->children()
                                                 ->scalarNode('form')->end()

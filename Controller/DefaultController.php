@@ -84,9 +84,9 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        $list = $this->mcm->getEntityItems($section, $entity);
+        $list = $this->mcm->getItems($entity);
 
-        $pager = $this->mcm->getPager($section, $entity, $list);
+        $pager = $this->mcm->getPager($list);
 
         if (!$pager) {
             return false;
@@ -94,7 +94,7 @@ class DefaultController extends Controller
 
         return array(
             'pager' => $pager,
-            'fields' => $pager->getListFields()
+            'fields' => $this->mcm->getListFields($entity)
         );
     }
 
@@ -107,7 +107,7 @@ class DefaultController extends Controller
             return false;
         }
 
-        $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
 
         if (!$item) {
             return false;
@@ -115,7 +115,7 @@ class DefaultController extends Controller
 
         return array(
             'item' => $item,
-            'details' => $this->mcm->getEntityDetails($entity, $item)
+            'details' => $this->mcm->getItemDetails($entity, $item)
         );
     }
 
@@ -128,7 +128,7 @@ class DefaultController extends Controller
         // $clone = $this->request->get('clone', false);
 
         if ($id) {
-            $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+            $item = $this->mcm->getRepository($entity)->findOneById($id);
             if (!$item) {
                 $this->session->getFlashBag()->add('error', 'Item [' . $id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
                 return false;
@@ -139,10 +139,10 @@ class DefaultController extends Controller
             //     $item = $item;
             // }
         } else {
-            $item = $this->mcm->getEntityNewObj($entity);
+            $item = $this->mcm->getNewItem($entity);
         }
 
-        $form = $this->mcm->getEntityForm($section, $entity, $item);
+        $form = $this->mcm->getForm($entity, $item);
         $form->handleRequest($this->request);
 
         $params = array();
@@ -190,22 +190,12 @@ class DefaultController extends Controller
             return false;
         }
 
-        $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
             return false;
         }
 
-        $redirect = $this->request->get('redirect');
-
-        $form = $this->mcm->createFormBuilder($item)
-            ->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$section, 'entity'=>$entity['name'], 'action'=>'remove', 'id'=>$item->getId(), 'redirect'=>$redirect
-            )))
-            ->add('remove', SubmitType::class, array(
-                'attr' => array('class' => 'btn-danger')
-            ))
-            ->getForm()
-        ;
+        $form = $this->mcm->getRemoveForm($entity,$item);
 
         $form->handleRequest($this->request);
 
@@ -252,7 +242,7 @@ class DefaultController extends Controller
             return array('success' => false, 'error' => 'No file(s).');
         }
 
-        $repo = $this->mcm->getEntityRepository($entity);
+        $repo = $this->mcm->getRepository($entity);
 
         $name = $this->request->files->keys()[0];
         $file = $this->request->files->get($name);
@@ -268,7 +258,7 @@ class DefaultController extends Controller
             }
             $item->setFile($file);
         } else {
-            $item = $this->mcm->getEntityNewObj($entity);
+            $item = $this->mcm->getNewItem($entity);
             $item->setFile($file);
             $this->om->persist($item);
         }
@@ -306,7 +296,7 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
             $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
             return false;
@@ -320,7 +310,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getRelationItems($relation, $item);
 
-        $pager = $this->mcm->getPager($section, $relation, $list);
+        $pager = $this->mcm->getPager($list);
 
         if (!$pager) {
             return false;
@@ -328,11 +318,10 @@ class DefaultController extends Controller
 
         $params = $this->mcm->getRelationParams($relation, $item);
 
-        $params['bridges'] = $this->mcm->getRelationBridges($entity, $relation);
+        $params['bridges'] = $this->mcm->getBridges($relation);
 
         $params['pager'] = $pager;
-        $params['fields'] = $pager->getListFields();
-        $params['form'] = $pager->getFiltersForm();
+        $params['fields'] = $this->mcm->getListFields($relation);
 
         return $params;
     }
@@ -341,7 +330,7 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
             $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
             return false;
@@ -379,7 +368,7 @@ class DefaultController extends Controller
         }
 
         $params['pager'] = $pager;
-        $params['fields'] = $pager->getListFields();
+        $params['fields'] = $this->mcm->getListFields($entity);
         $params['form'] = $pager->getFiltersForm();
 
         return $params;
@@ -389,7 +378,7 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
             $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
             return false;
@@ -436,7 +425,7 @@ class DefaultController extends Controller
         $params['relation_action'] = ( $this->mcm->getRelationDefaultAction($entity, $relation['name']) === 'show' ? 'set' : 'add' );
 
         $params['pager'] = $pager;
-        $params['fields'] = $pager->getListFields();
+        $params['fields'] = $this->mcm->getListFields($entity);
         $params['form'] = $pager->getFiltersForm();
 
         return $params;
@@ -446,7 +435,7 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        $item = $this->mcm->getEntityRepository($entity)->findOneById($id);
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
         if (!$item) {
             $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getEntityClass($entity) . ' not found.');
             return false;

@@ -39,10 +39,11 @@ class ViewController extends Controller
             $request->getSession()->getFlashBag()->add('error', 'Entity not Found.');
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section)));
         }
-        if (!$action || !in_array($action, $admin->getActions($section, $entity))) {
+        if (!$admin->hasAction($section, $entity, $action)) {
             $request->getSession()->getFlashBag()->add('error', 'Action not Found.');
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
         }
+
         if ($action === 'relations') {
             if (!intval($id)) {
                 $request->getSession()->getFlashBag()->add('error', 'Missing Id.');
@@ -51,7 +52,7 @@ class ViewController extends Controller
             $relation = $request->get('relation');
             if (!$relation) {
                 $_entity = $admin->getEntity($section, $entity);
-                $relations = $admin->getEntityAssociations($_entity);
+                $relations = $admin->getAssociations($_entity);
                 $relAction = $admin->getRelationDefaultAction($_entity, $relation[0]);
                 return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0],'relAction'=>$relAction)));
             }

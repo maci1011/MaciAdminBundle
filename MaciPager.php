@@ -68,16 +68,6 @@ class MaciPager
 		$this->range = $range;
 	}
 
-	public function getListFields()
-	{
-		return $this->fields_list;
-	}
-
-	public function setListFields($fields_list)
-	{
-		$this->fields_list = $fields_list;
-	}
-
 	/* Utils */
 
 	public function getLength()

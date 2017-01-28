@@ -124,7 +124,7 @@ class AdminMenuBuilder
 
         $entity = $this->mcm->getEntity($section, $entity);
 
-		$associations = $this->mcm->getEntityAssociations($entity);
+		$associations = $this->mcm->getAssociations($entity);
 
 		$action = $this->request->get('action');
 

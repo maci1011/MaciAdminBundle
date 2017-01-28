@@ -113,7 +113,7 @@ class AdminController extends Controller
                 //  entity definitions
                 $this->_sections[$name]['entities'][$entity_name]['section'] = $name;
                 $this->_sections[$name]['entities'][$entity_name]['name'] = $entity_name;
-                $this->_sections[$name]['entities'][$entity_name]['class'] = $this->getEntityClass($entity);
+                $this->_sections[$name]['entities'][$entity_name]['class'] = $this->getClass($entity);
                 if (!array_key_exists('label', $entity)) {
                     $this->_sections[$name]['entities'][$entity_name]['label'] = $this->generateLabel($entity_name);
                 }
@@ -131,10 +131,15 @@ class AdminController extends Controller
 
     public function getSection($section)
     {
-        if (array_key_exists($section, $this->_sections)) {
+        if ($this->hasSection($section)) {
             return $this->_sections[$section];
         }
         return false;
+    }
+
+    public function hasSection($section)
+    {
+        return array_key_exists($section, $this->_sections);
     }
 
     public function getSectionConfig($section)
@@ -229,15 +234,19 @@ class AdminController extends Controller
         return false;
     }
 
+/*
+    ---> Actions Functions
+*/
+
     public function getMainActions($section, $entity)
     {
         $entity = $this->getEntity($section, $entity);
         $actions = array('list');
-        if ($this->hasEntityTrash($entity)) {
+        if ($this->hasTrash($entity)) {
             $actions[] = 'trash';
         }
         $actions[] = 'new';
-        if ($this->isEntityUploadable($entity)) {
+        if ($this->isUploadable($entity)) {
             $actions[] = 'uploader';
         }
         return $actions;
@@ -262,44 +271,61 @@ class AdminController extends Controller
         );
     }
 
-    // ????
-    // public function getAdminBundle()
-    // {
-    //     return $this->kernel->getBundle('MaciAdminBundle');
-    // }
-
-    public function getEntityAssociations($entity)
+    public function hasAction($section, $entity, $action)
     {
-        $metadata = $this->getEntityMetadata($entity);
+        return in_array($action, array_merge(
+            $this->getMainActions($section, $entity),
+            $this->getSingleActions($section, $entity),
+            $this->getMultipleActions($section, $entity)
+        ));
+    }
 
-        foreach ($metadata->associationMappings as $fieldName => $relation) {
-            // if ($relation['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
+/*
+    ---> Generic Functions
+*/
+
+    public function getAssociations($map)
+    {
+        $metadata = $this->getMetadata($map);
+
+        foreach ($metadata->associationMappings as $fieldName => $association) {
+            // if ($association['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
             //     $associations[] = $fieldName;
             // }
-            $associations[] = $fieldName;
+            if ($this->isRelationEnable($map,$fieldName)) {
+                $associations[] = $fieldName;
+            }
         }
 
         return $associations;
     }
 
-    public function getEntityAssociationMetadata($entity, $relation)
+    public function getAssociationMetadata($map, $association)
     {
-        $metadata = $this->getEntityMetadata($entity);
+        $metadata = $this->getMetadata($map);
 
-        if (array_key_exists($relation, $metadata->associationMappings)) {
-            return $metadata->associationMappings[$relation];
+        if (array_key_exists($association, $metadata->associationMappings)) {
+            return $metadata->associationMappings[$association];
         }
 
         return false;
     }
 
-    public function getEntityBundle($entity)
+    public function getBridges($map)
     {
-        $name = split(':', $entity['class']);
+        if (!array_key_exists('bridges', $map)) {
+            return array();
+        }
+        return $map['bridges'];
+    }
+
+    public function getBundle($map)
+    {
+        $name = split(':', $map['class']);
         if (1 < count($name)) {
             return $this->kernel->getBundle($name[0]);
         }
-        $namespace = substr($entity['class'], 0, strpos($entity['class'], 'Bundle') + 6);
+        $namespace = substr($map['class'], 0, strpos($map['class'], 'Bundle') + 6);
         $bundles = $this->kernel->getBundles();
         foreach ($bundles as $bundle) {
             if ($bundle->getNamespace() === $namespace) {
@@ -309,46 +335,140 @@ class AdminController extends Controller
         return false;
     }
 
-    public function getEntityBundleName($entity)
+    public function getBundleName($map)
     {
-        return $this->getEntityBundle($entity)->getName();
+        return $this->getBundle($map)->getName();
     }
 
-    public function getEntityBundleNamespace($entity)
+    public function getBundleNamespace($map)
     {
-        return $this->getEntityBundle($entity)->getNamespace();
+        return $this->getBundle($map)->getNamespace();
     }
 
-    public function getEntityClass($entity)
+    public function getClass($map)
     {
-        if (class_exists($entity['class'])) {
-            return $entity['class'];
+        if (class_exists($map['class'])) {
+            return $map['class'];
         }
-        $repo = $this->getEntityRepository($entity);
+        $repo = $this->getRepository($map);
         if ($repo) {
             return $repo->getClassName();
         }
         return false;
     }
 
-    // public function getEntitiesClassList()
-    // {
-    //     if (!is_array($this->_list)) {
-    //         $list = $this->om->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
-    //         foreach ($list as $key => $value) {
-    //             $reflcl = new \ReflectionClass($value);
-    //             if ($reflcl->isAbstract()) {
-    //                 unset($list[$key]);
-    //             }
-    //         }
-    //         $this->_list = array_values($list);
-    //     }
-    //     return $this->_list;
-    // }
-
-    public function getEntityDetails($entity, $object)
+    public function getCurrentRelation($map)
     {
-        $fields = $this->getEntityFields($entity);
+        return $this->getRelation($map, $this->request->get('relation'));
+    }
+
+    public function getFields($map)
+    {
+        $metadata = $this->getMetadata($map);
+
+        $fields = (array) $metadata->fieldNames;
+
+        // Remove the primary key field if it's not managed manually
+        if (!$metadata->isIdentifierNatural()) {
+            $fields = array_diff($fields, $metadata->identifier);
+        }
+
+        return $fields;
+    }
+
+    public function getFieldValue($field,$object)
+    {
+        $getter = $this->getGetterMethod($object,$field);
+        if (!$getter) {
+            $this->session->getFlashBag()->add('error', 'Getter Method for ' . $field . ' in ' . get_class($object) . ' not found.');
+            return false;
+        }
+        return call_user_method($getter,$object);
+    }
+
+    public function generateForm($map, $object = false)
+    {
+        if (!$object) {
+            $object = $this->getNewItem($map);
+        }
+
+        $fields = $this->getFields($map);
+        $form = $this->createFormBuilder($object);
+        $isNew = (bool) $object->getId();
+
+        if ($isNew) {
+            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId())));
+        } else {
+            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new')));
+        }
+
+        foreach ($fields as $field) {
+            if (in_array($field, array('created','updated',$map['trash_attr']))) {
+                continue;
+            }
+            $method = ('get' . ucfirst($field) . 'Array');
+            if ( method_exists($object, $method) ) {
+                $form->add($field, ChoiceType::class, array(
+                    'empty_data' => '',
+                    'choices' => call_user_method($method, $object)
+                ));
+            } else {
+                $form->add($field);
+            }
+            // else if ($field === 'locale') {
+            //     $form->add($field,null,array(
+            //         'data' => $this->request->getLocale()
+            //     ));
+            // }
+        }
+
+        $form->add('reset', ResetType::class);
+
+        $form->add(( $isNew ? 'save' : 'add'), SubmitType::class, array(
+            'attr'=>array('class'=>'btn btn-primary')
+        ));
+
+        return $form->getForm();
+    }
+
+    public function getForm($map, $object = false)
+    {
+        $form = $map['name'];
+        if (array_key_exists('form', $map)) {
+            $form = $map['form'];
+        }
+        if (class_exists($form)) {
+            return $this->createForm(new $form, $object);
+        }
+        $form = ( $this->getBundleNamespace($map) . "\\Form\\Mcm" . $this->getCamel($map['section']) . "\\" . $this->getCamel($map['name']) . "Type" );
+        if (class_exists($form)) {
+            return $this->createForm($form, $object);
+        }
+        $form = ( $this->getBundleNamespace($map) . "\\Form\\Mcm\\" . $this->getCamel($map['name']) . "Type" );
+        if (class_exists($form)) {
+            return $this->createForm($form, $object);
+        }
+        return $this->generateForm($map, $object);
+    }
+
+    public function getListFields($map)
+    {
+        if (array_key_exists('list', $map) && count($map['list'])) {
+            return array_merge(array('_id'), $map['list'], array('_actions'));
+        }
+        $fields = array_keys($this->getFields($map));
+        $list = array('_id');
+        foreach ($fields as $field) {
+            if ($field == $map['trash_attr']) continue;
+            $list[] = lcfirst($this->getCamel($field));
+        }
+        $list[] = '_actions';
+        return $list;
+    }
+
+    public function getItemDetails($map, $object)
+    {
+        $fields = $this->getFields($map);
 
         $details = array();
 
@@ -381,143 +501,15 @@ class AdminController extends Controller
         return $details;
     }
 
-    public function getEntityFields($entity)
+    public function getItems($map)
     {
-        $metadata = $this->getEntityMetadata($entity);
-
-        $fields = (array) $metadata->fieldNames;
-
-        // Remove the primary key field if it's not managed manually
-        if (!$metadata->isIdentifierNatural()) {
-            $fields = array_diff($fields, $metadata->identifier);
-        }
-
-        return $fields;
-    }
-
-    public function getEntityFilters($entity)
-    {
-        return $this->session->get('admin_filters_'.$entity['name'], array());
-    }
-
-    public function hasEntityFilters($entity)
-    {
-        return !!count($this->getEntityFilters($entity));
-    }
-
-    public function setEntityFilters($entity, $filters)
-    {
-        $this->session->set('admin_filters_'.$entity['name'], $filters);
-    }
-
-    public function removeEntityFilters($entity)
-    {
-        $this->session->set('admin_filters_'.$entity['name'], array());
-    }
-
-    public function getEntityFilterFields($entity)
-    {
-        if (array_key_exists('filters', $entity) && count($entity['filters'])) {
-            return $entity['filters'];
-        }
-        return array();
-    }
-
-    public function hasEntityFilterFields($entity)
-    {
-        if (array_key_exists('filters', $entity) && count($entity['filters'])) {
-            return true;
-        }
-        return false;
-    }
-
-    public function getEntityFiltersForm($section, $entity)
-    {
-        $form = $entity['name'];
-        $object = $this->getEntityNewObj($entity);
-        $filters = $this->getEntityFilters($entity);
-        foreach ($filters as $field => $filter) {
-            $method = ('set' . ucfirst($field));
-            if ( method_exists($object, $method) ) {
-                call_user_method_array($method, $object, array($filter));
-            }
-        }
-        return $this->generateEntityForm($section, $entity, $object);
-    }
-
-    public function getEntityForm($section, $entity, $object = false)
-    {
-        $form = $entity['name'];
-        if (!$object) {
-            $object = $this->getEntityNewObj($entity);
-        }
-        if (array_key_exists('form', $entity)) {
-            $form = $entity['form'];
-        }
-        if (class_exists($form)) {
-            return $this->createForm(new $form, $object);
-        }
-        $form = ( $this->getEntityBundleNamespace($entity) . "\\Form\\Mcm" . $this->getCamel($section) . "\\" . $this->getCamel($entity['name']) . "Type" );
-        if (class_exists($form)) {
-            return $this->createForm($form, $object);
-        }
-        $form = ( $this->getEntityBundleNamespace($entity) . "\\Form\\Mcm\\" . $this->getCamel($entity['name']) . "Type" );
-        if (class_exists($form)) {
-            return $this->createForm($form, $object);
-        }
-        return $this->generateEntityForm($section, $entity, $object);
-    }
-
-    public function generateEntityForm($section, $entity, $object)
-    {
-        $fields = $this->getEntityFields($entity);
-        $form = $this->createFormBuilder($object);
-        $isNew = (bool) $object->getId();
-
-        if ($isNew) {
-            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$section, 'entity'=>$entity['name'], 'action'=>'edit', 'id'=>$object->getId())));
-        } else {
-            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$section, 'entity'=>$entity['name'], 'action'=>'new')));
-        }
-
-        foreach ($fields as $field) {
-            if (in_array($field, array('created','updated',$entity['trash_attr']))) {
-                continue;
-            }
-            $method = ('get' . ucfirst($field) . 'Array');
-            if ( method_exists($object, $method) ) {
-                $form->add($field, ChoiceType::class, array(
-                    'empty_data' => '',
-                    'choices' => call_user_method($method, $object)
-                ));
-            } else {
-                $form->add($field);
-            }
-            // else if ($field === 'locale') {
-            //     $form->add($field,null,array(
-            //         'data' => $this->request->getLocale()
-            //     ));
-            // }
-        }
-
-        $form->add('reset', ResetType::class);
-
-        $form->add(( $isNew ? 'save' : 'add'), SubmitType::class, array(
-            'attr'=>array('class'=>'btn btn-primary')
-        ));
-
-        return $form->getForm();
-    }
-
-    public function getEntityItems($section, $entity)
-    {
-        $repo = $this->getEntityRepository($entity);
+        $repo = $this->getRepository($map);
         $query = $repo->createQueryBuilder('e');
         $root = $query->getRootAlias();
-        $fields = $this->getEntityFields($entity);
+        $fields = $this->getFields($map);
 
-        if ($this->hasEntityTrash($entity)) {
-            $trashAttr = $entity['trash_attr'];
+        if ($this->hasTrash($map)) {
+            $trashAttr = $map['trash_attr'];
             $trashValue = (bool) ( $this->request->get('action', '') === 'trash' );
             if ( in_array($trashAttr, $fields) ) {
                 $query->andWhere($root . '.' . $trashAttr . ' = :' . $trashAttr);
@@ -541,29 +533,14 @@ class AdminController extends Controller
         return $list;
     }
 
-    public function getEntityListFields($entity)
+    public function getMetadata($map)
     {
-        if (array_key_exists('list', $entity) && count($entity['list'])) {
-            return array_merge(array('_id'), $entity['list'], array('_actions'));
-        }
-        $fields = array_keys($this->getEntityFields($entity));
-        $list = array('_id');
-        foreach ($fields as $field) {
-            if ($field == $entity['trash_attr']) continue;
-            $list[] = lcfirst($this->getCamel($field));
-        }
-        $list[] = '_actions';
-        return $list;
+        return $this->om->getClassMetadata( $this->getClass($map) );
     }
 
-    public function getEntityMetadata($entity)
+    public function getNewItem($map)
     {
-        return $this->om->getClassMetadata( $this->getEntityClass($entity) );
-    }
-
-    public function getEntityNewObj($entity)
-    {
-        $class = $this->getEntityClass($entity);
+        $class = $this->getClass($map);
         $item = new $class;
         if (method_exists($item, 'setLocale')) {
             call_user_method('setLocale', $item, $this->request->getLocale());
@@ -571,85 +548,42 @@ class AdminController extends Controller
         return $item;
     }
 
-    public function getEntityRepository($entity)
-    {
-        return $this->om->getRepository($entity['class']);
-    }
-
-    public function hasEntityTrash($entity)
-    {
-        if (in_array($entity['trash_attr'], $this->getEntityFields($entity))) {
-            return true;
-        }
-        return false;
-    }
-
-    public function isEntityUploadable($entity)
-    {
-        return (bool) $entity['uploadable'];
-    }
-
-/*
-    ---> Relations Functions
-*/
-
-    public function getMapForRelation($relationMetadata)
+    public function getNewMap($metadata)
     {
         $map = $this->getDefaultMap();
-        $map['class'] = $relationMetadata['targetEntity'];
-        $map['name'] = $relationMetadata['fieldName'];
-        $map['label'] = $this->generateLabel( $relationMetadata['fieldName'] );
+        $map['class'] = $metadata['targetEntity'];
+        $map['name'] = $metadata['fieldName'];
+        $map['label'] = $this->generateLabel( $metadata['fieldName'] );
         return $map;
     }
 
-    public function getRelation($entity, $relationName)
+    public function getRelation($map,$association)
     {
-        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relationName);
-        if (!$relationMetadata) {
+        if (!$this->isRelationEnable($map,$association)) {
             return false;
         }
-        return $this->getMapForRelation($relationMetadata);
-    }
-
-    public function getRelationBridges($entity, $relation)
-    {
-        if (!array_key_exists('relations', $entity) || 
-            !array_key_exists($relation['name'], $entity['relations']) ||
-            !array_key_exists('bridges', $entity['relations'][$relation['name']])) {
-            return array();
-        }
-        return $entity['relations'][$relation['name']]['bridges'];
-    }
-
-    public function getCurrentRelation($entity)
-    {
-        return $this->getRelation($entity, $this->request->get('relation'));
-    }
-
-    public function getRelationActions($section, $entity)
-    {
-        return array('list', 'show', 'add', 'set', 'bridge', 'remove');
-    }
-
-    public function getRelationDefaultAction($entity, $relation)
-    {
-        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation);
-
-        if (!$relationMetadata) {
+        $metadata = $this->getAssociationMetadata($map, $association);
+        if (!$metadata) {
             return false;
         }
-
-        if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY) {
-            return 'list';
+        $relation = $this->getNewMap($metadata);
+        if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
+            $relation = array_merge($relation, $map['relations'][$association]);
         }
-
-        return 'show';
-
+        return $relation;
     }
 
-    public function getRelationInverseField($entity, $relation)
+    public function isRelationEnable($map,$association)
     {
-        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+        if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
+            return $map['relations'][$association]['enabled'];
+        }
+        return true;
+    }
+
+    public function getRelationInverseField($map, $relation)
+    {
+        $relationMetadata = $this->getAssociationMetadata($map, $relation['name']);
 
         $joinTable = false;
         $joinColumns = false;
@@ -675,7 +609,7 @@ class AdminController extends Controller
         }
 
         if (!$inverseField) {
-            $relationMetadataClass = $this->getEntityMetadata($relation);
+            $relationMetadataClass = $this->getMetadata($relation);
             $identifiers = $relationMetadataClass->getIdentifier();
             $inverseField = $identifiers[0];
         }
@@ -685,13 +619,7 @@ class AdminController extends Controller
 
     public function getRelationItems($relation, $object)
     {
-        $getter = $this->getGetterMethod($object, $relation['name']);
-        if (!$getter) {
-            $this->session->getFlashBag()->add('error', 'Getter Method for ' . $relation['name'] . ' in ' . get_class($object) . ' not found.');
-            return array();
-        }
-
-        $getted = call_user_method($getter, $object);
+        $getted = $this->getFieldValue($relation['name'], $object);
 
         if (is_object($getted)) {
             if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection') {
@@ -704,17 +632,65 @@ class AdminController extends Controller
         return array();
     }
 
-    public function getRelationParams($relation, $item = false)
+    public function getRemoveForm($map,$item)
     {
-        $relAction = $this->request->get('relAction');
-        return array(
-            'relation' => $relation['name'],
-            'relation_label' => $relation['label'],
-            'relation_action' => $relAction,
-            'relation_action_label' => $this->generateLabel($relAction),
-            'item' => $item
-        );
+        return $this->createFormBuilder($item)
+            ->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'remove', 'id'=>$item->getId()
+            )))
+            ->add('remove', SubmitType::class, array(
+                'attr' => array('class' => 'btn-danger')
+            ))
+            ->getForm()
+        ;
     }
+
+    public function getRepository($map)
+    {
+        return $this->om->getRepository($map['class']);
+    }
+
+    public function hasTrash($map)
+    {
+        if (in_array($map['trash_attr'], $this->getFields($map))) {
+            return true;
+        }
+        return false;
+    }
+
+    public function isUploadable($map)
+    {
+        return (bool) $map['uploadable'];
+    }
+
+/*
+    ---> TODO - EDIT  V V V V V V V
+*/
+
+    public function getRelationActions($section, $entity)
+    {
+        return array('list', 'show', 'add', 'set', 'bridge', 'remove');
+    }
+
+    public function getRelationDefaultAction($entity, $relation)
+    {
+        $relationMetadata = $this->getAssociationMetadata($entity, $relation);
+
+        if (!$relationMetadata) {
+            return false;
+        }
+
+        if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY) {
+            return 'list';
+        }
+
+        return 'show';
+
+    }
+
+/*
+    ---> Relations Functions
+*/
 
     public function getItemsForRelation($entity, $relation, $item, $bridge = false)
     {
@@ -735,7 +711,7 @@ class AdminController extends Controller
             $repo = $bridge;
         }
 
-        $repo = $this->getEntityRepository($repo);
+        $repo = $this->getRepository($repo);
         $query = $repo->createQueryBuilder('r');
         $root = $query->getRootAlias();
 
@@ -748,7 +724,7 @@ class AdminController extends Controller
         }
 
         // todo: an option fot this
-        if ($this->getEntityClass($entity) === $this->getEntityClass($relation) && !$bridge) {
+        if ($this->getClass($entity) === $this->getClass($relation) && !$bridge) {
             $query->andWhere($root . '.' . $inverseField . ' != :pid');
             $query->setParameter(':pid', call_user_method(('get'.ucfirst($inverseField)), $item));
         }
@@ -762,7 +738,7 @@ class AdminController extends Controller
     {
         $manager = call_user_method($managerMethod, $this, $item, $field);
         if (!$manager) {
-            $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getEntityClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
             return false;
         }
         call_user_method($manager, $item, ((strpos($managerMethod, 'Remover') && !$this->getRemoverMethod($item, $field)) ? null : $obj));
@@ -775,7 +751,7 @@ class AdminController extends Controller
         if (!$this->setRelation($managerMethod, $entity, $relation['name'], $item, $obj)) {
             return false;
         }
-        $relationMetadata = $this->getEntityAssociationMetadata($entity, $relation['name']);
+        $relationMetadata = $this->getAssociationMetadata($entity, $relation['name']);
         $isOwningSide = $relationMetadata['isOwningSide'];
         $mappedBy = $relationMetadata['mappedBy'];
         if (!$isOwningSide && 0<strlen($mappedBy) && !$this->setRelation($managerMethod, $relation, $mappedBy, $obj, $item)) {
@@ -801,11 +777,11 @@ class AdminController extends Controller
         if (!count($ids)) {
             return false;
         }
-        $repo = $this->getEntityRepository($relation);
+        $repo = $this->getRepository($relation);
         foreach ($ids as $_id) {
             $_id = (int) $_id;
             if (!$_id || !in_array($_id, $this->getListIds($list))) {
-                $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getEntityClass($relation) . ' not found.');
+                $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($relation) . ' not found.');
                 continue;
             }
             $obj = $list[array_search($_id, $this->getListIds($list))];
@@ -843,13 +819,13 @@ class AdminController extends Controller
         if (!count($ids)) {
             return false;
         }
-        $repo = $this->getEntityRepository($bridge);
+        $repo = $this->getRepository($bridge);
         foreach ($ids as $_id) {
             $_id = (int) $_id;
             if (!$_id || !in_array($_id, $this->getListIds($list))) {
                 continue;
             }
-            $newItem = $this->getEntityNewObj($relation);
+            $newItem = $this->getNewItem($relation);
             $obj = $list[array_search($_id, $this->getListIds($list))];
             if ($this->manageRelation('SetterOrAdder', $entity, $relation, $item, $newItem) && $this->manageRelation('SetterOrAdder', $relation, $bridge, $newItem, $obj)) {
                 $this->om->persist($newItem);
@@ -881,6 +857,18 @@ class AdminController extends Controller
         );
     }
 
+    public function getRelationParams($relation, $item = false)
+    {
+        $relAction = $this->request->get('relAction');
+        return array(
+            'relation' => $relation['name'],
+            'relation_label' => $relation['label'],
+            'relation_action' => $relAction,
+            'relation_action_label' => $this->generateLabel($relAction),
+            'item' => $item
+        );
+    }
+
     public function getTemplate($section,$entity,$action)
     {
         if (is_string($entity)) {
@@ -891,7 +879,7 @@ class AdminController extends Controller
         if ( $template ) {
             return $template;
         }
-        $bundleName = $this->getEntityBundleName($entity);
+        $bundleName = $this->getBundleName($entity);
         $template = $bundleName . ':Mcm' . $this->getCamel($entity['name']) . ':_' . $action . '.html.twig';
         if ( $this->templating->exists($template) ) {
             return $template;
@@ -907,25 +895,14 @@ class AdminController extends Controller
     ---> Pager
 */
 
-    public function getPager($section, $entity, $result)
+    public function getPager($list)
     {
-        if (is_string($entity)) {
-            $entity = $this->getEntity($entity);
-            if (!$entity) {
-                return false;
-            }
-        }
-
         $pageLimit = $this->config['options']['page_limit'];
         $pageRange = $this->config['options']['page_range'];
 
         $page = $this->request->get('page', 1);
 
-        $pager = new MaciPager($result, $pageLimit, $page, $pageRange);
-
-        $fields_list = $this->getEntityListFields($entity);
-
-        $pager->setListFields($fields_list);
+        $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
 
         return $pager;
     }
@@ -1103,5 +1080,83 @@ class AdminController extends Controller
     {
         return $this->router->generate($route, $parameters, $referenceType);
     }
+
+/*
+    ---> CODE IN PAUSE O_O ( Filters )
+*/
+
+    public function getEntityFilters($entity)
+    {
+        return $this->session->get('admin_filters_'.$entity['name'], array());
+    }
+
+    public function hasEntityFilters($entity)
+    {
+        return !!count($this->getEntityFilters($entity));
+    }
+
+    public function setEntityFilters($entity, $filters)
+    {
+        $this->session->set('admin_filters_'.$entity['name'], $filters);
+    }
+
+    public function removeEntityFilters($entity)
+    {
+        $this->session->set('admin_filters_'.$entity['name'], array());
+    }
+
+    public function getEntityFilterFields($entity)
+    {
+        if (array_key_exists('filters', $entity) && count($entity['filters'])) {
+            return $entity['filters'];
+        }
+        return array();
+    }
+
+    public function hasEntityFilterFields($entity)
+    {
+        if (array_key_exists('filters', $entity) && count($entity['filters'])) {
+            return true;
+        }
+        return false;
+    }
+
+    public function getEntityFiltersForm($section, $entity)
+    {
+        $form = $entity['name'];
+        $object = $this->getNewItem($entity);
+        $filters = $this->getEntityFilters($entity);
+        foreach ($filters as $field => $filter) {
+            $method = ('set' . ucfirst($field));
+            if ( method_exists($object, $method) ) {
+                call_user_method_array($method, $object, array($filter));
+            }
+        }
+        return $this->generateForm($entity, $object);
+    }
+
+/*
+    ---> ???
+*/
+
+    // public function getAdminBundle()
+    // {
+    //     return $this->kernel->getBundle('MaciAdminBundle');
+    // }
+
+    // public function getEntitiesClassList()
+    // {
+    //     if (!is_array($this->_list)) {
+    //         $list = $this->om->getConfiguration()->getMetadataDriverImpl()->getAllClassNames();
+    //         foreach ($list as $key => $value) {
+    //             $reflcl = new \ReflectionClass($value);
+    //             if ($reflcl->isAbstract()) {
+    //                 unset($list[$key]);
+    //             }
+    //         }
+    //         $this->_list = array_values($list);
+    //     }
+    //     return $this->_list;
+    // }
 
 }
