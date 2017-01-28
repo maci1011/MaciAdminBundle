@@ -320,7 +320,7 @@ class DefaultController extends Controller
             return false;
         }
 
-        $params = $this->mcm->getRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($relation, $item);
 
         $params['bridges'] = $this->mcm->getBridges($relation);
 
@@ -348,7 +348,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item);
 
-        $params = $this->mcm->getRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
 
@@ -389,19 +389,19 @@ class DefaultController extends Controller
 
         $relation = $this->mcm->getCurrentRelation($entity);
         if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
             return false;
         }
 
-        $bridge = $this->mcm->getRelation($relation, $this->request->get('bridge'));
+        $bridge = $this->mcm->getCurrentBridge($relation);
         if (!$bridge) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $bridge . ' in ' . $this->mcm->getClass($relation) . ' not found.');
+            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('bridge') . ' in ' . $this->mcm->getClass($relation) . ' not found.');
             return false;
         }
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item, $bridge);
 
-        $params = $this->mcm->getRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
 
@@ -451,7 +451,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getRelationItems($relation, $item);
 
-        $params = $this->mcm->getRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
 
