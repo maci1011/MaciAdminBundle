@@ -2,6 +2,7 @@
 
 namespace Maci\AdminBundle\Controller;
 
+use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -9,14 +10,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DefaultController extends Controller
 {
+    private $om;
+
     private $session;
 
     private $request;
 
     private $mcm;
 
-    public function __construct(Session $session, RequestStack $requestStack, $mcm)
+    public function __construct(ObjectManager $objectManager, Session $session, RequestStack $requestStack, $mcm)
     {
+        $this->om = $objectManager;
         $this->session = $session;
         $this->request = $requestStack->getCurrentRequest();
         $this->mcm = $mcm;

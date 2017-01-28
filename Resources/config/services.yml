@@ -7,7 +7,7 @@ services:
 
     maci.admin.default:
         class: Maci\AdminBundle\Controller\DefaultController
-        arguments: ["@session","@request_stack","@maci.admin"]
+        arguments: ["@doctrine.orm.entity_manager","@session","@request_stack","@maci.admin"]
 
     maci_admin.menu_builder:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder
