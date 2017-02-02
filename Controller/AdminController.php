@@ -235,7 +235,7 @@ class AdminController extends Controller
     public function getEntityTemplate($section, $entity, $action)
     {
         if ($this->hasEntityTemplate($section, $entity, $action)) {
-            return $this->_sections[$section]['entities'][$entity]['templates'][$action];
+            return $this->_sections[$section]['entities'][$entity]['templates'][$action]['template'];
         }
         return false;
     }
@@ -243,7 +243,7 @@ class AdminController extends Controller
     public function hasEntityTemplate($section, $entity, $action)
     {
         if ($this->hasEntity($section, $entity) && array_key_exists($action, $this->_sections[$section]['entities'][$entity]['templates'])) {
-            return $this->templating->exists($this->_sections[$section]['entities'][$entity]['templates'][$action]);
+            return $this->templating->exists($this->_sections[$section]['entities'][$entity]['templates'][$action]['template']);
         }
         return false;
     }
@@ -398,34 +398,36 @@ class AdminController extends Controller
         return $map;
     }
 
-    public function getDefaultParams($section, $entity, $action, $id)
+    public function getDefaultParams($map)
     {
+        $action = $this->request->get('action');
         return array(
-            'section' => $section,
-            'section_label' => $this->getSectionLabel($section),
-            'section_has_dashboard' => $this->hasSectionDashboard($section),
-            'entity' => $entity,
-            'entity_label' => $this->getEntityLabel($section, $entity),
-            'action' => $action,
+            'section' => $map['section'],
+            'section_label' => $this->getSectionLabel($map['section']),
+            'section_has_dashboard' => $this->hasSectionDashboard($map['section']),
+            'entity' => $map['name'],
+            'entity_label' => $this->getEntityLabel($map['section'], $map['name']),
+            'action' =>  $action,
             'action_label' => $this->generateLabel($action),
-            'actions' => $this->arrayLabels($this->getActions($section, $entity)),
-            'main_actions' => $this->arrayLabels($this->getMainActions($section, $entity)),
-            'single_actions' => $this->arrayLabels($this->getSingleActions($section, $entity)),
-            'multiple_actions' => $this->arrayLabels($this->getMultipleActions($section, $entity)),
-            'id' => $id
+            'actions' => $this->arrayLabels($this->getActions($map['section'], $map['name'])),
+            'id' => $this->request->get('id'),
+            'main_actions' => $this->arrayLabels($this->getMainActions($map['section'], $map['name'])),
+            'multiple_actions' => $this->arrayLabels($this->getMultipleActions($map['section'], $map['name'])),
+            'single_actions' => $this->arrayLabels($this->getSingleActions($map['section'], $map['name'])),
+            'template' => $this->getTemplate($map,$action)
         );
     }
 
-    public function getDefaultRelationParams($relation, $item = false)
+    public function getDefaultRelationParams($map, $relation, $item = false)
     {
         $relAction = $this->request->get('relAction');
-        return array(
+        return array_merge($this->getDefaultParams($map), array(
             'relation' => $relation['association'],
             'relation_label' => $relation['label'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
             'item' => $item
-        );
+        ));
     }
 
     public function getFields($map)
@@ -801,18 +803,13 @@ class AdminController extends Controller
         return $this->om->getRepository($map['class']);
     }
 
-    public function getTemplate($section,$entity,$action)
+    public function getTemplate($map,$action)
     {
-        if (is_string($entity)) {
-            $entity = $this->getEntity($section,$entity);
-            if (!$entity) { return false; }
+        if ( array_key_exists($action, $map['templates']) && $this->templating->exists($map['templates'][$action]['template']) ) {
+            return $map['templates'][$action]['template'];
         }
-        $template = $this->getEntityTemplate($section,$entity['name'],$action);
-        if ( $template ) {
-            return $template;
-        }
-        $bundleName = $this->getBundleName($entity);
-        $template = $bundleName . ':Mcm' . $this->getCamel($entity['name']) . ':_' . $action . '.html.twig';
+        $bundleName = $this->getBundleName($map);
+        $template = $bundleName . ':Mcm' . $this->getCamel($map['name']) . ':_' . $action . '.html.twig';
         if ( $this->templating->exists($template) ) {
             return $template;
         }
@@ -930,10 +927,6 @@ class AdminController extends Controller
         $this->om->flush();
         return true;
     }
-
-/*
-    ---> Actions Parameters
-*/
 
 /*
     ---> Pager

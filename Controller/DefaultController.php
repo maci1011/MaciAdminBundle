@@ -81,7 +81,9 @@ class DefaultController extends Controller
 
     public function mcmDashboard($section, $entity, $id)
     {
-        return array();
+        $entity = $this->mcm->getEntity($section, $entity);
+
+        return $this->mcm->getDefaultParams($entity);
     }
 
     public function mcmList($section, $entity, $id)
@@ -96,10 +98,10 @@ class DefaultController extends Controller
             return false;
         }
 
-        return array(
+        return array_merge($this->mcm->getDefaultParams($entity), array(
             'pager' => $pager,
             'fields' => $this->mcm->getListFields($entity)
-        );
+        ));
     }
 
     public function mcmShow($section, $entity, $id)
@@ -117,10 +119,10 @@ class DefaultController extends Controller
             return false;
         }
 
-        return array(
+        return array_merge($this->mcm->getDefaultParams($entity), array(
             'item' => $item,
             'details' => $this->mcm->getItemDetails($entity, $item)
-        );
+        ));
     }
 
     public function mcmForm($section, $entity, $id)
@@ -149,7 +151,7 @@ class DefaultController extends Controller
         $form = $this->mcm->getForm($entity, $item);
         $form->handleRequest($this->request);
 
-        $params = array();
+        $params = $this->mcm->getDefaultParams($entity);
 
         if ($form->isSubmitted() && $form->isValid()) {
 
@@ -203,7 +205,7 @@ class DefaultController extends Controller
 
         $form->handleRequest($this->request);
 
-        $params = array();
+        $params = $this->mcm->getDefaultParams($entity);
 
         if ($form->isValid()) {
 
@@ -320,7 +322,7 @@ class DefaultController extends Controller
             return false;
         }
 
-        $params = $this->mcm->getDefaultRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
         $params['bridges'] = $this->mcm->getBridges($relation);
 
@@ -348,7 +350,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item);
 
-        $params = $this->mcm->getDefaultRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
 
@@ -401,7 +403,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item, $bridge);
 
-        $params = $this->mcm->getDefaultRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
 
@@ -426,6 +428,7 @@ class DefaultController extends Controller
 
         $params['relation_action_label'] .= ' ' . $bridge['label'] ;
         $params['relation_action'] = ( $this->mcm->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'set' : 'add' );
+        $params['template'] = $this->mcm->getTemplate($bridge, 'relations');
 
         $params['pager'] = $pager;
         $params['fields'] = $this->mcm->getListFields($bridge);
@@ -451,7 +454,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getRelationItems($relation, $item);
 
-        $params = $this->mcm->getDefaultRelationParams($relation, $item);
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
 

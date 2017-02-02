@@ -83,25 +83,21 @@ class ViewController extends Controller
             return $this->redirect($this->generateUrl($params['redirect'],$params['redirect_params']));
         }
 
-        $view_params = array_merge($admin->getDefaultParams($section, $entity, $action, $id), $params);
-
-        $template = $admin->getTemplate($section,$entity,$action);
-
         if ($request->isXmlHttpRequest()) {
             if ($request->getMethod() === 'POST') {
                 return new JsonResponse($params, 200);
             } else {
-                $render = $this->renderView($template, array(
-                    'params' => $view_params
+                $render = $this->renderView($params['template'], array(
+                    'params' => $params
                 ));
-                $json_params = array_merge($view_params, array('html' => $render));
+                $json_params = array_merge($params, array('html' => $render));
                 return new JsonResponse($json_params, 200);
             }
         }
 
         return $this->render('MaciAdminBundle:Default:view.html.twig', array(
-            'template' => $template,
-            'params' => $view_params
+            'template' => $params['template'],
+            'params' => $params
         ));
     }
 
