@@ -294,6 +294,11 @@ class AdminController extends Controller
         ));
     }
 
+    public function getRelationActions($section, $entity)
+    {
+        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'upload');
+    }
+
 /*
     ---> Generic Functions
 */
@@ -410,6 +415,7 @@ class AdminController extends Controller
             'action' =>  $action,
             'action_label' => $this->generateLabel($action),
             'actions' => $this->arrayLabels($this->getActions($map['section'], $map['name'])),
+            'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
             'main_actions' => $this->arrayLabels($this->getMainActions($map['section'], $map['name'])),
             'multiple_actions' => $this->arrayLabels($this->getMultipleActions($map['section'], $map['name'])),
@@ -422,12 +428,28 @@ class AdminController extends Controller
     {
         $relAction = $this->request->get('relAction');
         return array_merge($this->getDefaultParams($map), array(
+            'fields' => $this->getListFields($relation),
             'relation' => $relation['association'],
             'relation_label' => $relation['label'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
+            'bridges' => $this->getBridges($relation),
             'item' => $item,
             'template' => $this->getTemplate($map,('relations_'.$relAction))
+        ));
+    }
+
+    public function getDefaultBridgeParams($map, $relation, $bridge, $item = false)
+    {
+        $relAction = $this->request->get('relAction');
+        if ($relAction === 'bridge') {
+            $relAction = ( $this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add' );
+        }
+        return array_merge($this->getDefaultRelationParams($map, $relation, $item), array(
+            'fields' => $this->getListFields($bridge),
+            'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
+            'relation_action' => $relAction,
+            'template' => $this->getTemplate($bridge,('relations_'.$relAction))
         ));
     }
 
@@ -639,6 +661,8 @@ class AdminController extends Controller
             $query->setParameter(':pid', call_user_method(('get'.ucfirst($inverseField)), $item));
         }
 
+        $query->orderBy($root . '.' . $inverseField, 'DESC');
+
         $query = $query->getQuery();
 
         return $query->getResult();
@@ -704,11 +728,6 @@ class AdminController extends Controller
         }
         call_user_method($manager, $item, ((strpos($managerMethod, 'Remover') && !$this->getRemoverMethod($item, $field)) ? null : $obj));
         return true;
-    }
-
-    public function getRelationActions($section, $entity)
-    {
-        return array('list', 'show', 'add', 'set', 'bridge', 'remove');
     }
 
     public function getRelationDefaultAction($entity, $relation)

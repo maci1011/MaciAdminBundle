@@ -99,8 +99,7 @@ class DefaultController extends Controller
         }
 
         return array_merge($this->mcm->getDefaultParams($entity), array(
-            'pager' => $pager,
-            'fields' => $this->mcm->getListFields($entity)
+            'pager' => $pager
         ));
     }
 
@@ -326,10 +325,7 @@ class DefaultController extends Controller
 
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-        $params['bridges'] = $this->mcm->getBridges($relation);
-
         $params['pager'] = $pager;
-        $params['fields'] = $this->mcm->getListFields($relation);
 
         return $params;
     }
@@ -376,7 +372,6 @@ class DefaultController extends Controller
         }
 
         $params['pager'] = $pager;
-        $params['fields'] = $this->mcm->getListFields($relation);
 
         return $params;
     }
@@ -405,7 +400,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item, $bridge);
 
-        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
+        $params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
 
         if ($this->request->getMethod() === 'POST') {
 
@@ -428,12 +423,7 @@ class DefaultController extends Controller
             return false;
         }
 
-        $params['relation_action_label'] .= ' ' . $bridge['label'] ;
-        $params['relation_action'] = ( $this->mcm->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'set' : 'add' );
-        $params['template'] = $this->mcm->getTemplate($bridge, 'relations_' . $params['relation_action']);
-
         $params['pager'] = $pager;
-        $params['fields'] = $this->mcm->getListFields($bridge);
 
         return $params;
     }
