@@ -238,14 +238,16 @@ class DefaultController extends Controller
 
     public function mcmUploader($section, $entity, $id)
     {
-        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
-            return array();
-        }
-
         $entity = $this->mcm->getEntity($section, $entity);
 
+        $params = $this->mcm->getDefaultParams($entity);
+
+        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+            return $params;
+        }
+
         if (!count($this->request->files)) {
-            return array('success' => false, 'error' => 'No file(s).');
+            return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
         }
 
         $repo = $this->mcm->getRepository($entity);
@@ -254,13 +256,13 @@ class DefaultController extends Controller
         $file = $this->request->files->get($name);
 
         if(!$file->isValid()) {
-            return array('success' => false, 'error' => 'Upload failed.');
+            return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
         }
 
         if ($id) {
             $item = $repo->findOneById($id);
             if (!$item) {
-                return array('success' => false, 'error' => 'Item not found.');
+                return array_merge($params,array('success' => false, 'error' => 'Item not found.'));
             }
             $item->setFile($file);
         } else {
@@ -428,7 +430,7 @@ class DefaultController extends Controller
 
         $params['relation_action_label'] .= ' ' . $bridge['label'] ;
         $params['relation_action'] = ( $this->mcm->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'set' : 'add' );
-        $params['template'] = $this->mcm->getTemplate($bridge, 'relations');
+        $params['template'] = $this->mcm->getTemplate($bridge, 'relations_' . $params['relation_action']);
 
         $params['pager'] = $pager;
         $params['fields'] = $this->mcm->getListFields($bridge);

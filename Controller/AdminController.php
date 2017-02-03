@@ -426,7 +426,8 @@ class AdminController extends Controller
             'relation_label' => $relation['label'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
-            'item' => $item
+            'item' => $item,
+            'template' => $this->getTemplate($map,('relations_'.$relAction))
         ));
     }
 
