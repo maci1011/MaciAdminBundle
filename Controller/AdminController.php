@@ -58,8 +58,18 @@ class AdminController extends Controller
 
     private $router;
 
-    public function __construct(ObjectManager $objectManager, AuthorizationCheckerInterface $authorizationChecker, Session $session, RequestStack $requestStack, \AppKernel $kernel, FormFactory $formFactory, FormRegistry $formRegistry, Router $router, TwigEngine $templating, Array $config)
-    {
+    public function __construct(
+        ObjectManager $objectManager,
+        AuthorizationCheckerInterface $authorizationChecker,
+        Session $session,
+        RequestStack $requestStack,
+        \AppKernel $kernel,
+        FormFactory $formFactory,
+        FormRegistry $formRegistry,
+        Router $router,
+        TwigEngine $templating,
+        Array $config
+    ) {
         $this->om = $objectManager;
         $this->authorizationChecker = $authorizationChecker;
         $this->session = $session;
@@ -296,7 +306,7 @@ class AdminController extends Controller
 
     public function getRelationActions($section, $entity)
     {
-        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'upload');
+        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader');
     }
 
 /*
@@ -343,6 +353,21 @@ class AdminController extends Controller
             return array();
         }
         return $map['bridges'];
+    }
+
+    public function getUpladableBridges($map)
+    {
+        if (!array_key_exists('bridges', $map)) {
+            return array();
+        }
+        $upb = array();
+        foreach ($map['bridges'] as $bridge) {
+            $bm = $this->getBridge($map,$bridge);
+            if ($this->isUploadable($bm)) {
+                $upb[] = $bridge;
+            }
+        }
+        return $upb;
     }
 
     public function getBundle($map)
@@ -403,54 +428,78 @@ class AdminController extends Controller
         return $map;
     }
 
-    public function getDefaultParams($map)
+    public function getDefaultParams()
+    {
+        $section = $this->request->get('section');
+        return array(
+            'section' => $section,
+            'section_label' => $this->getSectionLabel($section),
+            'section_has_dashboard' => $this->hasSectionDashboard($section)
+        );
+    }
+
+    public function getDefaultEntityParams($map)
     {
         $action = $this->request->get('action');
-        return array(
-            'section' => $map['section'],
-            'section_label' => $this->getSectionLabel($map['section']),
-            'section_has_dashboard' => $this->hasSectionDashboard($map['section']),
+        return array_merge($this->getDefaultParams(),array(
             'entity' => $map['name'],
             'entity_label' => $this->getEntityLabel($map['section'], $map['name']),
             'action' =>  $action,
             'action_label' => $this->generateLabel($action),
-            'actions' => $this->arrayLabels($this->getActions($map['section'], $map['name'])),
+            'actions' => $this->getListLabels($this->getActions($map['section'], $map['name'])),
             'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
-            'main_actions' => $this->arrayLabels($this->getMainActions($map['section'], $map['name'])),
-            'multiple_actions' => $this->arrayLabels($this->getMultipleActions($map['section'], $map['name'])),
-            'single_actions' => $this->arrayLabels($this->getSingleActions($map['section'], $map['name'])),
+            'is_entity_uploadable' => $this->isUploadable($map),
+            'main_actions' => $this->getListLabels($this->getMainActions($map['section'], $map['name'])),
+            'multiple_actions' => $this->getListLabels($this->getMultipleActions($map['section'], $map['name'])),
+            'single_actions' => $this->getListLabels($this->getSingleActions($map['section'], $map['name'])),
             'template' => $this->getTemplate($map,$action)
-        );
+        ),($this->isUploadable($map) ? array(
+            'uploader_action' => $this->generateUrl('maci_admin_view', array('section'=>$map['section'],'entity'=>$map['name'],'action'=>'uploader'))
+        ) : array()));
     }
 
-    public function getDefaultRelationParams($map, $relation, $item = false)
+    public function getDefaultRelationParams($map, $relation)
     {
         $relAction = $this->request->get('relAction');
-        return array_merge($this->getDefaultParams($map), array(
+        return array_merge($this->getDefaultEntityParams($map),array(
             'fields' => $this->getListFields($relation),
             'relation' => $relation['association'],
             'relation_label' => $relation['label'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
             'bridges' => $this->getBridges($relation),
-            'item' => $item,
+            'uploadable_bridges' => $this->getUpladableBridges($relation),
+            'is_relation_uploadable' => $this->isUploadable($relation),
             'template' => $this->getTemplate($map,('relations_'.$relAction))
-        ));
+        ),($this->isUploadable($relation) ? array(
+            'uploader_action' => $this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'],'entity'=>$map['name'],
+                'action'=>'relations','id'=>$this->request->get('id'),
+                'relation'=>$relation['association'],'relAction'=>'uploader'
+            ))
+        ) : array()));
     }
 
-    public function getDefaultBridgeParams($map, $relation, $bridge, $item = false)
+    public function getDefaultBridgeParams($map, $relation, $bridge)
     {
         $relAction = $this->request->get('relAction');
         if ($relAction === 'bridge') {
             $relAction = ( $this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add' );
         }
-        return array_merge($this->getDefaultRelationParams($map, $relation, $item), array(
+        return array_merge($this->getDefaultRelationParams($map,$relation),array(
             'fields' => $this->getListFields($bridge),
             'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
             'relation_action' => $relAction,
             'template' => $this->getTemplate($bridge,('relations_'.$relAction))
-        ));
+        ),($this->isUploadable($bridge) ? array(
+            'uploader_action' => $this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'],'entity'=>$map['name'],
+                'action'=>'relations','id'=>$this->request->get('id'),
+                'relation'=>$relation['association'],'relAction'=>'uploader',
+                'bridge'=>$bridge['bridge']
+            ))
+        ) : array()));
     }
 
     public function getFields($map)
@@ -488,9 +537,13 @@ class AdminController extends Controller
         $isNew = (bool) $object->getId();
 
         if ($isNew) {
-            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId())));
+            $form->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId()
+            )));
         } else {
-            $form->setAction($this->generateUrl('maci_admin_view', array('section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new')));
+            $form->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
+            )));
         }
 
         foreach ($fields as $field) {
@@ -624,10 +677,10 @@ class AdminController extends Controller
         return $list;
     }
 
-    public function getItemsForRelation($entity, $relation, $item, $bridge = false)
+    public function getItemsForRelation($map, $relation, $item, $bridge = false)
     {
         $relation_items = $this->getRelationItems($relation, $item);
-        $inverseField = $this->getRelationInverseField($entity, $relation);
+        $inverseField = $this->getRelationInverseField($map, $relation);
         $repo = $relation;
 
         if ($bridge) {
@@ -656,7 +709,7 @@ class AdminController extends Controller
         }
 
         // todo: an option fot this
-        if ($this->getClass($entity) === $this->getClass($relation) && !$bridge) {
+        if ($this->getClass($map) === $this->getClass($relation) && !$bridge) {
             $query->andWhere($root . '.' . $inverseField . ' != :pid');
             $query->setParameter(':pid', call_user_method(('get'.ucfirst($inverseField)), $item));
         }
@@ -666,6 +719,29 @@ class AdminController extends Controller
         $query = $query->getQuery();
 
         return $query->getResult();
+    }
+
+    public function selectItemsFromRequestIds($map, $list)
+    {
+        $ids = split(',', $this->request->get('ids', ''));
+        if (!count($ids)) {
+            return false;
+        }
+        $obj_list = array();
+        $ids_list = $this->getListIds($list);
+        $repo = $this->getRepository($map);
+        foreach ($ids as $_id) {
+            $_id = (int) $_id;
+            if (!$_id) {
+                continue;
+            }
+            if (!in_array($_id, $ids_list)) {
+                $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
+                continue;
+            }
+            $obj_list[] = $list[array_search($_id, $ids_list)];
+        }
+        return $obj_list;
     }
 
     public function getMetadata($map)
@@ -719,20 +795,9 @@ class AdminController extends Controller
         return $relation;
     }
 
-    public function setRelation($managerMethod, $entity, $field, $item, $obj)
+    public function getRelationDefaultAction($map, $association)
     {
-        $manager = call_user_method($managerMethod, $this, $item, $field);
-        if (!$manager) {
-            $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
-            return false;
-        }
-        call_user_method($manager, $item, ((strpos($managerMethod, 'Remover') && !$this->getRemoverMethod($item, $field)) ? null : $obj));
-        return true;
-    }
-
-    public function getRelationDefaultAction($entity, $relation)
-    {
-        $relationMetadata = $this->getAssociationMetadata($entity, $relation);
+        $relationMetadata = $this->getAssociationMetadata($map, $association);
 
         if (!$relationMetadata) {
             return false;
@@ -857,6 +922,29 @@ class AdminController extends Controller
     ---> Relations Manager
 */
 
+    public function getManagerSuccessMessage($managerMethod, $entity, $relation, $id)
+    {
+        $message = 'Item [' . (strlen($id) ? $id : 'new') . '] ';
+        if (strpos($managerMethod, 'Remover') !== false) {
+            return $message . 'Removed.';
+        } else if (strpos($managerMethod, 'Adder')) {
+            return $message . ( $this->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'Setted.' : 'Added.' );
+        } else {
+            return $message . 'Setted.';
+        }
+    }
+
+    public function setRelation($managerMethod, $entity, $field, $item, $obj)
+    {
+        $manager = call_user_method($managerMethod, $this, $item, $field);
+        if (!$manager) {
+            $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
+            return false;
+        }
+        call_user_method($manager, $item, ((strpos($managerMethod, 'Remover') !== false && !$this->getRemoverMethod($item, $field)) ? null : $obj));
+        return true;
+    }
+
     public function manageRelation($managerMethod, $entity, $relation, $item, $obj)
     {
         $managerMethod = 'get' . $managerMethod . 'Method';
@@ -872,80 +960,66 @@ class AdminController extends Controller
         return true;
     }
 
-    public function getManagerSuccessMessage($managerMethod, $entity, $relation, $item)
+    public function relationItemsManager($entity, $relation, $item, $list, $managerMethod)
     {
-        $message = 'Item [' . $item . '] ';
-        if (strpos($managerMethod, 'Remover') !== false) {
-            return $message . 'Removed.';
-        } else if (strpos($managerMethod, 'Adder')) {
-            return $message . ( $this->getRelationDefaultAction($entity, $relation['association']) === 'show' ? 'Setted.' : 'Added.' );
-        } else {
-            return $message . 'Setted.';
-        }
-    }
-
-    public function relationItemsManager($entity, $relation, $item, $list, $ids, $managerMethod)
-    {
-        if (!count($ids)) {
-            return false;
-        }
-        $repo = $this->getRepository($relation);
-        foreach ($ids as $_id) {
-            $_id = (int) $_id;
-            if (!$_id || !in_array($_id, $this->getListIds($list))) {
-                $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($relation) . ' not found.');
-                continue;
-            }
-            $obj = $list[array_search($_id, $this->getListIds($list))];
+        foreach ($list as $obj) {
             if ($this->manageRelation($managerMethod, $entity, $relation, $item, $obj)) {
-                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $_id));
+                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $obj->getId()));
             }
         }
         $this->om->flush();
         return true;
     }
 
-    public function addRelationItems($entity, $relation, $item, $list, $ids)
+    public function addRelationItems($entity, $relation, $item, $list)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, $ids, 'SetterOrAdder');
+        $this->relationItemsManager($entity, $relation, $item, $list, 'SetterOrAdder');
     }
 
-    public function removeRelationItems($entity, $relation, $item, $list, $ids)
+    public function removeRelationItems($entity, $relation, $item, $list)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, $ids, 'RemoverOrSetter');
+        $this->relationItemsManager($entity, $relation, $item, $list, 'RemoverOrSetter');
     }
 
     public function addRelationItemsFromRequestIds($entity, $relation, $item, $list)
     {
-        $this->addRelationItems($entity, $relation, $item, $list, split(',', $this->request->get('ids', '')));
+        $this->addRelationItems($entity, $relation, $item, $this->selectItemsFromRequestIds($relation,$list));
     }
 
     public function removeRelationItemsFromRequestIds($entity, $relation, $item, $list)
     {
-        $this->removeRelationItems($entity, $relation, $item, $list, split(',', $this->request->get('ids', '')));
+        $this->removeRelationItems($entity, $relation, $item, $this->selectItemsFromRequestIds($relation,$list));
     }
 
-    public function addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list)
+/*
+    ---> Bridges Manager
+*/
+
+    public function bridgeItemsManager($entity, $relation, $bridge, $item, $list, $managerMethod)
     {
-        $ids = split(',', $this->request->get('ids', ''));
-        if (!count($ids)) {
-            return false;
-        }
-        $repo = $this->getRepository($bridge);
-        foreach ($ids as $_id) {
-            $_id = (int) $_id;
-            if (!$_id || !in_array($_id, $this->getListIds($list))) {
-                continue;
-            }
+        foreach ($list as $obj) {
             $newItem = $this->getNewItem($relation);
-            $obj = $list[array_search($_id, $this->getListIds($list))];
-            if ($this->manageRelation('SetterOrAdder', $entity, $relation, $item, $newItem) && $this->manageRelation('SetterOrAdder', $relation, $bridge, $newItem, $obj)) {
-                $this->om->persist($newItem);
-                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage('SetterOrAdder', $entity, $relation, $_id));
+            if ($this->manageRelation($managerMethod, $entity, $relation, $item, $newItem) &&
+                $this->manageRelation($managerMethod, $relation, $bridge, $newItem, $obj)
+            ) {
+                if (strpos($managerMethod, 'Remover') === false) {
+                    $this->om->persist($newItem);
+                }
+                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $obj->getId()));
             }
         }
         $this->om->flush();
         return true;
+    }
+
+    public function addBridgeItems($entity, $relation, $bridge, $item, $list)
+    {
+        $this->bridgeItemsManager($entity, $relation, $bridge, $item, $list, 'SetterOrAdder');
+    }
+
+    public function addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list)
+    {
+        $this->addBridgeItems($entity, $relation, $bridge, $item, $this->selectItemsFromRequestIds($bridge,$list));
     }
 
 /*
@@ -965,104 +1039,61 @@ class AdminController extends Controller
     }
 
 /*
-    ---> Utils
+    ---> search a method
 */
 
-    public function getListIds($list)
+    public function searchMethod($object,$field,$prefix = null)
     {
-        $ids = array();
-        foreach ($list as $item) {
-            $ids[] = $item->getId();
+        $methodName = ( $prefix . ucfirst($field) );
+        if (method_exists($object, $methodName)) {
+            return $methodName;
         }
-        return $ids;
+        $methodName = ( $prefix . ucfirst($field) . 's' );
+        if (method_exists($object, $methodName)) {
+            return $methodName;
+        }
+        if ($field === 'children') {
+            $methodName = $prefix . 'Child';
+            if (method_exists($object, $methodName)) {
+                return $methodName;
+            }
+        }
+        if (2<strlen($field)) {
+            $_len = strlen($field) - 1;
+            if ($field[$_len] === 's') {
+                $_mpp = substr($field, 0, $_len);
+                $methodName = ( $prefix . ucfirst($_mpp) );
+                if (method_exists($object, $methodName)) {
+                    return $methodName;
+                }
+            }
+        }
+        return false;
     }
 
     public function getGetterMethod($object,$field)
     {
-        $methodName = ( 'get' . ucfirst($field) );
-        if (method_exists($object, $methodName)) {
-            return $methodName;
-        }
-        $methodName = ( 'get' . ucfirst($field) . 's' );
-        if (method_exists($object, $methodName)) {
-            return $methodName;
-        }
-        return false;
+        return $this->searchMethod($object,$field,'get');
+    }
+
+    public function getIsMethod($object,$field)
+    {
+        return $this->searchMethod($object,$field,'is');
     }
 
     public function getSetterMethod($object,$field)
     {
-        $methodName = ( 'set' . ucfirst($field) );
-        if (method_exists($object, $methodName)) {
-            return $methodName;
-        }
-        if ($field === 'children') {
-            $methodName = 'setChild';
-            if (method_exists($object, $methodName)) {
-                return $methodName;
-            }
-        }
-        if (2<strlen($field)) {
-            $_len = strlen($field) - 1;
-            if ($field[$_len] === 's') {
-                $_mpp = substr($field, 0, $_len);
-                $methodName = ( 'set' . ucfirst($_mpp) );
-                if (method_exists($object, $methodName)) {
-                    return $methodName;
-                }
-            }
-        }
-        return false;
+        return $this->searchMethod($object,$field,'set');
     }
 
     public function getAdderMethod($object,$field)
     {
-        $methodName = ( 'add' . ucfirst($field) );
-        if (method_exists($object, $methodName)) {
-            return $methodName;
-        }
-        if ($field === 'children') {
-            $methodName = 'addChild';
-            if (method_exists($object, $methodName)) {
-                return $methodName;
-            }
-        }
-        if (2<strlen($field)) {
-            $_len = strlen($field) - 1;
-            if ($field[$_len] === 's') {
-                $_mpp = substr($field, 0, $_len);
-                $methodName = ( 'add' . ucfirst($_mpp) );
-                if (method_exists($object, $methodName)) {
-                    return $methodName;
-                }
-            }
-        }
-        return false;
+        return $this->searchMethod($object,$field,'add');
     }
 
     public function getRemoverMethod($object,$field)
     {
-        $methodName = ( 'remove' . ucfirst($field) );
-        if (method_exists($object, $methodName)) {
-            return $methodName;
-        }
-        if ($field === 'children') {
-            $methodName = 'removeChild';
-            if (method_exists($object, $methodName)) {
-                return $methodName;
-            }
-        }
-        if (2<strlen($field)) {
-            $_len = strlen($field) - 1;
-            if ($field[$_len] === 's') {
-                $_mpp = substr($field, 0, $_len);
-                $methodName = ( 'remove' . ucfirst($_mpp) );
-                if (method_exists($object, $methodName)) {
-                    return $methodName;
-                }
-            }
-        }
-        return false;
+        return $this->searchMethod($object,$field,'remove');
     }
 
     public function getSetterOrAdderMethod($object,$field)
@@ -1091,6 +1122,28 @@ class AdminController extends Controller
         return false;
     }
 
+/*
+    ---> Utils
+*/
+
+    public function getListIds($list)
+    {
+        $ids = array();
+        foreach ($list as $item) {
+            $ids[] = $item->getId();
+        }
+        return $ids;
+    }
+
+    public function getListLabels($array)
+    {
+        $list = array();
+        foreach ($array as $item) {
+            $list[$item] = $this->generateLabel($item);
+        }
+        return $list;
+    }
+
     public function getCamel($str)
     {
         return Container::camelize($str);
@@ -1099,15 +1152,6 @@ class AdminController extends Controller
     public function generateLabel($str)
     {
         return ucwords(str_replace('_', ' ', $str));
-    }
-
-    public function arrayLabels($array)
-    {
-        $list = array();
-        foreach ($array as $item) {
-            $list[$item] = $this->generateLabel($item);
-        }
-        return $list;
     }
 
     public function createForm($type, $data = null, array $options = array())

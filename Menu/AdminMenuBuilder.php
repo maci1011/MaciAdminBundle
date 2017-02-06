@@ -135,7 +135,7 @@ class AdminMenuBuilder
 		if ( $section && in_array($section, $sections) ) {
 
 			foreach ($single_actions as $action) {
-				if ($action == 'relations') {
+				if ($action === 'relations') {
 					if ( count($associations) ) {
 						foreach ($associations as $relation) {
 							if ($relation === 'translations') {
@@ -144,7 +144,7 @@ class AdminMenuBuilder
 							$label = $this->mcm->generateLabel($relation);
 							$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
 							$menu->addChild($label, array(
-							    'route' => 'maci_admin_view_relations',
+							    'route' => 'maci_admin_view',
 							    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
 							));
 						}

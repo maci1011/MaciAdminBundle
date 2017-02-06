@@ -54,13 +54,13 @@ class ViewController extends Controller
                 $_entity = $admin->getEntity($section, $entity);
                 $relations = $admin->getAssociations($_entity);
                 $relAction = $admin->getRelationDefaultAction($_entity, $relation[0]);
-                return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0],'relAction'=>$relAction)));
+                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0],'relAction'=>$relAction)));
             }
             $relAction = $request->get('relAction');
             if (!$relAction || !in_array($relAction, $admin->getRelationActions($section,$entity,$relation))) {
                 $_entity = $admin->getEntity($section, $entity);
                 $relAction = $admin->getRelationDefaultAction($_entity, $relation);
-                return $this->redirect($this->generateUrl('maci_admin_view_relations', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relation,'relAction'=>$relAction)));
+                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relation,'relAction'=>$relAction)));
             }
         }
 
@@ -84,15 +84,10 @@ class ViewController extends Controller
         }
 
         if ($request->isXmlHttpRequest()) {
-            if ($request->getMethod() === 'POST') {
-                return new JsonResponse($params, 200);
-            } else {
-                $render = $this->renderView($params['template'], array(
-                    'params' => $params
-                ));
-                $json_params = array_merge($params, array('html' => $render));
-                return new JsonResponse($json_params, 200);
-            }
+            $params['template'] = (array_key_exists('template',$params) ? $this->renderView($params['template'], array(
+                'params' => $params
+            )) : null);
+            return new JsonResponse($params, 200);
         }
 
         return $this->render('MaciAdminBundle:Default:view.html.twig', array(
@@ -113,10 +108,10 @@ class ViewController extends Controller
             if ($admin->hasEntity($secname, $entity)) {
                 $section = $secname;
                 if ($item) {
-                    $actions = $admin->arrayLabels($admin->getSingleActions($section,$entity));
+                    $actions = $admin->getListLabels($admin->getSingleActions($section,$entity));
                     $id = $item->getId();
                 } else {
-                    $actions = $admin->arrayLabels($admin->getMainActions($section,$entity));
+                    $actions = $admin->getListLabels($admin->getMainActions($section,$entity));
                 }
                 break;
             }

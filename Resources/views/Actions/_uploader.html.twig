@@ -1,5 +1,5 @@
 
-<form class="maci_uploader_form" action="{{ path("maci_admin_view", {'section': section, 'entity': entity, 'action': 'uploader'}) }}">
+<form class="maci_uploader_form" action="{{ uploader_action }}">
 
 	<div class="form-group">
 
@@ -11,7 +11,7 @@
 
 	<div class="form-group">
 
-		<a href="#" class="btn btn-default uploader_select">Select Files</a>
+		<button class="btn btn-default uploader_select">Select Files</button>
 
 	</div>
 
@@ -19,9 +19,9 @@
 
 	<div class="form-group">
 
-		<a href="#" class="btn btn-default uploader_reset">Reset</a>
+		<button class="btn btn-default uploader_reset">Reset</button>
 
-		<a href="#" class="btn btn-primary uploader_upload">Upload Files</a>
+		<button class="btn btn-primary uploader_upload">Upload Files</button>
 
 	</div>
 

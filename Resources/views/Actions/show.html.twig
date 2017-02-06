@@ -7,26 +7,26 @@
 			<span class="item-label">Id</span>
 		</div>
 		<div class="col-xs-8">
-			<span class="item-value">{{ item.id }}</span>
+			<span class="item-value">{{ id }}</span>
 		</div>
 	</div>
 
-	{% for item in details %}
+	{% for field in details %}
 
 	<div class="row details-item {% if loop.index is even %}even{% else %}odd{% endif %}">
 
 		<div class="col-xs-4">
-			<span class="item-label">{{ item.label }}</span>
+			<span class="item-label">{{ field.label }}</span>
 		</div>
 
 		<div class="col-xs-8">
 
-			{% if item.value is iterable %}
-			{% for child in item.value %}
+			{% if field.value is iterable %}
+			{% for child in field.value %}
 			<span class="item-child">{{ child }}</span>
 			{% endfor %}
 			{% else %}
-			<span class="item-value">{{ item.value }}</span>
+			<span class="item-value">{{ field.value }}</span>
 			{% endif %}
 
 		</div>

@@ -1,20 +1,7 @@
 
-
-maci_admin_view_relations_bridge:
-    path:  /view/{section}/{entity}/relations/{id}/{relation}/bridge/{bridge}
-    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: 'relations', relAction: 'bridge', bridge: false }
-    requirements:
-      id: \d+
-
-maci_admin_view_relations:
-    path:  /view/{section}/{entity}/relations/{id}/{relation}/{relAction}
-    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: 'relations', relAction: false }
-    requirements:
-      id: \d+
-
 maci_admin_view:
-    path:  /view/{section}/{entity}/{action}/{id}
-    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: false, id: false }
+    path:  /view/{section}/{entity}/{action}/{id}/{relation}/{relAction}/{bridge}
+    defaults: { _controller: MaciAdminBundle:View:view, section: false, entity: false, action: false, id: false, relation: false, relAction: false, bridge: false }
 
 maci_admin_dashboard:
     path:  /view/{section}

@@ -19,7 +19,7 @@ MaciAdminBundle lets you simply create administration backends for Symfony 2.7.*
 
 
 ### Features:
- - sections with differents auths
+ - sections for differents roles
  - entities actions: list, show, new, edit, trash, remove
  - entities relations: add and remove
 

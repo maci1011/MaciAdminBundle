@@ -83,7 +83,7 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        return $this->mcm->getDefaultParams($entity);
+        return $this->mcm->getDefaultEntityParams($entity);
     }
 
     public function mcmList($section, $entity, $id)
@@ -98,7 +98,7 @@ class DefaultController extends Controller
             return false;
         }
 
-        return array_merge($this->mcm->getDefaultParams($entity), array(
+        return array_merge($this->mcm->getDefaultEntityParams($entity), array(
             'pager' => $pager
         ));
     }
@@ -118,7 +118,7 @@ class DefaultController extends Controller
             return false;
         }
 
-        return array_merge($this->mcm->getDefaultParams($entity), array(
+        return array_merge($this->mcm->getDefaultEntityParams($entity), array(
             'item' => $item,
             'details' => $this->mcm->getItemDetails($entity, $item)
         ));
@@ -150,7 +150,7 @@ class DefaultController extends Controller
         $form = $this->mcm->getForm($entity, $item);
         $form->handleRequest($this->request);
 
-        $params = $this->mcm->getDefaultParams($entity);
+        $params = $this->mcm->getDefaultEntityParams($entity);
 
         if ($form->isSubmitted() && $form->isValid()) {
 
@@ -204,7 +204,7 @@ class DefaultController extends Controller
 
         $form->handleRequest($this->request);
 
-        $params = $this->mcm->getDefaultParams($entity);
+        $params = $this->mcm->getDefaultEntityParams($entity);
 
         if ($form->isValid()) {
 
@@ -239,7 +239,7 @@ class DefaultController extends Controller
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
-        $params = $this->mcm->getDefaultParams($entity);
+        $params = $this->mcm->getDefaultEntityParams($entity);
 
         if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
             return $params;
@@ -249,8 +249,6 @@ class DefaultController extends Controller
             return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
         }
 
-        $repo = $this->mcm->getRepository($entity);
-
         $name = $this->request->files->keys()[0];
         $file = $this->request->files->get($name);
 
@@ -258,17 +256,17 @@ class DefaultController extends Controller
             return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
         }
 
-        if ($id) {
-            $item = $repo->findOneById($id);
-            if (!$item) {
-                return array_merge($params,array('success' => false, 'error' => 'Item not found.'));
-            }
-            $item->setFile($file);
-        } else {
-            $item = $this->mcm->getNewItem($entity);
-            $item->setFile($file);
-            $this->om->persist($item);
-        }
+        // if ($id) {
+        //     $item = $this->mcm->getRepository($entity)->findOneById($id);
+        //     if (!$item) {
+        //         return array_merge($params,array('success' => false, 'error' => 'Item not found.'));
+        //     }
+        //     $item->setFile($file);
+        // } else {}
+
+        $item = $this->mcm->getNewItem($entity);
+        $item->setFile($file);
+        $this->om->persist($item);
 
         $this->om->flush();
 
@@ -290,7 +288,13 @@ class DefaultController extends Controller
             return $this->mcmRelationsAdd($section, $entity, $id);
 
         } else if ($relAction === 'bridge') {
-            return $this->mcmRelationsBridge($section, $entity, $id);
+            return $this->mcmBridge($section, $entity, $id);
+
+        } else if ($relAction === 'uploader') {
+            if ($this->request->get('bridge')) {
+                return $this->mcmBridgeUploader($section, $entity, $id);
+            }
+            return $this->mcmRelationsUploader($section, $entity, $id);
 
         } else if ($relAction === 'remove') {
             return $this->mcmRelationsRemove($section, $entity, $id);
@@ -354,10 +358,11 @@ class DefaultController extends Controller
 
             $this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
 
-            $params['redirect'] = 'maci_admin_view_relations';
+            $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
                 'section' => $section,
                 'entity' => $entity['name'],
+                'action'=>'relations',
                 'id' => $id,
                 'relation' => $relation['association'],
                 'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
@@ -376,7 +381,7 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmRelationsBridge($section, $entity, $id)
+    public function mcmBridge($section, $entity, $id)
     {
         $entity = $this->mcm->getEntity($section, $entity);
 
@@ -406,10 +411,11 @@ class DefaultController extends Controller
 
             $this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 
-            $params['redirect'] = 'maci_admin_view_relations';
+            $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
                 'section' => $section,
                 'entity' => $entity['name'],
+                'action'=>'relations',
                 'id' => $id,
                 'relation' => $relation['association'],
                 'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
@@ -426,6 +432,100 @@ class DefaultController extends Controller
         $params['pager'] = $pager;
 
         return $params;
+    }
+
+    public function mcmRelationsUploader($section, $entity, $id)
+    {
+        $entity = $this->mcm->getEntity($section, $entity);
+
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
+        if (!$item) {
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
+            return false;
+        }
+
+        $relation = $this->mcm->getCurrentRelation($entity);
+        if (!$relation) {
+            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
+            return false;
+        }
+
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
+
+        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+            return $params;
+        }
+
+        if (!count($this->request->files)) {
+            return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
+        }
+
+        $name = $this->request->files->keys()[0];
+        $file = $this->request->files->get($name);
+
+        if(!$file->isValid()) {
+            return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
+        }
+
+        $new = $this->mcm->getNewItem($relation);
+        $new->setFile($file);
+        $this->om->persist($new);
+
+        $this->mcm->addRelationItems($entity, $relation, $item, array($new));
+
+        $this->om->flush();
+
+        return array('success' => true);
+    }
+
+    public function mcmBridgeUploader($section, $entity, $id)
+    {
+        $entity = $this->mcm->getEntity($section, $entity);
+
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
+        if (!$item) {
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
+            return false;
+        }
+
+        $relation = $this->mcm->getCurrentRelation($entity);
+        if (!$relation) {
+            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
+            return false;
+        }
+
+        $bridge = $this->mcm->getCurrentBridge($relation);
+        if (!$bridge) {
+            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('bridge') . ' in ' . $this->mcm->getClass($relation) . ' not found.');
+            return false;
+        }
+
+        $params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
+
+        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+            return $params;
+        }
+
+        if (!count($this->request->files)) {
+            return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
+        }
+
+        $name = $this->request->files->keys()[0];
+        $file = $this->request->files->get($name);
+
+        if(!$file->isValid()) {
+            return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
+        }
+
+        $new = $this->mcm->getNewItem($bridge);
+        $new->setFile($file);
+        $this->om->persist($new);
+
+        $this->mcm->addBridgeItems($entity, $relation, $bridge, $item, array($new));
+
+        $this->om->flush();
+
+        return array('success' => true);
     }
 
     public function mcmRelationsRemove($section, $entity, $id)
@@ -452,10 +552,11 @@ class DefaultController extends Controller
 
             $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
 
-            $params['redirect'] = 'maci_admin_view_relations';
+            $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
                 'section' => $section,
                 'entity' => $entity['name'],
+                'action'=>'relations',
                 'id' => $id,
                 'relation' => $relation['association'],
                 'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
