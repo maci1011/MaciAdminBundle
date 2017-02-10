@@ -130,6 +130,9 @@ class AdminController extends Controller
                 if (!array_key_exists('templates', $entity)) {
                     $this->_sections[$name]['entities'][$entity_name]['templates'] = [];
                 }
+                if (!array_key_exists('uploadable', $entity)) {
+                    $this->_sections[$name]['entities'][$entity_name]['uploadable'] = false;
+                }
             }
         }
     }
@@ -283,7 +286,7 @@ class AdminController extends Controller
 
     public function getMultipleActions($section, $entity)
     {
-        return array('reorder');
+        return array();
     }
 
     public function getActions($section, $entity)
@@ -306,7 +309,7 @@ class AdminController extends Controller
 
     public function getRelationActions($section, $entity)
     {
-        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader');
+        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader', 'reorder');
     }
 
 /*
@@ -424,6 +427,7 @@ class AdminController extends Controller
         $map['list'] = array();
         $map['filters'] = array();
         $map['templates'] = array();
+        $map['sort_attr'] = 'position';
         $map['trash_attr'] = 'removed';
         return $map;
     }
@@ -453,10 +457,11 @@ class AdminController extends Controller
             'main_actions' => $this->getListLabels($this->getMainActions($map['section'], $map['name'])),
             'multiple_actions' => $this->getListLabels($this->getMultipleActions($map['section'], $map['name'])),
             'single_actions' => $this->getListLabels($this->getSingleActions($map['section'], $map['name'])),
-            'template' => $this->getTemplate($map,$action)
-        ),($this->isUploadable($map) ? array(
-            'uploader_action' => $this->generateUrl('maci_admin_view', array('section'=>$map['section'],'entity'=>$map['name'],'action'=>'uploader'))
-        ) : array()));
+            'template' => $this->getTemplate($map,$action),
+            'uploader' => ($this->isUploadable($map) ? $this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'],'entity'=>$map['name'],'action'=>'uploader'
+            )) : false)
+        ));
     }
 
     public function getDefaultRelationParams($map, $relation)
@@ -471,14 +476,18 @@ class AdminController extends Controller
             'bridges' => $this->getBridges($relation),
             'uploadable_bridges' => $this->getUpladableBridges($relation),
             'is_relation_uploadable' => $this->isUploadable($relation),
-            'template' => $this->getTemplate($map,('relations_'.$relAction))
-        ),($this->isUploadable($relation) ? array(
-            'uploader_action' => $this->generateUrl('maci_admin_view', array(
+            'sortable' => ($this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'],'entity'=>$map['name'],
+                'action'=>'relations','id'=>$this->request->get('id'),
+                'relation'=>$relation['association'],'relAction'=>'reorder'
+            )) : false),
+            'template' => $this->getTemplate($map,('relations_'.$relAction)),
+            'uploader' => ($this->isUploadable($relation) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'relations','id'=>$this->request->get('id'),
                 'relation'=>$relation['association'],'relAction'=>'uploader'
-            ))
-        ) : array()));
+            )) : false)
+        ));
     }
 
     public function getDefaultBridgeParams($map, $relation, $bridge)
@@ -491,15 +500,14 @@ class AdminController extends Controller
             'fields' => $this->getListFields($bridge),
             'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
             'relation_action' => $relAction,
-            'template' => $this->getTemplate($bridge,('relations_'.$relAction))
-        ),($this->isUploadable($bridge) ? array(
-            'uploader_action' => $this->generateUrl('maci_admin_view', array(
+            'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
+            'uploader' => ($this->isUploadable($bridge) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'relations','id'=>$this->request->get('id'),
                 'relation'=>$relation['association'],'relAction'=>'uploader',
                 'bridge'=>$bridge['bridge']
-            ))
-        ) : array()));
+            )) : false)
+        ));
     }
 
     public function getFields($map)
@@ -765,6 +773,7 @@ class AdminController extends Controller
         $map['class'] = $metadata['targetEntity'];
         $map['name'] = $metadata['fieldName'];
         $map['label'] = $this->generateLabel( $metadata['fieldName'] );
+        $map['uploadable'] = false;
         return $map;
     }
 
@@ -888,6 +897,14 @@ class AdminController extends Controller
         return $this->om->getRepository($map['class']);
     }
 
+    public function isSortable($map)
+    {
+        if ($map['sort_attr'] && in_array($map['sort_attr'], $this->getFields($map))) {
+            return true;
+        }
+        return false;
+    }
+
     public function getTemplate($map,$action)
     {
         if ( array_key_exists($action, $map['templates']) && $this->templating->exists($map['templates'][$action]['template']) ) {
@@ -907,7 +924,7 @@ class AdminController extends Controller
 
     public function hasTrash($map)
     {
-        if (in_array($map['trash_attr'], $this->getFields($map))) {
+        if ($map['trash_attr'] && in_array($map['trash_attr'], $this->getFields($map))) {
             return true;
         }
         return false;

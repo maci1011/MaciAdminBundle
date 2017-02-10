@@ -35,6 +35,7 @@ class Configuration implements ConfigurationInterface
                                         ->scalarNode('form')->end()
                                         ->scalarNode('label')->end()
                                         ->scalarNode('class')->isRequired()->end()
+                                        ->scalarNode('sort_attr')->defaultValue('position')->end()
                                         ->scalarNode('trash_attr')->defaultValue('removed')->end()
                                         ->booleanNode('uploadable')->defaultValue(false)->end()
                                         ->booleanNode('enabled')->defaultValue(true)->end()

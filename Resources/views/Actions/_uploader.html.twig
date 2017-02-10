@@ -1,5 +1,7 @@
 
-<form class="maci_uploader_form" action="{{ uploader_action }}">
+{% if uploader %}
+
+<form class="maci_uploader_form" action="{{ uploader }}">
 
 	<div class="form-group">
 
@@ -26,3 +28,5 @@
 	</div>
 
 </form>
+
+{% endif %}

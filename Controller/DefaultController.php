@@ -298,6 +298,9 @@ class DefaultController extends Controller
 
         } else if ($relAction === 'remove') {
             return $this->mcmRelationsRemove($section, $entity, $id);
+
+        } else if ($relAction === 'reorder') {
+            return $this->mcmRelationsReorder($section, $entity, $id);
         }
 
         return false;
@@ -565,6 +568,55 @@ class DefaultController extends Controller
         }
 
         return $params;
+    }
+
+    public function mcmRelationsReorder($section, $entity, $id)
+    {
+        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+            return false;
+        }
+
+        $ids = $this->request->get('ids', array());
+
+        if (count($ids)<2) {
+            return array('success' => false, 'error' => 'Reorder: No ids.');
+        }
+
+        $entity = $this->mcm->getEntity($section, $entity);
+
+        $item = $this->mcm->getRepository($entity)->findOneById($id);
+        if (!$item) {
+            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
+            return false;
+        }
+
+        $relation = $this->mcm->getCurrentRelation($entity);
+        if (!$relation) {
+            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
+            return false;
+        }
+
+        // $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
+
+        if ( !method_exists($this->mcm->getNewItem($relation), 'setPosition') ) {
+            return array('success' => false, 'error' => 'Reorder: Method not found.');
+        }
+
+        $repo = $this->mcm->getRepository($relation);
+
+        $counter = 0;
+
+        foreach ($ids as $id) {
+            $item = $repo->findOneById($id);
+            if ( $item ) {
+                $item->setPosition($counter);
+            }
+            $counter++;
+        }
+
+        $this->om->flush();
+
+        return array('success' => true);
     }
 
 }

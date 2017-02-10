@@ -30,6 +30,27 @@ $(document).ready(function(e) {
     	admin.setRichTextEditor( $(this) );
     });
 
+    $( "div[sortable]" ).each(function(i,el) {
+    	$(el).sortable({
+			items: '.list-item',
+		    stop: function(e, ui) {
+		        var list = $(el).find(".list-item");
+		        var ids = [];
+		        list.each(function(j,fl) {
+		            ids.push( parseInt( $(fl).find('input[type=hidden]').eq(0).val() ) );
+		        });
+		        $.ajax({
+		            type: 'POST',
+		            data: {ids: ids},
+		            url: $(el).attr('sortable'),
+		            success: function () {
+		                console.log('Reorded!');
+		            }
+		        });
+		    }
+		});
+    });
+
 });
 
 })(jQuery);

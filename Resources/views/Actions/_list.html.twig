@@ -3,7 +3,7 @@
 
 {% if list|length %}
 
-<div class="list-default">
+<div class="list-default" {% if sortable %}sortable="{{ sortable }}"{% endif %}>
 <table class="table table-striped{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
 
 <thead>
