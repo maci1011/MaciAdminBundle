@@ -457,6 +457,7 @@ class AdminController extends Controller
             'main_actions' => $this->getListLabels($this->getMainActions($map['section'], $map['name'])),
             'multiple_actions' => $this->getListLabels($this->getMultipleActions($map['section'], $map['name'])),
             'single_actions' => $this->getListLabels($this->getSingleActions($map['section'], $map['name'])),
+            'sortable' => false,
             'template' => $this->getTemplate($map,$action),
             'uploader' => ($this->isUploadable($map) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],'action'=>'uploader'
