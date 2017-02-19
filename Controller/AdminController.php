@@ -2,7 +2,6 @@
 
 namespace Maci\AdminBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Bundle\TwigBundle\TwigEngine;
 use Symfony\Component\DependencyInjection\Container;
@@ -26,7 +25,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 use Maci\AdminBundle\MaciPager;
 
-class AdminController extends Controller
+class AdminController
 {
     private $_sections;
 
