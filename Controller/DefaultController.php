@@ -30,65 +30,64 @@ class DefaultController extends Controller
     ---> Default Actions
 */
 
-    public function dashboardAction($section, $entity, $id)
+    public function dashboardAction()
     {
-        return $this->mcmDashboard($section, $entity, $id);
+        return $this->mcmDashboard();
     }
 
-    public function listAction($section, $entity, $id)
+    public function listAction()
     {
-        return $this->mcmList($section, $entity, $id);
+        return $this->mcmList();
     }
 
-    public function trashAction($section, $entity, $id)
+    public function trashAction()
     {
-        return $this->mcmList($section, $entity, $id);
+        return $this->mcmList();
     }
 
-    public function showAction($section, $entity, $id)
+    public function showAction()
     {
-        return $this->mcmShow($section, $entity, $id);
+        return $this->mcmShow();
     }
 
-    public function newAction($section, $entity, $id)
+    public function newAction()
     {
-        return ( $id ? false : $this->mcmForm($section, $entity, $id) );
+        return ( $this->request->get('id') ? false : $this->mcmForm() );
     }
 
-    public function editAction($section, $entity, $id)
+    public function editAction()
     {
-        return ( $id ? $this->mcmForm($section, $entity, $id) : false );
+        return ( $this->request->get('id') ? $this->mcmForm() : false );
     }
 
-    public function removeAction($section, $entity, $id)
+    public function removeAction()
     {
-        return $this->mcmRemove($section, $entity, $id);
+        return $this->mcmRemove();
     }
 
-    public function relationsAction($section, $entity, $id)
+    public function relationsAction()
     {
-        return $this->mcmRelations($section, $entity, $id);
+        return $this->mcmRelations();
     }
 
-    public function uploaderAction($section, $entity, $id)
+    public function uploaderAction()
     {
-        return $this->mcmUploader($section, $entity, $id);
+        return $this->mcmUploader();
     }
 
 /*
     ---> Generic Actions
 */
 
-    public function mcmDashboard($section, $entity, $id)
+    public function mcmDashboard()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
-
-        return $this->mcm->getDefaultEntityParams($entity);
+        return $this->mcm->getDefaultParams();
     }
 
-    public function mcmList($section, $entity, $id)
+    public function mcmList()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
         $list = $this->mcm->getItems($entity);
 
@@ -103,20 +102,13 @@ class DefaultController extends Controller
         ));
     }
 
-    public function mcmShow($section, $entity, $id)
+    public function mcmShow()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'Missing Id.');
-            return false;
-        }
-
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-
-        if (!$item) {
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
         return array_merge($this->mcm->getDefaultEntityParams($entity), array(
             'item' => $item,
@@ -124,20 +116,18 @@ class DefaultController extends Controller
         ));
     }
 
-    public function mcmForm($section, $entity, $id)
+    public function mcmForm()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
         $item = null;
 
         // $clone = $this->request->get('clone', false);
 
         if ($id) {
-            $item = $this->mcm->getRepository($entity)->findOneById($id);
-            if (!$item) {
-                $this->session->getFlashBag()->add('error', 'Item [' . $id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-                return false;
-            }
+            $item = $this->mcm->getCurrentItem();
+            if (!$item) return false;
             // if ($clone) {
             //     $item = $this->cloneItem($entity, $item);
             // } else {
@@ -173,7 +163,7 @@ class DefaultController extends Controller
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
-                'section' => $section,
+                'section' => $this->mcm->getCurrentSection(),
                 'entity' => $entity['name'],
                 'action' => 'list'
             );
@@ -186,19 +176,13 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmRemove($section, $entity, $id)
+    public function mcmRemove()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'Missing Id.');
-            return false;
-        }
-
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
         $form = $this->mcm->getRemoveForm($entity,$item);
 
@@ -220,7 +204,7 @@ class DefaultController extends Controller
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
-                'section' => $section,
+                'section' => $this->mcm->getCurrentSection(),
                 'entity' => $entity['name'],
                 'action' => 'list'
             );
@@ -235,9 +219,10 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmUploader($section, $entity, $id)
+    public function mcmUploader()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
         $params = $this->mcm->getDefaultEntityParams($entity);
 
@@ -277,50 +262,45 @@ class DefaultController extends Controller
     ---> Generic Relations Actions
 */
 
-    public function mcmRelations($section, $entity, $id)
+    public function mcmRelations()
     {
         $relAction = $this->request->get('relAction');
 
         if ($relAction === 'list' || $relAction === 'show') {
-            return $this->mcmRelationsList($section, $entity, $id);
+            return $this->mcmRelationsList();
 
         } else if ($relAction === 'add' || $relAction === 'set') {
-            return $this->mcmRelationsAdd($section, $entity, $id);
+            return $this->mcmRelationsAdd();
 
         } else if ($relAction === 'bridge') {
-            return $this->mcmBridge($section, $entity, $id);
+            return $this->mcmBridge();
 
         } else if ($relAction === 'uploader') {
             if ($this->request->get('bridge')) {
-                return $this->mcmBridgeUploader($section, $entity, $id);
+                return $this->mcmBridgeUploader();
             }
-            return $this->mcmRelationsUploader($section, $entity, $id);
+            return $this->mcmRelationsUploader();
 
         } else if ($relAction === 'remove') {
-            return $this->mcmRelationsRemove($section, $entity, $id);
+            return $this->mcmRelationsRemove();
 
         } else if ($relAction === 'reorder') {
-            return $this->mcmRelationsReorder($section, $entity, $id);
+            return $this->mcmRelationsReorder();
         }
 
         return false;
     }
 
-    public function mcmRelationsList($section, $entity, $id)
+    public function mcmRelationsList()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
         $list = $this->mcm->getRelationItems($relation, $item);
 
@@ -337,21 +317,16 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmRelationsAdd($section, $entity, $id)
+    public function mcmRelationsAdd()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item);
 
@@ -363,7 +338,7 @@ class DefaultController extends Controller
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
-                'section' => $section,
+                'section' => $this->mcm->getCurrentSection(),
                 'entity' => $entity['name'],
                 'action'=>'relations',
                 'id' => $id,
@@ -384,27 +359,19 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmBridge($section, $entity, $id)
+    public function mcmBridge()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
-        $bridge = $this->mcm->getCurrentBridge($relation);
-        if (!$bridge) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('bridge') . ' in ' . $this->mcm->getClass($relation) . ' not found.');
-            return false;
-        }
+        $bridge = $this->mcm->getCurrentBridge();
+        if (!$bridge) return false;
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item, $bridge);
 
@@ -416,7 +383,7 @@ class DefaultController extends Controller
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
-                'section' => $section,
+                'section' => $this->mcm->getCurrentSection(),
                 'entity' => $entity['name'],
                 'action'=>'relations',
                 'id' => $id,
@@ -437,21 +404,16 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmRelationsUploader($section, $entity, $id)
+    public function mcmRelationsUploader()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
@@ -481,27 +443,19 @@ class DefaultController extends Controller
         return array('success' => true);
     }
 
-    public function mcmBridgeUploader($section, $entity, $id)
+    public function mcmBridgeUploader()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
-        $bridge = $this->mcm->getCurrentBridge($relation);
-        if (!$bridge) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('bridge') . ' in ' . $this->mcm->getClass($relation) . ' not found.');
-            return false;
-        }
+        $bridge = $this->mcm->getCurrentBridge();
+        if (!$bridge) return false;
 
         $params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
 
@@ -531,21 +485,16 @@ class DefaultController extends Controller
         return array('success' => true);
     }
 
-    public function mcmRelationsRemove($section, $entity, $id)
+    public function mcmRelationsRemove()
     {
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $relationName . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
         $list = $this->mcm->getRelationItems($relation, $item);
 
@@ -553,11 +502,33 @@ class DefaultController extends Controller
 
         if ($this->request->getMethod() === 'POST') {
 
-            $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
+            if ($relation['remove_in_relation'] === true) {
+
+                $list = $this->mcm->selectItemsFromRequestIds($relation,$list);
+
+                foreach ($list as $item) {
+
+                    if (method_exists($item, 'setRemoved')) {
+                        $item->setRemoved(true);
+                    } else {
+                        $this->om->remove($item);
+                    }
+
+                    $this->session->getFlashBag()->add('success', 'Item [' . $item->getId() . '] for ' . $this->mcm->getClass($relation) . ' removed.');
+
+                }
+
+                $this->om->flush();
+
+            } else {
+
+                $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
+
+            }
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
-                'section' => $section,
+                'section' => $this->mcm->getCurrentSection(),
                 'entity' => $entity['name'],
                 'action'=>'relations',
                 'id' => $id,
@@ -570,7 +541,7 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmRelationsReorder($section, $entity, $id)
+    public function mcmRelationsReorder()
     {
         if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
             return false;
@@ -582,19 +553,14 @@ class DefaultController extends Controller
             return array('success' => false, 'error' => 'Reorder: No ids.');
         }
 
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
 
-        $item = $this->mcm->getRepository($entity)->findOneById($id);
-        if (!$item) {
-            $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
 
-        $relation = $this->mcm->getCurrentRelation($entity);
-        if (!$relation) {
-            $this->session->getFlashBag()->add('error', 'Relation ' . $this->request->get('relation') . ' in ' . $this->mcm->getClass($entity) . ' not found.');
-            return false;
-        }
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
 
         // $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 

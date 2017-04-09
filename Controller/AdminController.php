@@ -214,15 +214,18 @@ class AdminController
         return false;
     }
 
-    public function getEntityByClass($section, $className)
+    public function getEntityByClass($className, $pref_section = false)
     {
-        $entities = $this->getEntities($section);
-        if (!$entities) {
-            return false;
+        $sections = $this->getAuthSections();
+        if ($pref_section && in_array($pref_section, $sections)) {
+            $sections = array_merge(array($pref_section), $sections);
         }
-        foreach ($entities as $name => $map) {
-            if ($className === $this->getClass($map)) {
-                return $map;
+        foreach ($sections as $section) {
+            $entities = $this->getEntities($section);
+            foreach ($entities as $name => $map) {
+                if ($className === $this->getClass($map)) {
+                    return $map;
+                }
             }
         }
         return false;
@@ -264,9 +267,8 @@ class AdminController
     ---> Actions Functions
 */
 
-    public function getMainActions($section, $entity)
+    public function getMainActions($entity)
     {
-        $entity = $this->getEntity($section, $entity);
         $actions = array('list');
         if ($this->hasTrash($entity)) {
             $actions[] = 'trash';
@@ -278,35 +280,35 @@ class AdminController
         return $actions;
     }
 
-    public function getSingleActions($section, $entity)
+    public function getSingleActions($entity)
     {
         return array('show', 'edit', 'relations', 'remove');
     }
 
-    public function getMultipleActions($section, $entity)
+    public function getMultipleActions($entity)
     {
         return array();
     }
 
-    public function getActions($section, $entity)
+    public function getActions($entity)
     {
         return array_merge(
-            $this->getMainActions($section, $entity),
-            $this->getSingleActions($section, $entity),
-            $this->getMultipleActions($section, $entity)
+            $this->getMainActions($entity),
+            $this->getSingleActions($entity),
+            $this->getMultipleActions($entity)
         );
     }
 
-    public function hasAction($section, $entity, $action)
+    public function hasAction($entity, $action)
     {
         return in_array($action, array_merge(
-            $this->getMainActions($section, $entity),
-            $this->getSingleActions($section, $entity),
-            $this->getMultipleActions($section, $entity)
+            $this->getMainActions($entity),
+            $this->getSingleActions($entity),
+            $this->getMultipleActions($entity)
         ));
     }
 
-    public function getRelationActions($section, $entity)
+    public function getRelationActions($entity)
     {
         return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader', 'reorder');
     }
@@ -410,30 +412,130 @@ class AdminController
         return false;
     }
 
-    public function getCurrentRelation($map)
+    public function getCurrentAction()
     {
-        return $this->getRelation($map, $this->request->get('relation'));
+        if (isset($this->current_action)) {
+            return $this->current_action;
+        }
+        $entity = $this->getCurrentEntity();
+        $action = $this->request->get('action');
+        if ($this->hasAction($entity, $action)) {
+            $this->current_action = $action;
+            return $action;
+        }
+        $this->current_action = false;
+        $this->session->getFlashBag()->add('error', 'Action [' . $action . '] for [' . $entity['label'] . '] not found.');
+        return false;
     }
 
-    public function getCurrentBridge($map)
+    public function getCurrentBridge()
     {
-        return $this->getBridge($map, $this->request->get('bridge'));
+        if (isset($this->current_bridge)) {
+            return $this->current_bridge;
+        }
+        $relation = $this->getCurrentRelation();
+        $bridge = $this->getBridge($relation, $this->request->get('bridge'));
+        if ($bridge) {
+            $this->current_bridge = $bridge;
+            return $bridge;
+        }
+        $this->current_bridge = false;
+        $this->session->getFlashBag()->add('error', 'Bridge [' . $this->request->get('bridge') . '] in [' . $relation['label'] . '] not found.');
+        return false;
+    }
+
+    public function getCurrentEntity()
+    {
+        if (isset($this->current_entity)) {
+            return $this->current_entity;
+        }
+        $section = $this->getCurrentSection();
+        if (!$section) {
+            return false;
+        }
+        $entity = $this->getEntity($section, $this->request->get('entity'));
+        if ($entity) {
+            $this->current_entity = $entity;
+            return $entity;
+        }
+        $this->current_entity = false;
+        $this->session->getFlashBag()->add('error', 'Entity [' . $this->request->get('entity') . '] in section [' . $section . '] not found.');
+        return false;
+    }
+
+    public function getCurrentItem()
+    {
+        if (isset($this->current_item)) {
+            return $this->current_item;
+        }
+        $entity = $this->getCurrentEntity();
+        $id = (int) $this->request->get('id');
+        if (!$id) {
+            $this->session->getFlashBag()->add('error', 'Missing Id.');
+            return false;
+        }
+        $item = $this->getRepository($entity)->findOneById($id);
+        if ($item) {
+            $this->current_item = $item;
+            return $item;
+        }
+        $this->current_item = false;
+        $this->session->getFlashBag()->add('error', 'Item [' . $id . '] for [' . $entity['label'] . '] not found.');
+        return false;
+    }
+
+    public function getCurrentRelation()
+    {
+        if (isset($this->current_relation)) {
+            return $this->current_relation;
+        }
+        $entity = $this->getCurrentEntity();
+        $relation = $this->getRelation($entity, $this->request->get('relation'));
+        if ($relation) {
+            $this->current_relation = $relation;
+            return $relation;
+        }
+        $this->current_relation = false;
+        $this->session->getFlashBag()->add('error', 'Relation [' . $this->request->get('relation') . '] for [' . $entity['label'] . '] not found.');
+        return false;
+    }
+
+    public function getCurrentSection()
+    {
+        if (isset($this->current_section)) {
+            return $this->current_section;
+        }
+        $section = $this->request->get('section');
+        if (in_array($section, $this->getAuthSections())) {
+            $this->current_section = $section;
+            return $section;
+        }
+        $this->current_section = false;
+        $this->session->getFlashBag()->add('error', 'Section [' . $section . '] not found.');
+        return false;
     }
 
     public function getDefaultMap()
     {
         $map = array();
-        $map['list'] = array();
+        $map['class'] = null;
         $map['filters'] = array();
-        $map['templates'] = array();
+        $map['label'] = null;
+        $map['list'] = array();
+        $map['name'] = null;
+        $map['remove_in_relation'] = false;
         $map['sort_attr'] = 'position';
+        $map['templates'] = array();
         $map['trash_attr'] = 'removed';
+        $map['uploadable'] = false;
         return $map;
     }
 
-    public function getDefaultParams()
+    public function getDefaultParams($section = false)
     {
-        $section = $this->request->get('section');
+        if (!$section) {
+            $section = $this->getCurrentSection();
+        }
         return array(
             'section' => $section,
             'section_label' => $this->getSectionLabel($section),
@@ -446,16 +548,16 @@ class AdminController
         $action = $this->request->get('action');
         return array_merge($this->getDefaultParams(),array(
             'entity' => $map['name'],
-            'entity_label' => $this->getEntityLabel($map['section'], $map['name']),
+            'entity_label' => $map['label'],
             'action' =>  $action,
             'action_label' => $this->generateLabel($action),
-            'actions' => $this->getListLabels($this->getActions($map['section'], $map['name'])),
+            'actions' => $this->getListLabels($this->getActions($map)),
             'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
             'is_entity_uploadable' => $this->isUploadable($map),
-            'main_actions' => $this->getListLabels($this->getMainActions($map['section'], $map['name'])),
-            'multiple_actions' => $this->getListLabels($this->getMultipleActions($map['section'], $map['name'])),
-            'single_actions' => $this->getListLabels($this->getSingleActions($map['section'], $map['name'])),
+            'main_actions' => $this->getListLabels($this->getMainActions($map)),
+            'multiple_actions' => $this->getListLabels($this->getMultipleActions($map)),
+            'single_actions' => $this->getListLabels($this->getSingleActions($map)),
             'sortable' => false,
             'template' => $this->getTemplate($map,$action),
             'uploader' => ($this->isUploadable($map) ? $this->generateUrl('maci_admin_view', array(
@@ -471,6 +573,8 @@ class AdminController
             'fields' => $this->getListFields($relation),
             'relation' => $relation['association'],
             'relation_label' => $relation['label'],
+            'relation_section' => $relation['section'],
+            'relation_entity' => $relation['name'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
             'bridges' => $this->getBridges($relation),
@@ -773,7 +877,6 @@ class AdminController
         $map['class'] = $metadata['targetEntity'];
         $map['name'] = $metadata['fieldName'];
         $map['label'] = $this->generateLabel( $metadata['fieldName'] );
-        $map['uploadable'] = false;
         return $map;
     }
 
@@ -783,14 +886,14 @@ class AdminController
             return false;
         }
 
-        $metadata = $this->getAssociationMetadata($map, $association);
+        $metadata = $this->getAssociationMetadata($map,$association);
         if (!$metadata) {
             return false;
         }
 
         $relation = $this->getNewMap($metadata);
 
-        $entity = $this->getEntityByClass($map['section'], $this->getClass($relation));
+        $entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
         if ($entity) {
             $relation = $entity;
         }

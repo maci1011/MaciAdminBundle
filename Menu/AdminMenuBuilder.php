@@ -89,19 +89,17 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-		$sections = $this->mcm->getAuthSections();
+        $section = $this->mcm->getCurrentSection();
 
-		$section = $this->request->get('section');
+        $entity = $this->mcm->getCurrentEntity();
 
-		$entity = $this->request->get('entity');
+		if ( $entity ) {
 
-		if ( $section && in_array($section, $sections) ) {
-
-			foreach ($this->mcm->getMainActions($section, $entity) as $action) {
+			foreach ($this->mcm->getMainActions($entity) as $action) {
 				$label = $this->mcm->generateLabel($action);
 				$menu->addChild($label, array(
 				    'route' => 'maci_admin_view',
-				    'routeParameters' => array('section' => $section, 'entity' => $entity, 'action' => $action)
+				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action)
 				));
 			}
 
