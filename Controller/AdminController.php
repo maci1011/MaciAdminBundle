@@ -474,7 +474,7 @@ class AdminController
             $this->session->getFlashBag()->add('error', 'Missing Id.');
             return false;
         }
-        $item = $this->getRepository($entity)->findOneById($id);
+        $item = $this->getItem($entity, $id);
         if ($item) {
             $this->current_item = $item;
             return $item;
@@ -722,16 +722,42 @@ class AdminController
         return $list;
     }
 
+    public function getItem($map, $id)
+    {
+        return $this->getRepository($map)->findOneById($id);
+    }
+
+    public function removeItems($map, $list)
+    {
+        if (!count($list)) return false;
+        
+        foreach ($list as $item) {
+            $id = $item->getId();
+            if (method_exists($item, 'setRemoved')) {
+                $item->setRemoved(true);
+            } else {
+                $this->om->remove($item);
+            }
+            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $entity['label'] . '] removed.');
+        }
+        $this->om->flush();
+        
+        return true;
+    }
+
+    public function removeItemsFromRequestIds($map, $list)
+    {
+        return $this->mcm->removeItems($map, $this->mcm->selectItemsFromRequestIds($map,$list));
+    }
+
     public function getItemDetails($map, $object)
     {
         $fields = $this->getFields($map);
-
         $details = array();
 
         foreach ($fields as $field) {
 
             $value = null;
-
             $uf = ucfirst($field);
 
             if (method_exists($object, ('is'.$uf))) {
@@ -751,7 +777,6 @@ class AdminController
                 'label' => $this->generateLabel($field),
                 'value' => $value
             ));
-
         }
 
         return $details;

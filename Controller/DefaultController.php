@@ -125,7 +125,7 @@ class DefaultController extends Controller
 
         // $clone = $this->request->get('clone', false);
 
-        if ($id) {
+        if ((int) $this->request->get('id', 0)) {
             $item = $this->mcm->getCurrentItem();
             if (!$item) return false;
             // if ($clone) {
@@ -145,6 +145,7 @@ class DefaultController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
 
             $isNew = (bool) ( $item->getId() === null );
+
             if ($isNew) {
                 $this->om->persist($item);
             }
@@ -192,15 +193,7 @@ class DefaultController extends Controller
 
         if ($form->isValid()) {
 
-            if (method_exists($item, 'setRemoved')) {
-                $item->setRemoved(true);
-            } else {
-                $this->om->remove($item);
-            }
-
-            $this->om->flush();
-
-            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for ' . $this->mcm->getClass($entity) . ' removed.');
+            $this->mcm->removeItems($entity, array($item));
 
             $params['redirect'] = 'maci_admin_view';
             $params['redirect_params'] = array(
@@ -504,21 +497,7 @@ class DefaultController extends Controller
 
             if ($relation['remove_in_relation'] === true) {
 
-                $list = $this->mcm->selectItemsFromRequestIds($relation,$list);
-
-                foreach ($list as $item) {
-
-                    if (method_exists($item, 'setRemoved')) {
-                        $item->setRemoved(true);
-                    } else {
-                        $this->om->remove($item);
-                    }
-
-                    $this->session->getFlashBag()->add('success', 'Item [' . $item->getId() . '] for ' . $this->mcm->getClass($relation) . ' removed.');
-
-                }
-
-                $this->om->flush();
+                $this->mcm->removeItemsFromRequestIds($relation, $list);
 
             } else {
 
