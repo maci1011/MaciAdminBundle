@@ -162,12 +162,7 @@ class DefaultController extends Controller
                 $this->session->getFlashBag()->add('success', 'Item Edited.');
             }
 
-            $params['redirect'] = 'maci_admin_view';
-            $params['redirect_params'] = array(
-                'section' => $this->mcm->getCurrentSection(),
-                'entity' => $entity['name'],
-                'action' => 'list'
-            );
+            $params = $this->mcm->getDefaultEntityRedirectParams($entity);
 
         }
 
@@ -195,12 +190,7 @@ class DefaultController extends Controller
 
             $this->mcm->removeItems($entity, array($item));
 
-            $params['redirect'] = 'maci_admin_view';
-            $params['redirect_params'] = array(
-                'section' => $this->mcm->getCurrentSection(),
-                'entity' => $entity['name'],
-                'action' => 'list'
-            );
+            $params = $this->mcm->getDefaultEntityRedirectParams($entity);
 
         } else {
 
@@ -329,15 +319,7 @@ class DefaultController extends Controller
 
             $this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
 
-            $params['redirect'] = 'maci_admin_view';
-            $params['redirect_params'] = array(
-                'section' => $this->mcm->getCurrentSection(),
-                'entity' => $entity['name'],
-                'action'=>'relations',
-                'id' => $id,
-                'relation' => $relation['association'],
-                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
-            );
+            $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 
         }
 
@@ -374,15 +356,7 @@ class DefaultController extends Controller
 
             $this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 
-            $params['redirect'] = 'maci_admin_view';
-            $params['redirect_params'] = array(
-                'section' => $this->mcm->getCurrentSection(),
-                'entity' => $entity['name'],
-                'action'=>'relations',
-                'id' => $id,
-                'relation' => $relation['association'],
-                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
-            );
+            $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 
         }
 
@@ -490,31 +464,15 @@ class DefaultController extends Controller
         if (!$relation) return false;
 
         $list = $this->mcm->getRelationItems($relation, $item);
-
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
         if ($this->request->getMethod() === 'POST') {
-
             if ($relation['remove_in_relation'] === true) {
-
                 $this->mcm->removeItemsFromRequestIds($relation, $list);
-
             } else {
-
                 $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
-
             }
-
-            $params['redirect'] = 'maci_admin_view';
-            $params['redirect_params'] = array(
-                'section' => $this->mcm->getCurrentSection(),
-                'entity' => $entity['name'],
-                'action'=>'relations',
-                'id' => $id,
-                'relation' => $relation['association'],
-                'relAction' => $this->mcm->getRelationDefaultAction($entity, $relation['association'])
-            );
-
+            $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
         }
 
         return $params;
@@ -541,14 +499,11 @@ class DefaultController extends Controller
         $relation = $this->mcm->getCurrentRelation();
         if (!$relation) return false;
 
-        // $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
-
         if ( !method_exists($this->mcm->getNewItem($relation), 'setPosition') ) {
             return array('success' => false, 'error' => 'Reorder: Method not found.');
         }
 
         $repo = $this->mcm->getRepository($relation);
-
         $counter = 0;
 
         foreach ($ids as $id) {

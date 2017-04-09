@@ -614,6 +614,41 @@ class AdminController
         ));
     }
 
+    public function getDefaultRedirectParams()
+    {
+        return array(
+            'redirect' => 'maci_admin_view',
+            'redirect_params' => array()
+        );
+    }
+
+    public function getDefaultEntityRedirectParams($map)
+    {
+        return array(
+            'redirect' => 'maci_admin_view',
+            'redirect_params' => array(
+                'section' => $map['section'],
+                'entity' => $map['name'],
+                'action' => 'list'
+            )
+        );
+    }
+
+    public function getDefaultRelationRedirectParams($map, $relation)
+    {
+        return array(
+            'redirect' => 'maci_admin_view',
+            'redirect_params' => array(
+                'section' => $map['section'],
+                'entity' => $map['name'],
+                'action'=>'relations',
+                'id' => (int) $this->request->get('id', 0),
+                'relation' => $relation['association'],
+                'relAction' => $this->getRelationDefaultAction($map, $relation['association'])
+            )
+        );
+    }
+
     public function getFields($map)
     {
         $metadata = $this->getMetadata($map);
@@ -738,7 +773,7 @@ class AdminController
             } else {
                 $this->om->remove($item);
             }
-            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $entity['label'] . '] removed.');
+            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $map['label'] . '] removed.');
         }
         $this->om->flush();
         
@@ -747,7 +782,7 @@ class AdminController
 
     public function removeItemsFromRequestIds($map, $list)
     {
-        return $this->mcm->removeItems($map, $this->mcm->selectItemsFromRequestIds($map,$list));
+        return $this->removeItems($map, $this->selectItemsFromRequestIds($map,$list));
     }
 
     public function getItemDetails($map, $object)
@@ -1367,15 +1402,6 @@ class AdminController
         }
         return $this->generateForm($entity, $object);
     }
-
-/*
-    ---> ???
-*/
-
-    // public function getAdminBundle()
-    // {
-    //     return $this->kernel->getBundle('MaciAdminBundle');
-    // }
 
     // public function getEntitiesClassList()
     // {
