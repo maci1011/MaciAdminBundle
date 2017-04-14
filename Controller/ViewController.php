@@ -25,17 +25,18 @@ class ViewController extends Controller
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$sections[0])));
         }
         if (!in_array($section, $sections)) {
-            $request->getSession()->getFlashBag()->add('error', 'Section not Found.');
+            $request->getSession()->getFlashBag()->add('error', 'Section [' . $section . '] not Found.');
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$sections[0])));
         }
-        $_entity = $admin->getCurrentEntity();
-        if (!$_entity) {
+        $entity = $request->get('entity');
+        if (!$entity || !$admin->hasEntity($section, $entity)) {
             if ($admin->hasSectionDashboard($section)) {
                 return $this->render($admin->getSectionDashboard($section));
             }
             $entities = array_keys($admin->getEntities($section));
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entities[0],'action'=>'list')));
         }
+        $_entity = $admin->getCurrentEntity();
         $entity = $_entity['name'];
         $action = $admin->getCurrentAction();
         if (!$action) {

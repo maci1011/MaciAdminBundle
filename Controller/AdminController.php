@@ -141,6 +141,11 @@ class AdminController
         return $this->_auth_sections;
     }
 
+    public function isAuthSection($section)
+    {
+        return in_array($section, $this->getAuthSections());
+    }
+
     public function getSection($section)
     {
         if ($this->hasSection($section)) {
@@ -402,23 +407,19 @@ class AdminController
 
     public function getClass($map)
     {
-        if (class_exists($map['class'])) {
-            return $map['class'];
-        }
+        if (class_exists($map['class'])) return $map['class'];
         $repo = $this->getRepository($map);
-        if ($repo) {
-            return $repo->getClassName();
-        }
+        if ($repo) return $repo->getClassName();
         return false;
     }
 
     public function getCurrentAction()
     {
-        if (isset($this->current_action)) {
-            return $this->current_action;
-        }
+        if (isset($this->current_action)) return $this->current_action;
         $entity = $this->getCurrentEntity();
+        if (!$entity) return false;
         $action = $this->request->get('action');
+        if (!$action) return false;
         if ($this->hasAction($entity, $action)) {
             $this->current_action = $action;
             return $action;
@@ -430,11 +431,12 @@ class AdminController
 
     public function getCurrentBridge()
     {
-        if (isset($this->current_bridge)) {
-            return $this->current_bridge;
-        }
+        if (isset($this->current_bridge)) return $this->current_bridge;
         $relation = $this->getCurrentRelation();
-        $bridge = $this->getBridge($relation, $this->request->get('bridge'));
+        if (!$relation) return false;
+        $_bridge = $this->request->get('bridge');
+        if (!$_bridge) return false;
+        $bridge = $this->getBridge($relation, $_bridge);
         if ($bridge) {
             $this->current_bridge = $bridge;
             return $bridge;
@@ -446,34 +448,28 @@ class AdminController
 
     public function getCurrentEntity()
     {
-        if (isset($this->current_entity)) {
-            return $this->current_entity;
-        }
+        if (isset($this->current_entity)) return $this->current_entity;
         $section = $this->getCurrentSection();
-        if (!$section) {
-            return false;
-        }
-        $entity = $this->getEntity($section, $this->request->get('entity'));
+        if (!$section) return false;
+        $_entity = $this->request->get('entity');
+        if (!$_entity) return false;
+        $entity = $this->getEntity($section, $_entity);
         if ($entity) {
             $this->current_entity = $entity;
             return $entity;
         }
         $this->current_entity = false;
-        $this->session->getFlashBag()->add('error', 'Entity [' . $this->request->get('entity') . '] in section [' . $section . '] not found.');
+        $this->session->getFlashBag()->add('error', 'Entity [' . $_entity . '] in section [' . $section . '] not found.');
         return false;
     }
 
     public function getCurrentItem()
     {
-        if (isset($this->current_item)) {
-            return $this->current_item;
-        }
+        if (isset($this->current_item)) return $this->current_item;
         $entity = $this->getCurrentEntity();
+        if (!$entity) return false;
         $id = (int) $this->request->get('id');
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'Missing Id.');
-            return false;
-        }
+        if (!$id) return false;
         $item = $this->getItem($entity, $id);
         if ($item) {
             $this->current_item = $item;
@@ -486,27 +482,27 @@ class AdminController
 
     public function getCurrentRelation()
     {
-        if (isset($this->current_relation)) {
-            return $this->current_relation;
-        }
+        if (isset($this->current_relation)) return $this->current_relation;
         $entity = $this->getCurrentEntity();
-        $relation = $this->getRelation($entity, $this->request->get('relation'));
+        if (!$entity) return false;
+        $_relation = $this->request->get('relation');
+        if (!$_relation) return false;
+        $relation = $this->getRelation($entity, $_relation);
         if ($relation) {
             $this->current_relation = $relation;
             return $relation;
         }
         $this->current_relation = false;
-        $this->session->getFlashBag()->add('error', 'Relation [' . $this->request->get('relation') . '] for [' . $entity['label'] . '] not found.');
+        $this->session->getFlashBag()->add('error', 'Relation [' . $_relation . '] for [' . $entity['label'] . '] not found.');
         return false;
     }
 
     public function getCurrentSection()
     {
-        if (isset($this->current_section)) {
-            return $this->current_section;
-        }
+        if (isset($this->current_section)) return $this->current_section;
         $section = $this->request->get('section');
-        if (in_array($section, $this->getAuthSections())) {
+        if (!$section) return false;
+        if ($this->isAuthSection($section)) {
             $this->current_section = $section;
             return $section;
         }
