@@ -92,7 +92,7 @@ class ViewController extends Controller
         ));
     }
 
-    public function adminBarAction(Request $request, $entity, $item = false)
+    public function adminBarAction($entity, $item = false)
     {
         $admin = $this->container->get('maci.admin');
         $sections = $admin->getAuthSections();
@@ -103,11 +103,12 @@ class ViewController extends Controller
         foreach ($sections as $secname) {
             if ($admin->hasEntity($secname, $entity)) {
                 $section = $secname;
+                $_entity = $admin->getEntity($section, $entity);
                 if ($item) {
-                    $actions = $admin->getListLabels($admin->getSingleActions($section,$entity));
+                    $actions = $admin->getListLabels($admin->getSingleActions($_entity));
                     $id = $item->getId();
                 } else {
-                    $actions = $admin->getListLabels($admin->getMainActions($section,$entity));
+                    $actions = $admin->getListLabels($admin->getMainActions($_entity));
                 }
                 break;
             }
