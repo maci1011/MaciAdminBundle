@@ -381,7 +381,7 @@ class AdminController
 
     public function getBundle($map)
     {
-        $name = split(':', $map['class']);
+        $name = explode(':', $map['class']);
         if (1 < count($name)) {
             return $this->kernel->getBundle($name[0]);
         }

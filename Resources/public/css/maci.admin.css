@@ -244,6 +244,10 @@ h4 {
 	padding: 12px;
 }
 
+.uploader_list {
+    padding-bottom: 15px;
+}
+
 .modal-body .maci-form {
     padding: 8px;
 }

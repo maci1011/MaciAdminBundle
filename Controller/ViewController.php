@@ -68,7 +68,7 @@ class ViewController extends Controller
             return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
 
-        $params = call_user_method($callAction, $controller);
+        $params = call_user_func_array(array($controller, $callAction), array());
 
         if ($params===false) {
             $request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');

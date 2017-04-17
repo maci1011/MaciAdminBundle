@@ -13,12 +13,15 @@ var maciUploader = function (form, options) {
 		_callback = false,
 		_start_callback = false,
 		_end_callback = false,
+		_upload_limit = 3,
 		_upload_index,
+		_uploaded_index,
 		_name = 'file',
 
 	_obj = {
 
-	sendFile: function(i, map) {
+	sendFile: function(map) {
+		map.status_col.text('Uploading...');
 		var data = new FormData();
 		data.append(_name, map.file);
 		$.ajax({
@@ -31,39 +34,47 @@ var maciUploader = function (form, options) {
 			contentType: false,
 			success: function (dat,sts,jqx) {
 				if ($.isFunction(_callback)) {
-					_callback(dat);
+					_callback(dat,sts,jqx);
 				}
 				_obj.end(map);
-				if (_upload_index == _files.length) {
-					_obj.endUpload(dat);
-				}
 			}
 		});
 	},
 
 	end: function(map) {
-		$('<span/>').text(' - uploaded!').appendTo(map.item);
-		_upload_index++;
+		map.status_col.text('Uploaded!');
+		_uploaded_index++;
+		if (_uploaded_index == _files.length) {
+			_obj.endUpload();
+		} else {
+			_obj.uploadNext();
+		}
 	},
 
-	endUpload: function(dat) {
+	endUpload: function() {
 		_obj.clearList();
 		_select.show();
 		if ($.isFunction(_end_callback)) {
-			_end_callback(dat);
+			_end_callback();
 		}
 	},
 
-	upload: function(dat) {
+	upload: function() {
 		_select.hide();
 		_obj.hideUploadButton();
 		if ($.isFunction(_start_callback)) {
-			_start_callback(dat);
+			_start_callback();
 		}
-		_upload_index = 0;
-		$.each(_files, function(i, map) {
-			_obj.sendFile(i, map);
-		});
+		for (var i = (_upload_limit < _files.length ? _upload_limit : _files.length); i >= 0; i--) {
+			_obj.uploadNext();
+		}
+	},
+
+	uploadNext: function() {
+		var uploading = _upload_index - _uploaded_index;
+		if (_upload_index == _files.length || _upload_limit < uploading) return;
+		_obj.sendFile(_files[_upload_index]);
+		_upload_index++;
 	},
 
 	setName: function(name) {
@@ -91,16 +102,18 @@ var maciUploader = function (form, options) {
 	},
 
 	addItem: function(file) {
-		var item = $('<div/>', {'class': 'row'}).appendTo(_list),
-			title = $('<span/>').text(file.name).appendTo(item);
+		var item = $('<div/>', {'class': 'row'}).appendTo(_list);
 		_files.push({
 			'item': item,
-			'file': file
+			'file': file,
+			'name_col': $('<div/>', {'class': 'item-name col-xs-12 col-sm-8'}).text(file.name).appendTo(item),
+			'status_col': $('<div/>', {'class': 'item-status col-xs-12 col-sm-4'}).appendTo(item)
 		});
 	},
 
 	clearList: function() {
 		_upload_index = 0;
+		_uploaded_index = 0;
 		_files = [];
 		_list.html('');
 		_obj.hideUploadButton();
