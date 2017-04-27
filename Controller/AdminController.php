@@ -618,20 +618,21 @@ class AdminController
         );
     }
 
-    public function getDefaultEntityRedirectParams($map)
+    public function getDefaultEntityRedirectParams($map, $action = 'list')
     {
         return array(
             'redirect' => 'maci_admin_view',
             'redirect_params' => array(
                 'section' => $map['section'],
                 'entity' => $map['name'],
-                'action' => 'list'
+                'action' => $action
             )
         );
     }
 
-    public function getDefaultRelationRedirectParams($map, $relation)
+    public function getDefaultRelationRedirectParams($map, $relation, $action = false)
     {
+        if (!$action) $action = $this->getRelationDefaultAction($map, $relation['association']);
         return array(
             'redirect' => 'maci_admin_view',
             'redirect_params' => array(
@@ -640,7 +641,7 @@ class AdminController
                 'action'=>'relations',
                 'id' => (int) $this->request->get('id', 0),
                 'relation' => $relation['association'],
-                'relAction' => $this->getRelationDefaultAction($map, $relation['association'])
+                'relAction' => $action
             )
         );
     }

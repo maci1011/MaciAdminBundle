@@ -9,11 +9,11 @@
 	<td class="list-item-id">
 		<input name="id" type="hidden" value="{{ item.id }}" />
 		{% if action == 'relations' %}
-		<a href="{{ path('maci_admin_view', { 'section': relation_section, 'entity': relation_entity, 'action': 'show', 'id': item.id }) }}" title="See Details">
+		<a href="{{ path('maci_admin_view', { 'section': relation_section, 'entity': relation_entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
 			{{ item.id }}
 		</a>
 		{% else %}
-		<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'show', 'id': item.id }) }}" title="See Details">
+		<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
 			{{ item.id }}
 		</a>
 		{% endif %}

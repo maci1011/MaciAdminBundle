@@ -162,7 +162,7 @@ class DefaultController extends Controller
                 $this->session->getFlashBag()->add('success', 'Item Edited.');
             }
 
-            $params = $this->mcm->getDefaultEntityRedirectParams($entity);
+            $params = $this->mcm->getDefaultEntityRedirectParams($entity, ($isNew ? 'new' : 'edit'));
 
         }
 
