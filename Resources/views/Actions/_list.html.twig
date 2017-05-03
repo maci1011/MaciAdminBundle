@@ -9,34 +9,32 @@
 <thead>
 <tr class="list-header">
 
-	{% if '_id' in fields %}
-	<th class="list-header-id">
-		<span class="list-title">Id</span>
-	</th>
-	{% endif %}
-
 	{% for field in fields %}
 
-	{% if not ( field in ['_id', '_actions'] ) %}
-
-	<th>
-		{% if field == '_string' %}
-		<span class="list-title">Name</span>
-		{% else %}
-		<span class="list-title">{{ field|capitalize }}</span>
-		{% endif %}
+	{% if field == 'id' %}
+	<th class="list-header id">
+		<span class="list-title">Id</span>
 	</th>
-
+	{% elseif field == '_preview' %}
+	<th class="list-header _preview">
+		<span class="list-title">Preview</span>
+	</th>
+	{% elseif field == '_string' %}
+	<th class="list-header name">
+		<span class="list-title">Name</span>
+	</th>
+	{% else %}
+	<th class="list-header {{ field }}">
+		<span class="list-title">{{ field|capitalize }}</span>
+	</th>
 	{% endif %}
 
 	{% endfor %}
 
 	{% if type is not defined or type == 'list' %}
-	{% if '_actions' in fields %}
 	<th class="list-header-last list-header-actions">
 		<span class="list-title">Actions</span>
 	</th>
-	{% endif %}
 	{% elseif type == 'relation' %}
 	<th class="list-header-last list-header-remove">
 		<span class="list-title">Remove Item</span>

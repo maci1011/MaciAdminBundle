@@ -2,32 +2,19 @@
 <div class="container-fluid">
 <div class="details-list">
 
-	<div class="row details-item even entity-detail-id">
-		<div class="col-xs-4">
-			<span class="item-label">Id</span>
-		</div>
-		<div class="col-xs-8">
-			<span class="item-value">{{ id }}</span>
-		</div>
-	</div>
-
-	{% for field in details %}
+	{% for field in fields %}
 
 	<div class="row details-item {% if loop.index is even %}even{% else %}odd{% endif %}">
 
 		<div class="col-xs-4">
-			<span class="item-label">{{ field.label }}</span>
+
+			<span class="item-label">{{ field|capitalize }}</span>
+
 		</div>
 
 		<div class="col-xs-8">
 
-			{% if field.value is iterable %}
-			{% for child in field.value %}
-			<span class="item-child">{{ child }}</span>
-			{% endfor %}
-			{% else %}
-			<span class="item-value">{{ field.value }}</span>
-			{% endif %}
+			{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
 
 		</div>
 

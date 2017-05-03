@@ -1,0 +1,61 @@
+
+
+{% if field == '_string' %}
+
+<span class="item-field-value">{{ item }}</span>
+
+{% else %}
+
+
+	{% set fldLabel = (field|capitalize ~ 'Label') %}
+	{% set fldValue = (field|capitalize ~ 'Value') %}
+
+
+	{% if attribute(item, fldLabel) is defined %}
+
+		{% set val = attribute(item, fldLabel) %}
+
+	{% elseif attribute(item, fldValue) is defined %}
+
+		{% set val = attribute(item, fldValue) %}
+
+	{% else %}
+
+		{% set val = attribute(item, field) %}
+
+	{% endif %}
+
+
+	{% if val.timestamp is defined %}
+
+<span class="item-field-value">{{ val|date('d/m/Y H:i:s') }}</span>
+
+	{% elseif val is iterable %}
+
+<ul class="item-field-value">
+
+	{% for child in val %}
+
+	<li>{{ val }}</li>
+
+	{% endfor %}
+
+</ul>
+
+	{% elseif val is same as(true) %}
+
+<span class="glyphicon glyphicon-ok"></span>
+
+	{% elseif val is same as(false) %}
+
+<span class="glyphicon glyphicon-remove"></span>
+
+	{% else %}
+
+<span class="item-field-value">{{ val }}</span>
+
+	{% endif %}
+
+
+{% endif %}
+

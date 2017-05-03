@@ -143,7 +143,7 @@ h4 {
     display: block;
 }
 
-.list-default tr.list-header > th.list-header-id > span {
+.list-default tr.list-header > th.list-header.id > span {
     padding: 0;
     text-align: center;
     width: 50px;
@@ -179,12 +179,15 @@ h4 {
 }
 
 .list-default tr.list-item > td > a,
-.list-default tr.list-item > td > p {
+.list-default tr.list-item > td > p,
+.list-default tr.list-item > td > span,
+.list-default tr.list-item > td > .item-field-value {
     padding: 5px;
     font-size: 10pt;
     line-height: 20px;
     margin: 0;
     border: 0;
+    display: inline-block;
 }
 
 .list-default tr.list-item > td.list-item-id > a,

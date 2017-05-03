@@ -11,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -700,6 +701,8 @@ class AdminController
                     'empty_data' => '',
                     'choices' => call_user_method($method, $object)
                 ));
+            } else if ( $field === 'path' && method_exists($object, 'setFile') ) {
+                $form->add('file', FileType::class, array('required' => false));
             } else {
                 $form->add($field);
             }
@@ -741,16 +744,22 @@ class AdminController
 
     public function getListFields($map)
     {
+        $object = $this->getNewItem($map);
+        $list = [];
+        if (method_exists($object, 'getId')) {
+            $list[] = 'id';
+        }
         if (array_key_exists('list', $map) && count($map['list'])) {
-            return array_merge(array('_id'), $map['list'], array('_actions'));
+            return array_merge($list, $map['list']);
+        }
+        if (method_exists($object, 'getAbsolutePath') && method_exists($object, 'getWebPath')) {
+            $list[] = '_preview';
         }
         $fields = array_keys($this->getFields($map));
-        $list = array('_id');
         foreach ($fields as $field) {
             if ($field == $map['trash_attr']) continue;
             $list[] = lcfirst($this->getCamel($field));
         }
-        $list[] = '_actions';
         return $list;
     }
 
@@ -780,38 +789,6 @@ class AdminController
     public function removeItemsFromRequestIds($map, $list)
     {
         return $this->removeItems($map, $this->selectItemsFromRequestIds($map,$list));
-    }
-
-    public function getItemDetails($map, $object)
-    {
-        $fields = $this->getFields($map);
-        $details = array();
-
-        foreach ($fields as $field) {
-
-            $value = null;
-            $uf = ucfirst($field);
-
-            if (method_exists($object, ('is'.$uf))) {
-                $value = ( call_user_method(('is'.$uf), $object) ? 'True' : 'False' );
-            } else if (method_exists($object, ('get'.$uf.'Label'))) {
-                $value = call_user_method(('get'.$uf.'Label'), $object);
-            } else if (method_exists($object, ('get'.$uf))) {
-                $value = call_user_method(('get'.$uf), $object);
-                if (is_object($value) && get_class($value) === 'DateTime') {
-                    $value = $value->format("Y-m-d H:i:s");
-                }
-            } else if (method_exists($object, $field)) {
-                $value = call_user_method($field, $object);
-            }
-
-            array_push($details, array(
-                'label' => $this->generateLabel($field),
-                'value' => $value
-            ));
-        }
-
-        return $details;
     }
 
     public function getItems($map)

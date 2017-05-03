@@ -9,7 +9,7 @@ services:
         class: Maci\AdminBundle\Controller\DefaultController
         arguments: ["@doctrine.orm.entity_manager","@session","@request_stack","@maci.admin"]
 
-    maci_admin.menu_builder:
+    maci.admin.menu_builder:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder
         arguments: ["@knp_menu.factory","@request_stack","@maci.admin"]
         tags:
@@ -17,3 +17,9 @@ services:
             - { name: knp_menu.menu_builder, method: createSectionsMenu, alias: admin_sections }
             - { name: knp_menu.menu_builder, method: createActionsMenu, alias: admin_actions }
             - { name: knp_menu.menu_builder, method: createItemActionsMenu, alias: admin_item_actions }
+
+    maci.admin.twig_extension:
+        class: Maci\AdminBundle\Twig\MaciAdminExtension
+        arguments: ['@kernel']
+        tags:
+            - { name: twig.extension }

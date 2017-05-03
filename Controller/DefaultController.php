@@ -111,8 +111,7 @@ class DefaultController extends Controller
         if (!$item) return false;
 
         return array_merge($this->mcm->getDefaultEntityParams($entity), array(
-            'item' => $item,
-            'details' => $this->mcm->getItemDetails($entity, $item)
+            'item' => $item
         ));
     }
 
@@ -140,8 +139,6 @@ class DefaultController extends Controller
         $form = $this->mcm->getForm($entity, $item);
         $form->handleRequest($this->request);
 
-        $params = $this->mcm->getDefaultEntityParams($entity);
-
         if ($form->isSubmitted() && $form->isValid()) {
 
             $isNew = (bool) ( $item->getId() === null );
@@ -162,14 +159,14 @@ class DefaultController extends Controller
                 $this->session->getFlashBag()->add('success', 'Item Edited.');
             }
 
-            $params = $this->mcm->getDefaultEntityRedirectParams($entity, ($isNew ? 'new' : 'edit'));
+            return $this->mcm->getDefaultEntityRedirectParams($entity, ($isNew ? 'new' : 'edit'));
 
         }
 
-        $params['item'] = $item;
-        $params['form'] = $form->createView();
-
-        return $params;
+        return array_merge($this->mcm->getDefaultEntityParams($entity), array(
+            'item' => $item,
+            'form' => $form->createView()
+        ));
     }
 
     public function mcmRemove()

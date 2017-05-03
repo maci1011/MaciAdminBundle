@@ -5,7 +5,10 @@
 
 <tr class="list-item">
 
-	{% if '_id' in fields %}
+	{% for field in fields %}
+
+	{% if field == 'id' %}
+
 	<td class="list-item-id">
 		<input name="id" type="hidden" value="{{ item.id }}" />
 		{% if action == 'relations' %}
@@ -18,35 +21,24 @@
 		</a>
 		{% endif %}
 	</td>
+
+	{% elseif field == '_preview' %}
+
+	<td class="list-item-preview">
+
+	{% if is_image(item.webPath) %}
+
+		<img src="{{ asset(item.webPath | imagine_filter('maci_admin_list_preview')) }}" alt="Preview" />
+
 	{% endif %}
 
-	{% for field in fields %}
+	</td>
 
-	{% if not ( field in ['_id', '_actions'] ) %}
+	{% else %}
 
 	<td>
 
-		{% if field == '_string' %}
-
-		<p>{{ item }}</p>
-
-		{% else %}
-
-		{% set mth1 = (field|capitalize ~ 'Label') %}
-		{% set mth2 = (field|capitalize ~ 'Value') %}
-		{% if attribute(item, mth1) is defined %}
-		{% set meth = attribute(item, mth1) %}
-		{% else %}
-		{% set meth = attribute(item, field) %}
-		{% endif %}
-
-		{% if meth.timestamp is defined %}
-		<p>{{ meth|date('d/m/Y') }}</p>
-		{% else %}
-		<p>{{ meth }}</p>
-		{% endif %}
-
-		{% endif %}
+		{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
 
 	</td>
 
@@ -55,7 +47,6 @@
 	{% endfor %}
 
 	{% if type == 'list' %}
-	{% if '_actions' in fields %}
 	<td class="list-item-actions">
 
 		<a class="btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'edit', 'id': item.id}) }}">
@@ -67,7 +58,6 @@
 		</a>
 
 	</td>
-	{% endif %}
 	{% elseif type == 'relation' %}
 	<td>
 
