@@ -626,7 +626,8 @@ class AdminController
             'redirect_params' => array(
                 'section' => $map['section'],
                 'entity' => $map['name'],
-                'action' => $action
+                'action' => $action,
+                'id' => (int) $this->request->get('id', false)
             )
         );
     }
