@@ -42,6 +42,7 @@ class AdminMenuBuilder
 			}
 		}
 		$menu->addChild('Homepage', array('route' => 'homepage'));
+		$menu['Homepage']->setLinkAttributes(array('target' => '_blank'));
 
 		return $menu;
 	}
