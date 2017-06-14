@@ -327,6 +327,8 @@ class AdminController
     {
         $metadata = $this->getMetadata($map);
 
+        $associations = array();
+
         foreach ($metadata->associationMappings as $fieldName => $association) {
             // if ($association['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
             //     $associations[] = $fieldName;
