@@ -36,7 +36,7 @@
         </button>
         <span id="menu-toggle" class="active">
             <span class="glyphicon glyphicon-th-list"></span>
-            {{ app.request.get('section')|upper }}
+            {% block menu_toggle %}{{ app.request.get('section')|upper }}{% endblock menu_toggle %}
         </span>
     </div>
     <div class="collapse navbar-collapse">
