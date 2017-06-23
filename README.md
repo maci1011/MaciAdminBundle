@@ -108,7 +108,7 @@ maci_admin:
                 product: 'AppEntityBundle:Product'
                 category: 'AppEntityBundle:Category'
                 page:
-                    class: 'MaciPageBundle:Page'
+                    class: 'AppBundle:Page'
                     list: ['title', 'path', 'template', 'locale']
             config:
                 roles: [ROLE_ADMIN]
@@ -130,10 +130,10 @@ maci_admin:
     sections:
         media:
             entities:
-                album: 'MaciMediaBundle:Album'
+                album: 'AppBundle:Album'
                 media:
                     label: Media
-                    class: 'MaciPageBundle:Page'
+                    class: 'AppBundle:Page'
                     list: ['_preview', 'name', 'type']
                     templates:
                         list: 'AppBundle:Default:list.html.twig'
@@ -142,13 +142,17 @@ maci_admin:
                     trash_attr: 'removed'
                     uploadable: true
                 media_item:
-                    class: 'MaciMediaBundle:Item'
+                    class: 'AppBundle:Item'
                     bridges: 'media'
                     remove_in_relation: false # remove the association, or, with true, delete the item
                     sort_attr: 'position'
             config:
                 roles: [ROLE_ADMIN]
                 dashboard: 'AppBundle:Default:media_dashboard.html.twig'
+        blog:
+            entities:
+                post: 'AppBundle:Post'
+                tag: 'AppBundle:Tag'
 ```
 
 
