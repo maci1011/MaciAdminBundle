@@ -132,14 +132,14 @@ maci_admin:
                     list: ['_preview', 'name', 'type']
                     templates:
                         list: 'AppBundle:Default:list.html.twig'
-                        # or: new, edit, show
+                        # or: show, new, edit, trash, remove
                     form: 'AppBundle\Form\Type\FormType'
                     trash_attr: 'removed'
                     uploadable: true
                 media_item:
                     class: 'MaciMediaBundle:Item'
                     bridges: 'media'
-                    remove_in_relation: true
+                    remove_in_relation: false # remove the association, or, with true, delete the item
                     sort_attr: 'position'
             config:
                 roles: [ROLE_ADMIN]
