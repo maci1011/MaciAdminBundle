@@ -117,6 +117,35 @@ the admin backend:
 
 ![Default MaciAdmin Backend interface](https://github.com/maci1011/MaciAdminBundle/raw/master/Resources/doc/images/maciadmin-promo.png)
 
+Full configuration:
+
+```yaml
+# app/config/config.yml
+maci_admin:
+    sections:
+        media:
+            entities:
+                album: 'MaciMediaBundle:Album'
+                media:
+                    label: Media
+                    class: 'MaciPageBundle:Page'
+                    list: ['_preview', 'name', 'type']
+                    templates:
+                        list: 'AppBundle:Default:list.html.twig'
+                        # or: new, edit, show
+                    form: 'AppBundle\Form\Type\FormType'
+                    trash_attr: 'removed'
+                    uploadable: true
+                media_item:
+                    class: 'MaciMediaBundle:Item'
+                    bridges: 'media'
+                    remove_in_relation: true
+                    sort_attr: 'position'
+            config:
+                roles: [ROLE_ADMIN]
+                dashboard: 'AppBundle:Default:media_dashboard.html.twig'
+```
+
 Keep reading the rest of the documentation to learn how to create complex backends (...coming soon).
 
 

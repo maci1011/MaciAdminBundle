@@ -43,6 +43,8 @@
         {% block top_menu %}
         <nav>
             {{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}
+        </nav>
+        <nav>
             <ul class="nav navbar-nav">
                 <li>
                     <span class="navbar-text">Locale: {{ app.request.locale|upper }}</span>

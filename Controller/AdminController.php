@@ -276,13 +276,17 @@ class AdminController
     public function getMainActions($entity)
     {
         $actions = array('list');
+
         if ($this->hasTrash($entity)) {
             $actions[] = 'trash';
         }
+
         $actions[] = 'new';
+
         if ($this->isUploadable($entity)) {
             $actions[] = 'uploader';
         }
+
         return $actions;
     }
 
