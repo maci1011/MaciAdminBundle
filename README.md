@@ -14,14 +14,15 @@ MaciAdminBundle lets you simply create administration backends for Symfony 2.7.*
 
 ### Missing:
  - tests
+ - filters
  - documentation with examples
- - some other things
+ - some other little thing
 
 
 ### Features:
  - sections for differents roles
  - entities actions: list, show, new, edit, trash, remove
- - entities relations: add and remove
+ - entities relations: list, add and remove
 
 
 **Requirements**
@@ -31,6 +32,7 @@ MaciAdminBundle lets you simply create administration backends for Symfony 2.7.*
   * Doctrine ORM entities (Doctrine ODM and Propel not supported).
 
 > **❮ NOTE ❯** you are reading the documentation of the bundle's **development** version.
+
 
 Installation
 ------------
@@ -87,6 +89,7 @@ php bin/console assets:install --symlink
 
 That's it! Now everything is ready to create your first admin backend.
 
+
 Your First Backend
 ------------------
 
@@ -117,7 +120,9 @@ the admin backend:
 
 ![Default MaciAdmin Backend interface](https://github.com/maci1011/MaciAdminBundle/raw/master/Resources/doc/images/maciadmin-promo.png)
 
-Full configuration:
+
+Full configuration
+------------------
 
 ```yaml
 # app/config/config.yml
@@ -146,10 +151,10 @@ maci_admin:
                 dashboard: 'AppBundle:Default:media_dashboard.html.twig'
 ```
 
-Keep reading the rest of the documentation to learn how to create complex backends (...coming soon).
-
 
 License
 -------
 
 This software is published under the [MIT License](LICENSE.md)
+
+
