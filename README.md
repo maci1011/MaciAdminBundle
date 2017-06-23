@@ -112,7 +112,7 @@ maci_admin:
                     list: ['title', 'path', 'template', 'locale']
             config:
                 roles: [ROLE_ADMIN]
-                dashboard: 'AppBundle:Default:my_dashboard.html.twig'
+                dashboard: 'AppBundle:Default:my_dashboard.html.twig' # optional
 ```
 
 **Congratulations! You've just created your first fully-featured backend!**
