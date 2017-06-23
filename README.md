@@ -133,16 +133,19 @@ maci_admin:
                 album: 'AppBundle:Album'
                 media:
                     label: Media
-                    class: 'AppBundle:Page'
+                    class: 'AppBundle:Media'
                     list: ['_preview', 'name', 'type']
                     templates:
                         list: 'AppBundle:Default:list.html.twig'
                         # or: show, new, edit, trash, remove
+                    relations:
+                        items:
+                            enabled: true # by default
                     form: 'AppBundle\Form\Type\FormType'
                     trash_attr: 'removed'
                     uploadable: true
                 media_item:
-                    class: 'AppBundle:Item'
+                    class: 'AppBundle:MediaItem'
                     bridges: 'media'
                     remove_in_relation: false # remove the association, or, with true, delete the item
                     sort_attr: 'position'
