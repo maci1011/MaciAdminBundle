@@ -78,7 +78,19 @@ maci_admin:
 # ...
 ```
 
-### Step 4: Prepare the Web Assets of the Bundle
+### Step 4: Set the thumbnails size for the list pages (for entities with a preview)
+
+```yaml
+# Liip Configuration
+liip_imagine:
+    filter_sets:
+        maci_admin_list_preview:
+            quality: 80
+            filters:
+                thumbnail: { size: [90, 90], mode: inbound }
+```
+
+### Step 5: Prepare the Web Assets of the Bundle
 
 ```cli
 # Symfony 2.7
