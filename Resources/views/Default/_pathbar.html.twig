@@ -2,55 +2,56 @@
 {% if params.section is defined %}
 
 <nav>
-<ul class="nav navbar-nav">
+<ol class="breadcrumb">
 
-    <li class="pathbar-parent">
-		{% if params.section_has_dashboard and params.entity is defined and params.entity %}
-		<a href="{{ path('maci_admin_view', {'section': params.section}) }}">
-    		{{ params.section_label }}
-			<span class="glyphicon glyphicon-chevron-right"></span>
+    <li>
+		<a href="{{ path('maci_admin') }}">
+    		Admin
 		</a>
-		{% else %}
-    	<span class="navbar-text">{{ params.section_label }}</span>
-		{% endif %}
     </li>
 
+	{% if params.section is defined and params.section %}
+    <li>
+		<a href="{{ path('maci_admin_view', {'section': params.section}) }}">
+    		{{ params.section_label }}
+		</a>
+    </li>
+	{% endif %}
+
 	{% if params.entity is defined and params.entity %}
-	<li class="pathbar-parent">
-		{% if params.action is defined and params.action %}
+	{% if params.action is defined and params.action %}
+	<li>
 		<a href="{{ path('maci_admin_view', {'section': params.section, 'entity': params.entity, 'action': 'list'}) }}">
 			{{ params.entity_label }}
-			<span class="glyphicon glyphicon-chevron-right"></span>
 		</a>
-		{% else %}
-    	<span class="navbar-text">{{ params.entity_label }}</span>
-		{% endif %}
+	</li>
+	{% else %}
+	<li class="active">
+    	{ params.entity_label }}
+	</li>
+	{% endif %}
+	{% endif %}
+
+	{% if params.id is defined and params.id %}
+	<li class="active">
+    	{{ params.id }}
 	</li>
 	{% endif %}
 
 	{% if params.action is defined and params.action %}
-	<li class="pathbar-parent">
-		{% if params.id is defined and params.id %}
-		<span class="navbar-text">
-			{{ params.action_label }}
-			<span class="glyphicon glyphicon-chevron-right"></span>
-		</span>
-		{% else %}
-    	<span class="navbar-text">{{ params.action_label }}</span>
-		{% endif %}
+	<li class="active">
+    	{{ params.action_label }}
 	</li>
 	{% endif %}
 
-	{% if params.id is defined and params.id %}
-	<li class="pathbar-parent">
-    	<span class="navbar-text">{{ params.id }}</span>
+	{% if params.relation_action is defined and params.relation_action %}
+	<li class="active">
+    	{{ params.relation|capitalize }}
 	</li>
 	{% endif %}
 
-    <li>
-    </li>
 
-</ul>
+</ol>
 </nav>
 
 {% endif %}
