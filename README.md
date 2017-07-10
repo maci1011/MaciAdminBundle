@@ -122,8 +122,8 @@ maci_admin:
                 page:
                     class: 'AppBundle:Page'
                     list: ['title', 'path', 'template', 'locale']
-            config:
-                roles: [ROLE_ADMIN]
+            config: # optional
+                roles: [ROLE_ADMIN] # default
                 dashboard: 'AppBundle:Default:my_dashboard.html.twig' # optional
 ```
 
