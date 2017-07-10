@@ -78,7 +78,7 @@ maci_admin:
 # ...
 ```
 
-### Step 4: Set the thumbnails size for the list pages (for entities with a preview)
+### Step 4: Set the thumbnails size for the "list" pages (for entities with a preview)
 
 ```yaml
 # Liip Configuration
