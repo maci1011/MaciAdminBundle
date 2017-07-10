@@ -157,11 +157,12 @@ maci_admin:
                     form: 'AppBundle\Form\Type\FormType'
                     trash_attr: 'removed'
                     uploadable: true
+                # Relations of this example: Album >1toM< MediaItem >Mto1< Media
                 media_item:
                     class: 'AppBundle:MediaItem'
-                    bridges: 'media'
-                    remove_in_relation: false # remove the association, or, with true, delete the item
-                    sort_attr: 'position'
+                    bridges: 'media' # allow to add directly media to, in this example, an album
+                    remove_in_relation: false # in relations, remove the association, or, with true, delete the item
+                    sort_attr: 'position' # allow to sort items in relations, here, the items of an album
             config:
                 roles: [ROLE_ADMIN]
                 dashboard: 'AppBundle:Default:media_dashboard.html.twig'
