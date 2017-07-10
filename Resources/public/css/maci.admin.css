@@ -93,30 +93,9 @@ h4 {
 
 /*   -----> Content Navbar <-----   */
 
-#pathbar.content-navbar .nav {
-    background-color: transparent;
-}
-
 .content-navbar .nav {
     margin: 0 0 15px 0;
     background-color: #eee;
-}
-
-#pathbar.content-navbar .nav > li > a {
-    text-decoration: underline;
-    color: #999;
-}
-
-#pathbar.content-navbar .nav > li > a,
-#pathbar.content-navbar .nav > li > span {
-    text-transform: uppercase;
-    font-size: 9pt;
-    line-height: 20px;
-}
-
-#pathbar.content-navbar .nav > li > a:hover,
-#pathbar.content-navbar .nav > li > a:focus {
-    background-color: #eaeaea;
 }
 
 #actionsbar.content-navbar .nav > li > a,
