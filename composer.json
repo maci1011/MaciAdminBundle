@@ -1,7 +1,7 @@
 {
     "name": "maci/admin-bundle",
     "type": "symfony-bundle",
-    "description": "Symfony MaciAdminBundle",
+    "description": "Symfony Admin Generator Bundle for Entities",
     "keywords": ["Admin Generator", "admin", "maci", "bootstrap"],
     "homepage": "https://github.com/maci1011/MaciAdminBundle",
     "license": "MIT",
