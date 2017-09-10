@@ -160,7 +160,7 @@ maci_admin:
                 # Relations of this example: Album >1toM< MediaItem >Mto1< Media
                 media_item:
                     class: 'AppBundle:MediaItem'
-                    bridges: 'media' # allow to add directly media to, in this example, an album
+                    bridges: 'media' # or ['media','foo'] allow to add directly media to, in this example, an album
                     remove_in_relation: false # in relations, remove the association, or, with true, delete the item
                     sort_attr: 'position' # allow to sort items in relations, here, the items of an album
             config:
