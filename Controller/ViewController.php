@@ -13,6 +13,11 @@ class ViewController extends Controller
         return $this->redirect($this->generateUrl('maci_admin_view'));
     }
 
+    public function notFoundAction(Request $request)
+    {
+        return $this->render('MaciAdminBundle:Default:not_found.html.twig');
+    }
+
     public function viewAction(Request $request)
     {
         $admin = $this->container->get('maci.admin');
@@ -90,42 +95,5 @@ class ViewController extends Controller
             'template' => $params['template'],
             'params' => $params
         ));
-    }
-
-    public function adminBarAction($entity, $item = false)
-    {
-        $admin = $this->container->get('maci.admin');
-        $sections = $admin->getAuthSections();
-        $id = false;
-        $section = false;
-        $actions = false;
-
-        foreach ($sections as $secname) {
-            if ($admin->hasEntity($secname, $entity)) {
-                $section = $secname;
-                $_entity = $admin->getEntity($section, $entity);
-                if ($item) {
-                    $actions = $admin->getListLabels($admin->getSingleActions($_entity));
-                    $id = $item->getId();
-                } else {
-                    $actions = $admin->getListLabels($admin->getMainActions($_entity));
-                }
-                break;
-            }
-        }
-
-        return $this->render('MaciAdminBundle:Default:admin_bar.html.twig', array(
-            'id' => $id,
-            'section' => $section,
-            'entity' => $entity,
-            'entity_label' => $admin->generateLabel($entity),
-            'item' => $item,
-            'actions' => $actions
-        ));
-    }
-
-    public function notFoundAction(Request $request)
-    {
-        return $this->render('MaciAdminBundle:Default:not_found.html.twig');
     }
 }

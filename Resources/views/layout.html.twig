@@ -34,10 +34,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
         </button>
+        {% block menu_toggle %}
+        {% if app.request.get('section') %}
         <span id="menu-toggle" class="active">
             <span class="glyphicon glyphicon-th-list"></span>
-            {% block menu_toggle %}{{ app.request.get('section')|upper }}{% endblock menu_toggle %}
+            {{ app.request.get('section')|upper }}
         </span>
+        {% endif %}
+        {% endblock menu_toggle %}
     </div>
     <div class="collapse navbar-collapse">
         {% block top_menu %}
@@ -45,12 +49,15 @@
             {{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}
         </nav>
         <nav>
-            <ul class="nav navbar-nav">
+            <ul class="nav navbar-nav navbar-right">
                 <li>
                     <span class="navbar-text">Locale: {{ app.request.locale|upper }}</span>
                 </li>
             </ul>
         </nav>
+
+        {% include "MaciAdminBundle:Default:_navbar_top.html.twig" %}
+
         {% endblock top_menu %}
     </div>
 </div>
@@ -68,13 +75,17 @@
 
     <div id="mainMenu">
 
-    {% block main_menu %}
+        {% block main_menu %}
+
+        {% if app.request.get('section') %}
 
         <h3>{{ app.request.get('section')|upper }}</h3>
 
         <nav>{{ knp_menu_render('admin_entities', {'currentClass': 'active'}) }}</nav>
 
-    {% endblock %}
+        {% endif %}
+
+        {% endblock %}
 
     </div>
 

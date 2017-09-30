@@ -25,7 +25,12 @@ h4 {
 /*   -----> Layout <-----   */
 
 .navbar-text {
-    margin: 15px;
+    margin: 0;
+    padding: 15px;
+}
+
+.navbar-nav.navbar-right:last-child {
+    margin-right: 0;
 }
 
 #sidebar-wrapper {
@@ -174,6 +179,7 @@ h4 {
 }
 
 .list-default tr.list-item > td.list-item-id > a,
+.list-default tr.list-item > td.list-item-id > span,
 .list-default tr.list-item > td.list-item-id > p {
     width: 50px;
     text-align: center;
