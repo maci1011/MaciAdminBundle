@@ -96,4 +96,36 @@ class ViewController extends Controller
             'params' => $params
         ));
     }
+
+    public function adminBarAction($entity, $item = false)
+    {
+        $admin = $this->container->get('maci.admin');
+        $sections = $admin->getAuthSections();
+        $id = false;
+        $section = false;
+        $actions = false;
+
+        foreach ($sections as $secname) {
+            if ($admin->hasEntity($secname, $entity)) {
+                $section = $secname;
+                $_entity = $admin->getEntity($section, $entity);
+                if ($item) {
+                    $actions = $admin->getListLabels($admin->getSingleActions($_entity));
+                    $id = $item->getId();
+                } else {
+                    $actions = $admin->getListLabels($admin->getMainActions($_entity));
+                }
+                break;
+            }
+        }
+
+        return $this->render('MaciAdminBundle:Default:admin_bar.html.twig', array(
+            'id' => $id,
+            'section' => $section,
+            'entity' => $entity,
+            'entity_label' => $admin->generateLabel($entity),
+            'item' => $item,
+            'actions' => $actions
+        ));
+    }
 }
