@@ -1,0 +1,33 @@
+
+{% extends "MaciAdminBundle::layout.html.twig" %}
+
+
+{% block menu_toggle %}
+<span id="menu-toggle" class="active">
+	<span class="glyphicon glyphicon-th-list"></span>
+	MENU
+</span>
+{% endblock menu_toggle %}
+
+
+{% block top_menu %}
+<nav>
+    <ul class="nav navbar-nav">
+        <li>
+            <a href="{{ path('homepage') }}">Homepage</a>
+        </li>
+    </ul>
+    <ul class="nav navbar-nav navbar-right">
+        <li>
+            <span class="navbar-text">Locale: {{ app.request.locale|upper }}</span>
+        </li>
+    </ul>
+    {% include "MaciAdminBundle:Default:_navbar_top.html.twig" %}
+</nav>
+{% endblock top_menu %}
+
+
+{% block main_menu %}
+<h3>Menu</h3>
+{# Your Menu #}
+{% endblock %}
