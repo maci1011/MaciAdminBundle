@@ -230,7 +230,11 @@ class DefaultController extends Controller
         // } else {}
 
         $item = $this->mcm->getNewItem($entity);
+
+        if (method_exists($item, 'setLocale')) $item->setLocale($this->request->getLocale());
+
         $item->setFile($file);
+
         $this->om->persist($item);
 
         $this->om->flush();
