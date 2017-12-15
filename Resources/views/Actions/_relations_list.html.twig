@@ -1,9 +1,5 @@
 
-{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'relation' } %}
-
-
 <div class="container-fluid">
-
 
 <a class="btn btn-primary" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': action, 'id': id, 'relation': relation, 'relAction': ( relation_action == 'show' ? 'set' : 'add' ) }) }}">
 	{% if relation_action == 'show' %}Set{% else %}Add{% endif %}
@@ -25,15 +21,14 @@
 </a>
 
 {% if bridge in uploadable_bridges %}
-
 <a class="btn btn-default" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': action, 'id': id, 'relation': relation, 'relAction': 'uploader', 'bridge': bridge }) }}">
 	Upload {{ bridge|capitalize }}
 </a>
-
 {% endif %}
-
 
 {% endfor %}
 
-
 </div>
+
+
+{% include "MaciAdminBundle:Actions:_list.html.twig" with { 'type': 'relation' } %}

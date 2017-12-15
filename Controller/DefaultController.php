@@ -401,11 +401,9 @@ class DefaultController extends Controller
         }
 
         $new = $this->mcm->getNewItem($relation);
+        $this->mcm->addRelationItems($entity, $relation, $item, array($new));
         $new->setFile($file);
         $this->om->persist($new);
-
-        $this->mcm->addRelationItems($entity, $relation, $item, array($new));
-
         $this->om->flush();
 
         return array('success' => true);
