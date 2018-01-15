@@ -146,6 +146,18 @@ h4 {
     width: 100px;
 }
 
+.list-default tr.multipleActionsBar {
+    display: none;
+}
+
+.list-default tr.multipleActionsBar > td {
+    padding: 0;
+}
+
+.list-default tr.multipleActionsBar > td > nav {
+    height: 50px;
+}
+
 .list-default tr.list-item.add-item td {
     background-color: #FEEBA9;
 }
@@ -164,6 +176,15 @@ h4 {
 
 .list-default tr.list-item.add-item .list-item-remove {
     display: block;
+}
+
+.list-default tr.list-item > td.list-item-checkbox {
+    width: 40px;
+    padding-left: 15px;
+}
+
+.list-default tr.list-item > td.list-item-id {
+    width: 40px;
 }
 
 .list-default tr.list-item > td > a,

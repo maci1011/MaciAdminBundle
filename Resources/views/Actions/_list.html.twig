@@ -1,4 +1,8 @@
 
+{% if type is not defined or not type in ['list', 'add', 'set'] %}
+{% set type = 'list' %}
+{% endif %}
+
 {% set list = pager.pageList %}
 
 {% if list|length %}
@@ -7,7 +11,12 @@
 <table class="table table-striped{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
 
 <thead>
+
 <tr class="list-header">
+
+	{% if type in ['list'] %}
+	<th class="list-header">&nbsp;</th>
+	{% endif %}
 
 	{% for field in fields %}
 
@@ -50,6 +59,61 @@
 	{% endif %}
 
 </tr>
+
+{% if type in ['list'] %}
+<tr class="multipleActionsBar">
+	<td>
+		<nav>
+			<ul class="nav navbar-nav">
+
+				<li>
+					<p class="navbar-text">
+						<span class="glyphicon glyphicon-ok-circle"></span>
+					</p>
+				</li>
+
+				<li>
+					<a class="action select-all" href="#">
+						<span class="glyphicon glyphicon-ok"></span>
+						Select All
+					</a>
+				</li>
+
+				<li>
+					<a class="action deselect-all" href="#">
+						<span class="glyphicon glyphicon-unchecked"></span>
+						Deselect All
+					</a>
+				</li>
+
+				{% if type == 'list' %}
+
+				<li>
+					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
+						<span class="glyphicon glyphicon-remove"></span>
+						Remove
+					</a>
+				</li>
+
+				{#} ,'relation'
+				{% elseif type == 'relation' %}
+
+				<li>
+					<a href="#">
+						<span class="glyphicon glyphicon-remove"></span>
+						Relation Remove
+					</a>
+				</li>
+				{#}
+
+				{% endif %}
+
+			</ul>
+		</nav>
+	</td>
+</tr>
+{% endif %}
+
 </thead>
 
 <tbody>

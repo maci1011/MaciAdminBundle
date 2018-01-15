@@ -764,6 +764,7 @@ class AdminController
         }
         $fields = array_keys($this->getFields($map));
         foreach ($fields as $field) {
+            if ($field == $map['sort_attr']) continue;
             if ($field == $map['trash_attr']) continue;
             $list[] = lcfirst($this->getCamel($field));
         }
@@ -791,11 +792,6 @@ class AdminController
         $this->om->flush();
         
         return true;
-    }
-
-    public function removeItemsFromRequestIds($map, $list)
-    {
-        return $this->removeItems($map, $this->selectItemsFromRequestIds($map,$list));
     }
 
     public function getItems($map)
@@ -1140,6 +1136,11 @@ class AdminController
     public function removeRelationItems($entity, $relation, $item, $list)
     {
         $this->relationItemsManager($entity, $relation, $item, $list, 'RemoverOrSetter');
+    }
+
+    public function removeItemsFromRequestIds($map, $list)
+    {
+        return $this->removeItems($map, $this->selectItemsFromRequestIds($map,$list));
     }
 
     public function addRelationItemsFromRequestIds($entity, $relation, $item, $list)

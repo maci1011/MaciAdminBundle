@@ -5,6 +5,14 @@
 
 <tr class="list-item">
 
+	{% if type in ['list'] %}
+	<td class="list-item-checkbox">
+		<div class="list-item-checkbox-wrapper">
+			<input type="checkbox" name="list-item-checkbox[{{ item.id }}]">
+		</div>
+	</td>
+	{% endif %}
+
 	{% for field in fields %}
 
 	{% if field == 'id' %}
