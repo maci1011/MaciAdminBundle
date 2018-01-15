@@ -174,13 +174,14 @@ class DefaultController extends Controller
         $entity = $this->mcm->getCurrentEntity();
         if (!$entity) return false;
 
-        if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
-            $this->mcm->removeItemsFromRequestIds($entity, $this->mcm->getItems($entity));
-            return array('success' => true);
-        }
-
         $item = $this->mcm->getCurrentItem();
-        if (!$item) return false;
+        if (!$item) {
+            if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
+                $this->mcm->removeItemsFromRequestIds($entity, $this->mcm->getItems($entity));
+                return array('success' => true);
+            }
+            return false;
+        }
 
         $form = $this->mcm->getRemoveForm($entity,$item);
 
