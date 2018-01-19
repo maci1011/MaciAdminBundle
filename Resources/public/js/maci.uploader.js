@@ -13,7 +13,7 @@ var maciUploader = function (form, options) {
 		_callback = false,
 		_start_callback = false,
 		_end_callback = false,
-		_upload_limit = 3,
+		_upload_limit = 1,
 		_upload_index,
 		_uploaded_index,
 		_name = 'file',
@@ -24,21 +24,23 @@ var maciUploader = function (form, options) {
 		map.status_col.text('Uploading...');
 		var data = new FormData();
 		data.append(_name, map.file);
-		$.ajax({
-			type: 'POST',
-			data: data,
-			url: _form.attr('action'),
-			cache: false,
-			dataType: 'json',
-			processData: false, // Don't process the files
-			contentType: false,
-			success: function (dat,sts,jqx) {
-				if ($.isFunction(_callback)) {
-					_callback(dat,sts,jqx);
-				}
+		// $.ajax({
+		// 	type: 'POST',
+		// 	data: data,
+		// 	url: _form.attr('action'),
+		// 	cache: false,
+		// 	dataType: 'json',
+		// 	processData: false, // Don't process the files
+		// 	contentType: false,
+		// 	success: function (dat,sts,jqx) {
+		// 		if ($.isFunction(_callback)) {
+		// 			_callback(dat,sts,jqx);
+		// 		}
+		setTimeout(function() {
 				_obj.end(map);
-			}
-		});
+		}, 500);
+		// 	}
+		// });
 	},
 
 	end: function(map) {
@@ -65,7 +67,7 @@ var maciUploader = function (form, options) {
 		if ($.isFunction(_start_callback)) {
 			_start_callback();
 		}
-		for (var i = (_upload_limit < _files.length ? _upload_limit : _files.length); i >= 0; i--) {
+		for (var i = (_upload_limit < _files.length ? _upload_limit : _files.length); i > 0; i--) {
 			_obj.uploadNext();
 		}
 	},
