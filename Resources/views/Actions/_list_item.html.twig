@@ -1,11 +1,15 @@
 
-{% if type is not defined or not type in ['list', 'add', 'set'] %}
+{% if type is not defined or not type in ['list', 'relation', 'add', 'set'] %}
 {% set type = 'list' %}
+{% endif %}
+
+{% if multipleArrayViews is not defined %}
+{% set multipleArrayViews = ['list', 'add'] %}
 {% endif %}
 
 <tr class="list-item">
 
-	{% if type in ['list'] %}
+	{% if type in multipleArrayViews %}
 	<td class="list-item-checkbox">
 		<div class="list-item-checkbox-wrapper">
 			<input type="checkbox" name="list-item-checkbox[{{ item.id }}]">
@@ -77,25 +81,13 @@
 		</form>
 
 	</td>
-	{% elseif type == 'add' %}
-	<td>
-
-		<a class="btn btn-sm list-item-add" href="#" rel="{{ item.id }}">
-			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-		</a>
-
-		<a class="btn btn-sm list-item-remove" href="#" rel="{{ item.id }}">
-			<span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
-		</a>
-
-	</td>
 	{% elseif type == 'set' %}
 	<td>
 
 		<form action="#" method="post">
 		<input type="hidden" name="ids" value="{{ item.id }}">
-		<button class="btn btn-sm list-item-set">
-			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Set
+		<button class="btn btn-sm btn-primary list-item-set">
+			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Set as {{ relation|capitalize }}
 		</button>
 		</form>
 

@@ -1,20 +1,24 @@
 
-{% if type is not defined or not type in ['list', 'add', 'set'] %}
+{% if type is not defined or not type in ['list', 'relation', 'add', 'set'] %}
 {% set type = 'list' %}
+{% endif %}
+
+{% if multipleArrayViews is not defined %}
+{% set multipleArrayViews = ['list', 'add'] %}
 {% endif %}
 
 {% set list = pager.pageList %}
 
 {% if list|length %}
 
-<div class="list-default" {% if sortable and 1 < list|length and not type in ['add, set'] %}sortable="{{ sortable }}"{% endif %}>
-<table class="table table-striped{% if type is defined and type in ['add','set'] %} list-{{ type }}{% endif %}">
+<div class="list list-default list-type-{{ type }}" {% if sortable and 1 < list|length and not type in ['add, set'] %}sortable="{{ sortable }}"{% endif %}>
+<table class="table table-striped">
 
 <thead>
 
 <tr class="list-header">
 
-	{% if type in ['list'] %}
+	{% if type in multipleArrayViews %}
 	<th class="list-header">&nbsp;</th>
 	{% endif %}
 
@@ -48,10 +52,6 @@
 	<th class="list-header-last list-header-remove">
 		<span class="list-title">Remove Item</span>
 	</th>
-	{% elseif type == 'add' %}
-	<th class="list-header-last list-header-add">
-		<span class="list-title">Add Items</span>
-	</th>
 	{% elseif type == 'set' %}
 	<th class="list-header-last list-header-set">
 		<span class="list-title">Set Item</span>
@@ -60,7 +60,7 @@
 
 </tr>
 
-{% if type in ['list'] %}
+{% if type in multipleArrayViews %}
 <tr class="multipleActionsBar">
 	<td>
 		<nav>
@@ -92,6 +92,15 @@
 					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
 						<span class="glyphicon glyphicon-remove"></span>
 						Remove
+					</a>
+				</li>
+
+				{% elseif type == 'add' %}
+
+				<li>
+					<a class="action btn-primary" confirm="Are you sure to add %items% items?" href="#">
+						<span class="glyphicon glyphicon-plus"></span>
+						Add Items
 					</a>
 				</li>
 

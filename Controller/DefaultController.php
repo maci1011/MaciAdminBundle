@@ -263,7 +263,7 @@ class DefaultController extends Controller
             return $this->mcmRelationsAdd();
 
         } else if ($relAction === 'bridge') {
-            return $this->mcmBridge();
+            return $this->mcmBridgeAdd();
 
         } else if ($relAction === 'uploader') {
             if ($this->request->get('bridge')) {
@@ -322,11 +322,11 @@ class DefaultController extends Controller
 
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-        if ($this->request->getMethod() === 'POST') {
+        if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
 
             $this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
 
-            $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+            return array('success' => true);
 
         }
 
@@ -341,7 +341,7 @@ class DefaultController extends Controller
         return $params;
     }
 
-    public function mcmBridge()
+    public function mcmBridgeAdd()
     {
         $entity = $this->mcm->getCurrentEntity();
         if (!$entity) return false;
@@ -363,7 +363,7 @@ class DefaultController extends Controller
 
             $this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 
-            $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+            return array('success' => true);
 
         }
 

@@ -36,9 +36,14 @@ h4 {
 #sidebar-wrapper {
     background-color: #eee;
 }
+
 #page-content-wrapper {
     padding: 65px 0;
     left: 0;
+}
+
+.nav > li > a.btn-primary:hover {
+    background-color: #333;
 }
 
 /*   -----> Top Navbar <-----   */
