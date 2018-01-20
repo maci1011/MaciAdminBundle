@@ -10,15 +10,16 @@ $(document).ready(function(e) {
 		});
 	});
 
-	$('.list-add-form .list-add-submit').each(function() {
-		$(this).click(function(e) {
+	$('.list-add-form .list-add-submit').each(function(i,el) {
+		$(el).click(function(e) {
 			e.preventDefault();
 			var ids = '';
-			$(this).parents('.list-add-form').parent().prev().find('.list-item.add-item').each(function() {
-				ids += $(this).find('input[name=id]').val() + ',';
+			$(el).parents('.container-fluid').first().parent().find('.list-default').eq(i).find('.list-item.add-item').each(function(j,fl) {
+				ids += $(fl).find('input[name=id]').first().val() + ',';
 			});
-			$(this).prev().val(ids);
-			$(this).parents('.list-add-form').submit();
+			$(el).prev('input[name=ids]').first().val(ids);
+			console.log(ids);
+			// $(el).parents('.list-add-form').submit();
 		});
 	});
 
