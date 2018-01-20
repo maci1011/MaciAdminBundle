@@ -24,23 +24,21 @@ var maciUploader = function (form, options) {
 		map.status_col.text('Uploading...');
 		var data = new FormData();
 		data.append(_name, map.file);
-		// $.ajax({
-		// 	type: 'POST',
-		// 	data: data,
-		// 	url: _form.attr('action'),
-		// 	cache: false,
-		// 	dataType: 'json',
-		// 	processData: false, // Don't process the files
-		// 	contentType: false,
-		// 	success: function (dat,sts,jqx) {
-		// 		if ($.isFunction(_callback)) {
-		// 			_callback(dat,sts,jqx);
-		// 		}
-		setTimeout(function() {
+		$.ajax({
+			type: 'POST',
+			data: data,
+			url: _form.attr('action'),
+			cache: false,
+			dataType: 'json',
+			processData: false, // Don't process the files
+			contentType: false,
+			success: function (dat,sts,jqx) {
+				if ($.isFunction(_callback)) {
+					_callback(dat,sts,jqx);
+				}
 				_obj.end(map);
-		}, 500);
-		// 	}
-		// });
+			}
+		});
 	},
 
 	end: function(map) {
