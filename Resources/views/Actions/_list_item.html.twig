@@ -75,7 +75,7 @@
 
 		<form action="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove'}) }}" method="post">
 		<input type="hidden" name="ids" value="{{ item.id }}">
-		<button class="btn btn-sm list-item-set">
+		<button class="btn btn-sm btn-danger list-item-set">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
 		</button>
 		</form>

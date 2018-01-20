@@ -2,7 +2,7 @@
 <div class="container-fluid">
 
 <a class="btn btn-primary" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': action, 'id': id, 'relation': relation, 'relAction': ( relation_action == 'show' ? 'set' : 'add' ) }) }}">
-	{% if relation_action == 'show' %}Set{% else %}Add{% endif %}
+	{% if relation_action == 'show' %}Set{% else %}Add{% endif %} {{ relation|capitalize }}
 </a>
 
 {% if is_relation_uploadable %}

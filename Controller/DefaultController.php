@@ -159,7 +159,10 @@ class DefaultController extends Controller
                 $this->session->getFlashBag()->add('success', 'Item Edited.');
             }
 
-            return $this->mcm->getDefaultEntityRedirectParams($entity, ($isNew ? 'new' : 'edit'));
+            if ($this->request->isXmlHttpRequest())
+                return array('success' => true);
+            else
+                return $this->mcm->getDefaultEntityRedirectParams($entity, ($isNew ? 'new' : 'edit'));
 
         }
 
@@ -189,18 +192,19 @@ class DefaultController extends Controller
 
         $params = $this->mcm->getDefaultEntityParams($entity);
 
-        if ($form->isValid()) {
+        if ($form->isSubmitted() && $form->isValid()) {
 
             $this->mcm->removeItems($entity, array($item));
 
-            $params = $this->mcm->getDefaultEntityRedirectParams($entity);
-
-        } else {
-
-            $params['item'] = $item;
-            $params['form'] = $form->createView();
+            if ($this->request->isXmlHttpRequest())
+                return array('success' => true);
+            else
+                return  $this->mcm->getDefaultEntityRedirectParams($entity);
 
         }
+
+        $params['item'] = $item;
+        $params['form'] = $form->createView();
 
         return $params;
     }
@@ -322,11 +326,14 @@ class DefaultController extends Controller
 
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-        if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
+        if ( $this->request->getMethod() === 'POST') {
 
             $this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
 
-            return array('success' => true);
+            if ($this->request->isXmlHttpRequest())
+                return array('success' => true);
+            else
+                return $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 
         }
 
@@ -477,7 +484,10 @@ class DefaultController extends Controller
             } else {
                 $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
             }
-            $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+            if ($this->request->isXmlHttpRequest())
+                return array('success' => true);
+            else
+                return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
         }
 
         return $params;

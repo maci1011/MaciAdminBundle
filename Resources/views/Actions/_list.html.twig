@@ -11,7 +11,7 @@
 
 {% if list|length %}
 
-<div class="list list-default list-type-{{ type }}" {% if sortable and 1 < list|length and not type in ['add, set'] %}sortable="{{ sortable }}"{% endif %}>
+<div class="list list-default list-type-{{ type }}" {% if sortable and 1 < list|length and type == 'relation' %}sortable="{{ sortable }}"{% endif %}>
 <table class="table table-striped">
 
 <thead>

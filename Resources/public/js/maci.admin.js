@@ -3,23 +3,6 @@
 
 $(document).ready(function(e) {
 
-	// $('.list-add-form .list-add-submit').each(function(i,el) {
-	// 	$(el).click(function(e) {
-	// 		e.preventDefault();
-	// 		var ids = '';
-	// 		var list = $(el).parents('.container-fluid').first().parent().find('.list.list-type-add').eq(i).find("input[name^=list-item-checkbox]:checked");
-	// 		if (!list.length) {
-	// 			alert('No Selected Items!');
-	// 		}
-	// 		list.each(function(j,fl) {
-	// 			ids += $(fl).find('input[name=id]').first().val() + ',';
-	// 		});
-	// 		$(el).prev('input[name=ids]').first().val(ids);
-	// 		console.log(ids);
-	// 		// $(el).parents('.list-add-form').submit();
-	// 	});
-	// });
-
 	$('.maci_uploader_form').each(function() {
 		maciUploader($(this));
 	});
