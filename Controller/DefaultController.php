@@ -161,8 +161,12 @@ class DefaultController extends Controller
 
             if ($this->request->isXmlHttpRequest())
                 return array('success' => true);
-            else
-                return $this->mcm->getDefaultEntityRedirectParams($entity, ($isNew ? 'new' : 'edit'));
+            else {
+                if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
+                    return $this->mcm->getDefaultEntityRedirectParams($entity, 'new');
+                else
+                    return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $item->getId());
+            }
 
         }
 

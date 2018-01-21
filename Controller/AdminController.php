@@ -625,7 +625,7 @@ class AdminController
         );
     }
 
-    public function getDefaultEntityRedirectParams($map, $action = 'list')
+    public function getDefaultEntityRedirectParams($map, $action = 'list', $id = false)
     {
         return array(
             'redirect' => 'maci_admin_view',
@@ -633,12 +633,12 @@ class AdminController
                 'section' => $map['section'],
                 'entity' => $map['name'],
                 'action' => $action,
-                'id' => (int) $this->request->get('id', false)
+                'id' => $id ? $id : (int) $this->request->get('id', false)
             )
         );
     }
 
-    public function getDefaultRelationRedirectParams($map, $relation, $action = false)
+    public function getDefaultRelationRedirectParams($map, $relation, $action = false, $id = false)
     {
         if (!$action) $action = $this->getRelationDefaultAction($map, $relation['association']);
         return array(
@@ -647,7 +647,7 @@ class AdminController
                 'section' => $map['section'],
                 'entity' => $map['name'],
                 'action'=>'relations',
-                'id' => (int) $this->request->get('id', 0),
+                'id' => $id ? $id : (int) $this->request->get('id', 0),
                 'relation' => $relation['association'],
                 'relAction' => $action
             )
@@ -686,15 +686,15 @@ class AdminController
 
         $fields = $this->getFields($map);
         $form = $this->createFormBuilder($object);
-        $isNew = (bool) $object->getId();
+        $isNew = !$object->getId();
 
         if ($isNew) {
             $form->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId()
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
             )));
         } else {
             $form->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId()
             )));
         }
 
@@ -713,18 +713,26 @@ class AdminController
             } else {
                 $form->add($field);
             }
-            // else if ($field === 'locale') {
-            //     $form->add($field,null,array(
-            //         'data' => $this->request->getLocale()
-            //     ));
-            // }
         }
 
-        $form->add('reset', ResetType::class);
-
-        $form->add(( $isNew ? 'save' : 'add'), SubmitType::class, array(
-            'attr'=>array('class'=>'btn btn-primary')
+        $form->add('reset', ResetType::class, array(
+            'label'=>'Reset Form'
         ));
+
+        if ($isNew) {
+            $form->add('save', SubmitType::class, array(
+                'label'=>'Save & Edit',
+                'attr'=>array('class'=>'btn btn-success')
+            ));
+            $form->add('save_and_add', SubmitType::class, array(
+                'label'=>'Save & Add',
+                'attr'=>array('class'=>'btn btn-primary')
+            ));
+        } else {
+            $form->add('save', SubmitType::class, array(
+                'attr'=>array('class'=>'btn btn-success')
+            ));
+        }
 
         return $form->getForm();
     }
