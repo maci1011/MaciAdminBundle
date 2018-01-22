@@ -617,41 +617,62 @@ class AdminController
         ));
     }
 
-    public function getDefaultRedirectParams()
+    public function getDefaultRedirectParams($opt = array())
     {
         return array(
             'redirect' => 'maci_admin_view',
-            'redirect_params' => array()
+            'redirect_params' => $opt
         );
     }
 
-    public function getDefaultEntityRedirectParams($map, $action = 'list', $id = false)
+    public function getDefaultEntityRedirectParams($map, $action = 'list', $id = null, $opt = array())
     {
-        return array(
-            'redirect' => 'maci_admin_view',
-            'redirect_params' => array(
-                'section' => $map['section'],
-                'entity' => $map['name'],
-                'action' => $action,
-                'id' => $id ? $id : (int) $this->request->get('id', false)
-            )
-        );
+        if (in_array($action, $this->getSingleActions($map))) {
+            $id = $id === null ? $this->request->get('id', null) : $id;
+        } else {
+            $id = null;
+        }
+        $params = $this->getDefaultRedirectParams();
+        $params['redirect_params'] = array_merge($params['redirect_params'], array(
+            'section' => $map['section'],
+            'entity' => $map['name'],
+            'action' => $action,
+            'id' => $id
+        ), $opt);
+        return $params;
     }
 
-    public function getDefaultRelationRedirectParams($map, $relation, $action = false, $id = false)
+    public function getDefaultRelationRedirectParams($map, $relation, $action = false, $id = null, $opt = array())
     {
+        $id = $id === null ? $this->request->get('id', null) : $id;
+        if ($id === null) {
+            return $this->getDefaultEntityRedirectParams($map);
+        }
         if (!$action) $action = $this->getRelationDefaultAction($map, $relation['association']);
-        return array(
-            'redirect' => 'maci_admin_view',
-            'redirect_params' => array(
-                'section' => $map['section'],
-                'entity' => $map['name'],
-                'action'=>'relations',
-                'id' => $id ? $id : (int) $this->request->get('id', 0),
-                'relation' => $relation['association'],
-                'relAction' => $action
-            )
-        );
+        $params = $this->getDefaultEntityRedirectParams($map, 'relations', $id);
+        $params['redirect_params'] = array_merge($params['redirect_params'], array(
+            'relation' => $relation['association'],
+            'relAction' => $action
+        ), $opt);
+        return $params;
+    }
+
+    public function getDefaultUrl($opt = array())
+    {
+        $action_params = $this->getDefaultRedirectParams($opt);
+        return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+    }
+
+    public function getEntityUrl($map, $action = 'list', $id = null, $opt = array())
+    {
+        $action_params = $this->getDefaultEntityRedirectParams($map, $action, $id, $opt);
+        return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+    }
+
+    public function getRelationUrl($map, $relation, $action = false, $id = null, $opt = array())
+    {
+        $action_params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id, $opt);
+        return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
     }
 
     public function getFields($map)
@@ -721,11 +742,15 @@ class AdminController
 
         if ($isNew) {
             $form->add('save', SubmitType::class, array(
-                'label'=>'Save & Edit',
+                'label'=>'Save & Edit Item',
                 'attr'=>array('class'=>'btn btn-success')
             ));
+            $form->add('save_and_list', SubmitType::class, array(
+                'label'=>'Save & Return to List',
+                'attr'=>array('class'=>'btn btn-primary')
+            ));
             $form->add('save_and_add', SubmitType::class, array(
-                'label'=>'Save & Add',
+                'label'=>'Save & Add a New Item',
                 'attr'=>array('class'=>'btn btn-primary')
             ));
         } else {
@@ -1027,12 +1052,21 @@ class AdminController
         return array();
     }
 
-    public function getRemoveForm($map,$item)
+    public function getRemoveForm($map, $item)
     {
         return $this->createFormBuilder($item)
-            ->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'remove', 'id'=>$item->getId()
-            )))
+            ->setAction($this->getEntityUrl($map, 'remove', $item->getId()))
+            ->add('remove', SubmitType::class, array(
+                'attr' => array('class' => 'btn-danger')
+            ))
+            ->getForm()
+        ;
+    }
+
+    public function getRelationRemoveForm($map, $relation, $item)
+    {
+        return $this->createFormBuilder($item)
+            ->setAction($this->getRelationUrl($map, $relation, 'remove', null, array('rid' => $item->getId())))
             ->add('remove', SubmitType::class, array(
                 'attr' => array('class' => 'btn-danger')
             ))
@@ -1053,7 +1087,7 @@ class AdminController
         return false;
     }
 
-    public function getTemplate($map,$action)
+    public function getTemplate($map, $action)
     {
         if ( array_key_exists($action, $map['templates']) && $this->templating->exists($map['templates'][$action]['template']) ) {
             return $map['templates'][$action]['template'];

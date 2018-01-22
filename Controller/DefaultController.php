@@ -164,6 +164,8 @@ class DefaultController extends Controller
             else {
                 if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
                     return $this->mcm->getDefaultEntityRedirectParams($entity, 'new');
+                else if ($form->has('save_and_list') && $form->get('save_and_list')->isClicked())
+                    return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
                 else
                     return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $item->getId());
             }
@@ -181,16 +183,22 @@ class DefaultController extends Controller
         $entity = $this->mcm->getCurrentEntity();
         if (!$entity) return false;
 
+        $list = $this->mcm->getItems($entity);
+
         $item = $this->mcm->getCurrentItem();
         if (!$item) {
             if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
-                $this->mcm->removeItemsFromRequestIds($entity, $this->mcm->getItems($entity));
+                $this->mcm->removeItemsFromRequestIds($entity, $list);
                 return array('success' => true);
             }
             return false;
         }
 
-        $form = $this->mcm->getRemoveForm($entity,$item);
+        if (!in_array($item, $list)) {
+            return false;
+        }
+
+        $form = $this->mcm->getRemoveForm($entity, $item);
 
         $form->handleRequest($this->request);
 
@@ -203,7 +211,7 @@ class DefaultController extends Controller
             if ($this->request->isXmlHttpRequest())
                 return array('success' => true);
             else
-                return  $this->mcm->getDefaultEntityRedirectParams($entity);
+                return $this->mcm->getDefaultEntityRedirectParams($entity);
 
         }
 
@@ -480,19 +488,48 @@ class DefaultController extends Controller
         if (!$relation) return false;
 
         $list = $this->mcm->getRelationItems($relation, $item);
-        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-        if ($this->request->getMethod() === 'POST') {
-            if ($relation['remove_in_relation'] === true) {
-                $this->mcm->removeItemsFromRequestIds($relation, $list);
-            } else {
-                $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
+        $rid = $this->request->get('rid', false);
+        $ids_list = $this->mcm->getListIds($list);
+
+        $relItem = false;
+        if (-1 < $index = array_search($rid, $ids_list)) {
+            $relItem = $list[$index];
+        }
+
+        if (!$relItem) {
+            if ($this->request->getMethod() === 'POST') {
+                if ($relation['remove_in_relation'] === true) {
+                    $this->mcm->removeItemsFromRequestIds($relation, $list);
+                } else {
+                    $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
+                }
+                if ($this->request->isXmlHttpRequest())
+                    return array('success' => true);
+                else
+                    return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
             }
+            return false;
+        }
+
+        $form = $this->mcm->getRelationRemoveForm($entity, $relation, $relItem);
+
+        $form->handleRequest($this->request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $this->mcm->removeItems($relation, array($relItem));
+
             if ($this->request->isXmlHttpRequest())
                 return array('success' => true);
             else
                 return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+
         }
+
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
+        $params['item'] = $relItem;
+        $params['form'] = $form->createView();
 
         return $params;
     }
