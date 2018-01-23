@@ -3,6 +3,12 @@
 
 $(document).ready(function(e) {
 
+	$('#messagesContainer .messages').each(function(i,el) {
+		setTimeout(function() {
+			$(el).hide(300);
+		}, ( 100 * i + 3000 ));
+	});
+
 	$('.maci_uploader_form').each(function() {
 		maciUploader($(this));
 	});

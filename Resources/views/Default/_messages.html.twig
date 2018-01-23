@@ -1,4 +1,6 @@
 
+<div id="messagesContainer">
+
 {% for message in app.session.flashBag.get('success')  %}
 <div class="messages bg-success">{% if message|length %}{{ message }}{% else %}Success!{% endif %}</div>
 {% endfor %}
@@ -6,3 +8,5 @@
 {% for message in app.session.flashBag.get('error')  %}
 <div class="messages bg-danger">{% if message|length %}{{ message }}{% else %}Error!{% endif %}</div>
 {% endfor %}
+
+</div>

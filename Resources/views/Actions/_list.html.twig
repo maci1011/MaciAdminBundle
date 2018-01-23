@@ -1,5 +1,12 @@
 
+{% if list is not defined %}
+{% if pager is defined %}
 {% set list = pager.pageList %}
+{% else %}
+{% set list = false %}
+{% endif %}
+{% endif %}
+
 
 {% if list|length %}
 
@@ -111,14 +118,14 @@
 				{% elseif type == 'relation' %}
 
 				<li>
-					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relation', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'item' }) }}">
+					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relations', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'item' }) }}">
 						<span class="glyphicon glyphicon-remove"></span>
 						Remove Items
 					</a>
 				</li>
 
 				<li>
-					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relation', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'association' }) }}">
+					<a class="action remove" confirm="Are you sure to remove %items% associations?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relations', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'association' }) }}">
 						<span class="glyphicon glyphicon-remove"></span>
 						Remove Associations
 					</a>

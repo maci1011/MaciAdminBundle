@@ -1052,10 +1052,10 @@ class AdminController
         return array();
     }
 
-    public function getRemoveForm($map, $item)
+    public function getRemoveForm($map, $item, $opt = array())
     {
         return $this->createFormBuilder($item)
-            ->setAction($this->getEntityUrl($map, 'remove', $item->getId()))
+            ->setAction($this->getEntityUrl($map, 'remove', $item->getId(), $opt))
             ->add('remove', SubmitType::class, array(
                 'attr' => array('class' => 'btn-danger')
             ))
@@ -1063,10 +1063,10 @@ class AdminController
         ;
     }
 
-    public function getRelationRemoveForm($map, $relation, $item)
+    public function getRelationRemoveForm($map, $relation, $item, $opt = array())
     {
         return $this->createFormBuilder($item)
-            ->setAction($this->getRelationUrl($map, $relation, 'remove', null, array('rid' => $item->getId())))
+            ->setAction($this->getRelationUrl($map, $relation, 'remove', null, $opt))
             ->add('remove', SubmitType::class, array(
                 'attr' => array('class' => 'btn-danger')
             ))
@@ -1159,7 +1159,7 @@ class AdminController
         return true;
     }
 
-    public function relationItemsManager($entity, $relation, $item, $list, $managerMethod)
+    public function relationItemsManager($managerMethod, $entity, $relation, $item, $list)
     {
         foreach ($list as $obj) {
             if ($this->manageRelation($managerMethod, $entity, $relation, $item, $obj)) {
@@ -1172,12 +1172,12 @@ class AdminController
 
     public function addRelationItems($entity, $relation, $item, $list)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, 'SetterOrAdder');
+        return $this->relationItemsManager('SetterOrAdder', $entity, $relation, $item, $list);
     }
 
     public function removeRelationItems($entity, $relation, $item, $list)
     {
-        $this->relationItemsManager($entity, $relation, $item, $list, 'RemoverOrSetter');
+        return $this->relationItemsManager('RemoverOrSetter', $entity, $relation, $item, $list);
     }
 
     public function removeItemsFromRequestIds($map, $list)
@@ -1187,19 +1187,19 @@ class AdminController
 
     public function addRelationItemsFromRequestIds($entity, $relation, $item, $list)
     {
-        $this->addRelationItems($entity, $relation, $item, $this->selectItemsFromRequestIds($relation,$list));
+        return $this->addRelationItems($entity, $relation, $item, $this->selectItemsFromRequestIds($relation,$list));
     }
 
     public function removeRelationItemsFromRequestIds($entity, $relation, $item, $list)
     {
-        $this->removeRelationItems($entity, $relation, $item, $this->selectItemsFromRequestIds($relation,$list));
+        return $this->removeRelationItems($entity, $relation, $item, $this->selectItemsFromRequestIds($relation,$list));
     }
 
 /*
     ---> Bridges Manager
 */
 
-    public function bridgeItemsManager($entity, $relation, $bridge, $item, $list, $managerMethod)
+    public function bridgeItemsManager($managerMethod, $entity, $relation, $bridge, $item, $list)
     {
         foreach ($list as $obj) {
             $newItem = $this->getNewItem($relation);
@@ -1218,12 +1218,12 @@ class AdminController
 
     public function addBridgeItems($entity, $relation, $bridge, $item, $list)
     {
-        $this->bridgeItemsManager($entity, $relation, $bridge, $item, $list, 'SetterOrAdder');
+        return $this->bridgeItemsManager('SetterOrAdder', $entity, $relation, $bridge, $item, $list);
     }
 
     public function addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list)
     {
-        $this->addBridgeItems($entity, $relation, $bridge, $item, $this->selectItemsFromRequestIds($bridge,$list));
+        return $this->addBridgeItems($entity, $relation, $bridge, $item, $this->selectItemsFromRequestIds($bridge,$list));
     }
 
 /*

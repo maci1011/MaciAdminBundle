@@ -512,7 +512,10 @@ class DefaultController extends Controller
             return false;
         }
 
-        $form = $this->mcm->getRelationRemoveForm($entity, $relation, $relItem);
+        $form = $this->mcm->getRelationRemoveForm($entity, $relation, $relItem, array(
+            'rid' => $relItem->getId(),
+            'rm' => $this->request->get('rm', 'association')
+        ));
 
         $form->handleRequest($this->request);
 
@@ -521,7 +524,7 @@ class DefaultController extends Controller
             if ($this->request->get('rm', '') === 'item') {
                 $this->mcm->removeItems($relation, array($relItem));
             } else {
-                $this->removeRelationItems($entity, $relation, $item, array($relItem));
+                $this->mcm->removeRelationItems($entity, $relation, $item, array($relItem));
             }
 
             if ($this->request->isXmlHttpRequest())
@@ -534,6 +537,8 @@ class DefaultController extends Controller
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
         $params['item'] = $relItem;
         $params['form'] = $form->createView();
+        $params['rid'] = $relItem->getId();
+        $params['rm'] = $this->request->get('rm', 'association');
 
         return $params;
     }
