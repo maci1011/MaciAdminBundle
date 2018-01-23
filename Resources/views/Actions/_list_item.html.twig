@@ -1,15 +1,21 @@
 
-{% if type is not defined or not type in ['list', 'relation', 'add', 'set'] %}
-{% set type = 'list' %}
+{% if item %}
+
+{% if type is not defined %}
+{% set type = 'default' %}
 {% endif %}
 
 {% if multipleArrayViews is not defined %}
-{% set multipleArrayViews = ['list', 'add'] %}
+{% set multipleArrayViews = [] %}
+{% endif %}
+
+{% if multipleCheckbox is not defined %}
+{% set multipleCheckbox = false %}
 {% endif %}
 
 <tr class="list-item">
 
-	{% if type in multipleArrayViews %}
+	{% if multipleCheckbox %}
 	<td class="list-item-checkbox">
 		<div class="list-item-checkbox-wrapper">
 			<input type="checkbox" name="list-item-checkbox[{{ item.id }}]">
@@ -96,3 +102,5 @@
 	{% endif %}
 
 </tr>
+
+{% endif %}

@@ -582,7 +582,7 @@ class AdminController
             'bridges' => $this->getBridges($relation),
             'uploadable_bridges' => $this->getUpladableBridges($relation),
             'is_relation_uploadable' => $this->isUploadable($relation),
-            'sortable' => ($this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
+            'sortable' => ($relAction === 'list' && $this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'relations','id'=>$this->request->get('id'),
                 'relation'=>$relation['association'],'relAction'=>'reorder'

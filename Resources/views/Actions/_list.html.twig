@@ -1,4 +1,8 @@
 
+{% set list = pager.pageList %}
+
+{% if list|length %}
+
 {% if type is not defined or not type in ['list', 'relation', 'add', 'set'] %}
 {% set type = 'list' %}
 {% endif %}
@@ -7,18 +11,22 @@
 {% set multipleArrayViews = ['list', 'relation', 'add'] %}
 {% endif %}
 
-{% set list = pager.pageList %}
+{% if multipleCheckbox is not defined %}
+{% set multipleCheckbox = (type in multipleArrayViews) %}
+{% endif %}
 
-{% if list|length %}
+{% if list|length == 1 %}
+{% set multipleCheckbox = false %}
+{% endif %}
 
-<div class="list list-default list-type-{{ type }}" {% if sortable and 1 < list|length and type == 'relation' %}sortable="{{ sortable }}"{% endif %}>
+<div class="list list-default list-type-{{ type }}"{% if sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
 <table class="table table-striped">
 
 <thead>
 
 <tr class="list-header">
 
-	{% if type in multipleArrayViews %}
+	{% if multipleCheckbox %}
 	<th class="list-header">&nbsp;</th>
 	{% endif %}
 
@@ -56,7 +64,7 @@
 
 </tr>
 
-{% if type in multipleArrayViews %}
+{% if multipleCheckbox %}
 <tr class="multipleActionsBar">
 	<td>
 		<nav>
