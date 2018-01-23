@@ -498,8 +498,8 @@ class DefaultController extends Controller
         }
 
         if (!$relItem) {
-            if ($this->request->getMethod() === 'POST') {
-                if ($relation['remove_in_relation'] === true) {
+            if ($this->request->getMethod() === 'POST' && $this->request->get('ids', false)) {
+                if ($this->request->get('rm', '') === 'item') {
                     $this->mcm->removeItemsFromRequestIds($relation, $list);
                 } else {
                     $this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
@@ -518,7 +518,11 @@ class DefaultController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            $this->mcm->removeItems($relation, array($relItem));
+            if ($this->request->get('rm', '') === 'item') {
+                $this->mcm->removeItems($relation, array($relItem));
+            } else {
+                $this->removeRelationItems($entity, $relation, $item, array($relItem));
+            }
 
             if ($this->request->isXmlHttpRequest())
                 return array('success' => true);

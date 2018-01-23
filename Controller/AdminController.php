@@ -526,7 +526,6 @@ class AdminController
         $map['label'] = null;
         $map['list'] = array();
         $map['name'] = null;
-        $map['remove_in_relation'] = false;
         $map['sort_attr'] = 'position';
         $map['templates'] = array();
         $map['trash_attr'] = 'removed';
@@ -817,10 +816,11 @@ class AdminController
             $id = $item->getId();
             if (method_exists($item, 'setRemoved')) {
                 $item->setRemoved(true);
+                $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $map['label'] . '] moved to trash.');
             } else {
                 $this->om->remove($item);
+                $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $map['label'] . '] removed.');
             }
-            $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $map['label'] . '] removed.');
         }
         $this->om->flush();
         

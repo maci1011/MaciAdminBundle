@@ -4,7 +4,7 @@
 {% endif %}
 
 {% if multipleArrayViews is not defined %}
-{% set multipleArrayViews = ['list', 'add'] %}
+{% set multipleArrayViews = ['list', 'relation', 'add'] %}
 {% endif %}
 
 {% set list = pager.pageList %}
@@ -44,13 +44,9 @@
 
 	{% endfor %}
 
-	{% if type is not defined or type == 'list' %}
-	<th class="list-header-last list-header-actions">
-		<span class="list-title">Actions</span>
-	</th>
-	{% elseif type == 'relation' %}
+	{% if type == 'list' or type == 'relation' %}
 	<th class="list-header-last list-header-remove">
-		<span class="list-title">Remove Item</span>
+		<span class="list-title">Actions</span>
 	</th>
 	{% elseif type == 'set' %}
 	<th class="list-header-last list-header-set">
@@ -104,16 +100,21 @@
 					</a>
 				</li>
 
-				{#} ,'relation'
 				{% elseif type == 'relation' %}
 
 				<li>
-					<a href="#">
+					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relation', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'item' }) }}">
 						<span class="glyphicon glyphicon-remove"></span>
-						Relation Remove
+						Remove Items
 					</a>
 				</li>
-				{#}
+
+				<li>
+					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relation', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'association' }) }}">
+						<span class="glyphicon glyphicon-remove"></span>
+						Remove Associations
+					</a>
+				</li>
 
 				{% endif %}
 

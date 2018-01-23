@@ -57,7 +57,6 @@ class Configuration implements ConfigurationInterface
                                             ->end()
                                             ->prototype('scalar')->end()
                                         ->end()
-                                        ->scalarNode('remove_in_relation')->defaultValue(false)->end()
                                         ->scalarNode('sort_attr')->defaultValue('position')->end()
                                         ->arrayNode('templates')
                                             ->prototype('array')
