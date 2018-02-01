@@ -152,7 +152,7 @@ h4 {
 }
 
 .list-default tr.multipleActionsBar {
-    display: none;
+    background-color: #F2F8FF;
 }
 
 .list-default tr.multipleActionsBar > td {
@@ -254,8 +254,12 @@ h4 {
 
 /*   -----> Form <-----   */
 
-.maci_admin_form {
-    padding: 0 20px;
+.admin-form > .form-group > label:after {
+    content: '*';
+}
+
+.admin-form > .form-group > label.required:after {
+    content: '';
 }
 
 .maciUploader div {

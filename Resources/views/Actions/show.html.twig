@@ -1,26 +1,2 @@
 
-<div class="container-fluid">
-<div class="details-list">
-
-	{% for field in fields %}
-
-	<div class="row details-item {% if loop.index is even %}even{% else %}odd{% endif %}">
-
-		<div class="col-xs-4">
-
-			<span class="item-label">{{ field|capitalize }}</span>
-
-		</div>
-
-		<div class="col-xs-8">
-
-			{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
-
-		</div>
-
-	</div>
-
-	{% endfor %}
-
-</div>
-</div>
+{% include "MaciAdminBundle:Actions:_show.html.twig" %}

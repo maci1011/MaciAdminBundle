@@ -23,35 +23,34 @@ $(document).ready(function(e) {
     	bar = $(bartr).find('.nav.navbar-nav').first();
 
     	var checkBar = function() {
-    		if (!visible && tbody.find("input[name^=list-item-checkbox]:checked").length) {
-    			$(bartr).show(300);
-    			visible = true;
-    		}
-    		if (visible && !tbody.find("input[name^=list-item-checkbox]:checked").length) {
-    			$(bartr).hide();
-    			visible = false;
-    		}
+    		$(bartr).find('.multipleActionsBarSelectedValue').first().text(
+    			tbody.find("input[name^=list-item-checkbox]:checked").length
+    		);
     	};
 
     	bar.find('.select-all').first().click(function(e) {
     		e.preventDefault();
 	    	tbody.find('input[name^=list-item-checkbox]').each(function(i,el) {
-	    		if (!$(el).is(':checked')) $(el)[0].checked = true;
-	    		checkBar();
+	    		$(el)[0].checked = true;
 	    	});
+	    	checkBar();
     	});
 
     	bar.find('.deselect-all').first().click(function(e) {
     		e.preventDefault();
 	    	tbody.find('input[name^=list-item-checkbox]').each(function(i,el) {
-	    		if ($(el).is(':checked')) $(el)[0].checked = false;
-	    		checkBar();
+	    		$(el)[0].checked = false;
 	    	});
+	    	checkBar();
     	});
 
     	bar.find('.action').not('.select-all, .deselect-all').each(function(i,el) {
 	    	$(el).click(function(e) {
 	    		e.preventDefault();
+	    		if (!tbody.find("input[name^=list-item-checkbox]:checked").length) {
+	    			alert('There are no selected items!');
+	    			return;
+	    		}
 	    		var cm = $(el).attr('confirm');
 	    		if (cm) {
 	    			cm = cm.replace('%items%', tbody.find("input[name^=list-item-checkbox]:checked").length);
@@ -70,14 +69,6 @@ $(document).ready(function(e) {
 		            data: {ids: ids},
 		            url: url,
 		            success: function(d,s,x) {
-						// if ($(el).hasClass("remove")) {
-						// 	tbody.find('input[name^=list-item-checkbox]:checked').each(function(i,el) {
-						// 		$(el).parents('.list-item').remove();
-						// 	});
-						// 	if (tbody.find('.list-item').length == 0) {
-						// 		window.location.reload();
-						// 	}
-						// }
 					    window.location.reload();
 		            }
 		        });
