@@ -13,7 +13,7 @@ $(document).ready(function(e) {
 		maciUploader($(this));
 	});
 
-    $('#bodyAdministration .admin-form textarea').not('.noeditor').each(function() {
+    $('#bodyAdministration .admin-form').not('.form-filters').find('textarea').not('.noeditor').each(function() {
     	admin.setRichTextEditor( $(this) );
     });
 
@@ -100,6 +100,17 @@ $(document).ready(function(e) {
 		        });
 		    }
 		});
+    });
+
+    $('.tablesorter').each(function(i,el) {
+    	$(el).tablesorter({
+    		headers: {
+    			0: {
+    				sorter: !$(el).parents('.list').first().hasClass('list-multiple')
+    			}
+    		},
+    		sortList: [[1,1]]
+    	});
     });
 
 });

@@ -120,6 +120,23 @@ h4 {
     color: #000;
 }
 
+/*   -----> Tablesorter <-----   */
+
+table.tablesorter thead tr .header {
+    background-repeat: no-repeat;
+    background-position: center right;
+    cursor: pointer;
+}
+
+table.tablesorter thead tr .header.headerSortUp {
+    background-image: url("./tablesorter/asc.gif");
+}
+
+table.tablesorter thead tr .header.headerSortDown {
+    background-image: url("./tablesorter/desc.gif");
+}
+
+
 /*   -----> List <-----   */
 
 .list-default {
@@ -218,17 +235,17 @@ h4 {
 
 /*   -----> Filters <-----   */
 
-.admin-form.filters-form {
+.admin-form.form-filters {
     padding-bottom: 15px;
 }
 
-.admin-form.filters-form label {
+.admin-form.form-filters label {
     text-transform: uppercase;
     font-size: 9pt;
     padding: 5px;
 }
 
-.admin-form.filters-form .btn {
+.admin-form.form-filters .btn {
     margin: 26px 0 0 10px;
 }
 

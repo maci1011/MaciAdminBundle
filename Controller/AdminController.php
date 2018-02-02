@@ -7,6 +7,7 @@ use Symfony\Bundle\TwigBundle\TwigEngine;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -300,22 +301,28 @@ class AdminController
         return array();
     }
 
+    public function getSettingsActions($entity)
+    {
+        $actions = array();
+        if(in_array('list', $this->getMainActions($entity))) {
+            $actions[] = 'set_list_filters';
+        }
+        return $actions;
+    }
+
     public function getActions($entity)
     {
         return array_merge(
             $this->getMainActions($entity),
             $this->getSingleActions($entity),
-            $this->getMultipleActions($entity)
+            $this->getMultipleActions($entity),
+            $this->getSettingsActions($entity)
         );
     }
 
     public function hasAction($entity, $action)
     {
-        return in_array($action, array_merge(
-            $this->getMainActions($entity),
-            $this->getSingleActions($entity),
-            $this->getMultipleActions($entity)
-        ));
+        return in_array($action, $this->getActions($entity));
     }
 
     public function getRelationActions($entity)
@@ -557,6 +564,7 @@ class AdminController
             'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
             'is_entity_uploadable' => $this->isUploadable($map),
+            'list_filters_form' => $this->getFiltersForm($map)->createView(),
             'main_actions' => $this->getListLabels($this->getMainActions($map)),
             'multiple_actions' => $this->getListLabels($this->getMultipleActions($map)),
             'single_actions' => $this->getListLabels($this->getSingleActions($map)),
@@ -582,6 +590,7 @@ class AdminController
             'bridges' => $this->getBridges($relation),
             'uploadable_bridges' => $this->getUpladableBridges($relation),
             'is_relation_uploadable' => $this->isUploadable($relation),
+            'list_filters_form' => $this->getFiltersForm($relation),
             'sortable' => ($relAction === 'list' && $this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'relations','id'=>$this->request->get('id'),
@@ -688,7 +697,20 @@ class AdminController
         return $fields;
     }
 
-    public function getFieldValue($field,$object)
+    public function getFieldType($map, $field)
+    {
+        $metadata = $this->getMetadata($map);
+
+        $fields = (array) $metadata->fieldMappings;
+
+        if (!in_array($field, array_keys($fields))) {
+            return false;
+        }
+
+        return $fields[$field]['type'];
+    }
+
+    public function getFieldValue($field, $object)
     {
         $getter = $this->getGetterMethod($object,$field);
         if (!$getter) {
@@ -698,67 +720,18 @@ class AdminController
         return call_user_method($getter,$object);
     }
 
-    public function generateForm($map, $object = false)
+    public function getFiltersForm($entity)
     {
-        if (!$object) {
-            $object = $this->getNewItem($map);
-        }
-
-        $fields = $this->getFields($map);
-        $form = $this->createFormBuilder($object);
-        $isNew = !$object->getId();
-
-        if ($isNew) {
-            $form->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
-            )));
-        } else {
-            $form->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId()
-            )));
-        }
-
-        foreach ($fields as $field) {
-            if (in_array($field, array('created','updated',$map['trash_attr']))) {
-                continue;
-            }
-            $method = ('get' . ucfirst($field) . 'Array');
-            if ( method_exists($object, $method) ) {
-                $form->add($field, ChoiceType::class, array(
-                    'empty_data' => '',
-                    'choices' => call_user_method($method, $object)
-                ));
-            } else if ( $field === 'path' && method_exists($object, 'setFile') ) {
-                $form->add('file', FileType::class, array('required' => false));
-            } else {
-                $form->add($field);
+        $form = $entity['name'];
+        $object = $this->getNewItem($entity);
+        $filters = $this->getEntityFilters($entity);
+        foreach ($filters as $field => $filter) {
+            $method = $this->getSetterMethod($object, $field);
+            if ( $method ) {
+                call_user_method_array($method, $object, array($filter));
             }
         }
-
-        $form->add('reset', ResetType::class, array(
-            'label'=>'Reset Form'
-        ));
-
-        if ($isNew) {
-            $form->add('save', SubmitType::class, array(
-                'label'=>'Save & Edit Item',
-                'attr'=>array('class'=>'btn btn-success')
-            ));
-            $form->add('save_and_list', SubmitType::class, array(
-                'label'=>'Save & Return to List',
-                'attr'=>array('class'=>'btn btn-primary')
-            ));
-            $form->add('save_and_add', SubmitType::class, array(
-                'label'=>'Save & Add a New Item',
-                'attr'=>array('class'=>'btn btn-primary')
-            ));
-        } else {
-            $form->add('save', SubmitType::class, array(
-                'attr'=>array('class'=>'btn btn-success')
-            ));
-        }
-
-        return $form->getForm();
+        return $this->generateForm($entity, $object, true);
     }
 
     public function getForm($map, $object = false)
@@ -779,6 +752,94 @@ class AdminController
             return $this->createForm($form, $object);
         }
         return $this->generateForm($map, $object);
+    }
+
+    public function generateForm($map, $object = false, $isFilterForm = false)
+    {
+        if (!$object) {
+            $object = $this->getNewItem($map);
+        }
+
+        $fields = $this->getFields($map);
+        $form = $this->createFormBuilder($object);
+        $isNew = !$object->getId();
+
+        if ($isFilterForm) {
+            $form->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
+            )));
+        }
+        else if ($isNew) {
+            $form->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
+            )));
+        } else {
+            $form->setAction($this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId()
+            )));
+        }
+
+        foreach ($fields as $field) {
+            if (in_array($field, array('created','updated',$map['trash_attr']))) {
+                continue;
+            }
+            if ($isFilterForm) {
+                $form->add($field . '_checkbox', CheckboxType::class, array(
+                    'label' => 'Set Filter',
+                    'attr' => ['class' => 'setFilterCheckbox'],
+                    'required' => false,
+                    'mapped' => false
+                ));
+            }
+            $method = ('get' . ucfirst($field) . 'Array');
+            if ( method_exists($object, $method) ) {
+                $form->add($field, ChoiceType::class, array(
+                    'empty_data' => '',
+                    'choices' => call_user_method($method, $object)
+                ));
+            } else if ( $field === 'path' && method_exists($object, 'setFile') ) {
+                $form->add('file', FileType::class, array('required' => false));
+            } else {
+                if ($isFilterForm && in_array($this->getFieldType($map, $field), ['string', 'text'])) {
+                    $form->add($field . '_method', ChoiceType::class, array(
+                        'label' => 'Method',
+                        'choices' => array('Is' => 'IS', 'Like' => 'LIKE'),
+                        'mapped' => false
+                    ));
+                }
+                $form->add($field);
+            }
+        }
+
+        $form->add('reset', ResetType::class, array(
+            'label'=>'Reset Form'
+        ));
+
+        if ($isFilterForm) {
+            $form->add('set_filters', SubmitType::class, array(
+                'label'=>'Set Filters',
+                'attr'=>array('class'=>'btn btn-primary')
+            ));
+        } else if ($isNew) {
+            $form->add('save', SubmitType::class, array(
+                'label'=>'Save & Edit Item',
+                'attr'=>array('class'=>'btn btn-success')
+            ));
+            $form->add('save_and_list', SubmitType::class, array(
+                'label'=>'Save & Return to List',
+                'attr'=>array('class'=>'btn btn-primary')
+            ));
+            $form->add('save_and_add', SubmitType::class, array(
+                'label'=>'Save & Add a New Item',
+                'attr'=>array('class'=>'btn btn-primary')
+            ));
+        } else {
+            $form->add('save', SubmitType::class, array(
+                'attr'=>array('class'=>'btn btn-success')
+            ));
+        }
+
+        return $form->getForm();
     }
 
     public function getListFields($map)
@@ -1135,6 +1196,7 @@ class AdminController
 
     public function setRelation($managerMethod, $entity, $field, $item, $obj)
     {
+        $managerMethod = 'get' . $managerMethod . 'Method';
         $manager = call_user_method($managerMethod, $this, $item, $field);
         if (!$manager) {
             $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
@@ -1146,7 +1208,6 @@ class AdminController
 
     public function manageRelation($managerMethod, $entity, $relation, $item, $obj)
     {
-        $managerMethod = 'get' . $managerMethod . 'Method';
         if (!$this->setRelation($managerMethod, $entity, $relation['association'], $item, $obj)) {
             return false;
         }
@@ -1411,20 +1472,6 @@ class AdminController
             return true;
         }
         return false;
-    }
-
-    public function getEntityFiltersForm($section, $entity)
-    {
-        $form = $entity['name'];
-        $object = $this->getNewItem($entity);
-        $filters = $this->getEntityFilters($entity);
-        foreach ($filters as $field => $filter) {
-            $method = ('set' . ucfirst($field));
-            if ( method_exists($object, $method) ) {
-                call_user_method_array($method, $object, array($filter));
-            }
-        }
-        return $this->generateForm($entity, $object);
     }
 
     // public function getEntitiesClassList()

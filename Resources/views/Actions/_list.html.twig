@@ -10,6 +10,8 @@
 
 {% if list|length %}
 
+{#% include "MaciAdminBundle:Actions:_filters.html.twig" %#}
+
 {% if type is not defined or not type in ['list', 'relation', 'add', 'set'] %}
 {% set type = 'list' %}
 {% endif %}
@@ -26,12 +28,12 @@
 {% set multipleCheckbox = false %}
 {% endif %}
 
-<div class="list list-default list-type-{{ type }}"{% if sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
-<table class="table table-striped">
+<div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
+<table class="table table-striped tablesorter">
 
 <thead>
 
-<tr class="list-header">
+<tr class="list-header-container">
 
 	{% if multipleCheckbox %}
 	<th class="list-header">&nbsp;</th>

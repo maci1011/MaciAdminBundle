@@ -1,16 +1,27 @@
 
-<div class="container-fluid">
+{% if list_filters_form is defined and list_filters_form %}
 
-<form class="admin-form filters-form form-inline" action="{{ path("maci_admin_view", {'section': params.section, 'entity': params.entity, 'action': 'set_filters'}) }}" method="post" }}>
 
-    {{ form_rest(form) }}
+{{ form_start(list_filters_form, {'attr':{'class':'admin-form form-filters form-inline container-fluid'}}) }}
 
-	{% if app.session.get(('admin_filters_' ~ params.entity), {})|length %}
-	<a class="btn btn-danger" href="{{ path("maci_admin_view", {'section': params.section, 'entity': params.entity, 'action': 'remove_filters'}) }}">
-		Remove Filters
-	</a>
-	{% endif %}
+{{ form_rest(list_filters_form) }}
 
-</form>
 
+{% if app.session.get(('admin_filters_' ~ params.entity), {})|length %}
+<a class="btn btn-danger" href="{{ path("maci_admin_view", {'section': params.section, 'entity': params.entity, 'action': 'remove_filters'}) }}">
+	Remove Filters
+</a>
+{% endif %}
+
+
+{#}
+<div class="form-group">
+	<em class="optional_fields">[ * {{ 'form.optional_fields' | matra('Optional Fields') }} ]</em>
 </div>
+{#}
+
+
+{{ form_end(list_filters_form) }}
+
+
+{% endif %}
