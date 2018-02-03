@@ -108,14 +108,14 @@ h4 {
     background-color: #eee;
 }
 
-#actionsbar.content-navbar .nav > li > a,
-#actionsbar.content-navbar .nav > li > span {
+.actionsbar.content-navbar .nav > li > a,
+.actionsbar.content-navbar .nav > li > span {
     color: #666;
 }
 
-#actionsbar.content-navbar .nav > li > a:hover,
-#actionsbar.content-navbar .nav > li > a:focus,
-#actionsbar.content-navbar .nav > li.active > a {
+.actionsbar.content-navbar .nav > li > a:hover,
+.actionsbar.content-navbar .nav > li > a:focus,
+.actionsbar.content-navbar .nav > li.active > a {
     background-color: #dadada;
     color: #000;
 }

@@ -115,13 +115,9 @@ class AdminMenuBuilder
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-		$sections = $this->mcm->getAuthSections();
+        $section = $this->mcm->getCurrentSection();
 
-		$section = $this->request->get('section');
-
-		$entity = $this->request->get('entity');
-
-        $entity = $this->mcm->getEntity($section, $entity);
+        $entity = $this->mcm->getCurrentEntity();
 
 		$associations = $this->mcm->getAssociations($entity);
 
@@ -131,30 +127,83 @@ class AdminMenuBuilder
 
 		$single_actions = $this->mcm->getSingleActions($section, $entity);
 
-		if ( $section && in_array($section, $sections) ) {
-
-			foreach ($single_actions as $action) {
-				if ($action === 'relations') {
-					if ( count($associations) ) {
-						foreach ($associations as $relation) {
-							if ($relation === 'translations') {
-								continue;
-							}
-							$label = $this->mcm->generateLabel($relation);
-							$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
-							$menu->addChild($label, array(
-							    'route' => 'maci_admin_view',
-							    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
-							));
+		foreach ($single_actions as $action) {
+			if ($action === 'relations') {
+				if ( count($associations) ) {
+					foreach ($associations as $relation) {
+						if ($relation === 'translations') {
+							continue;
 						}
+						$label = $this->mcm->generateLabel($relation);
+						$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
+						$menu->addChild($label, array(
+						    'route' => 'maci_admin_view',
+						    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
+						));
 					}
-				} else {
-					$label = $this->mcm->generateLabel($action);
-					$menu->addChild($label, array(
-					    'route' => 'maci_admin_view',
-					    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id)
-					));
 				}
+			} else {
+				$label = $this->mcm->generateLabel($action);
+				$menu->addChild($label, array(
+				    'route' => 'maci_admin_view',
+				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id)
+				));
+			}
+		}
+
+		return $menu;
+	}
+
+    public function createItemRelationActionsMenu(array $options)
+	{
+		$menu = $this->factory->createItem('root');
+
+		$menu->setChildrenAttribute('class', 'nav navbar-nav');
+
+        $section = $this->mcm->getCurrentSection();
+        if (!$section) return false;
+
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
+
+        $relation = $this->mcm->getCurrentRelation();
+        if (!$relation) return false;
+
+		$id = $this->request->get('id');
+
+		$relation_default_action = $this->mcm->getRelationDefaultAction($entity, $relation['association']);
+
+		$menu->addChild($this->mcm->generateLabel($relation_default_action), array(
+		    'route' => 'maci_admin_view',
+		    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_action)
+		));
+
+		$relation_default_method = $this->mcm->getRelationSetterAction($entity, $relation['association']);
+
+		$menu->addChild($this->mcm->generateLabel($relation_default_method . ' ' . $relation['association']), array(
+		    'route' => 'maci_admin_view',
+		    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_method)
+		));
+
+		if ($this->mcm->isUploadable($relation)) {
+			$menu->addChild('Upload', array(
+			    'route' => 'maci_admin_view',
+			    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader')
+			));
+		}
+
+		foreach ($this->mcm->getBridges($relation) as $bridge) {
+
+			$menu->addChild($this->mcm->generateLabel($relation_default_method . ' ' . $bridge), array(
+			    'route' => 'maci_admin_view',
+			    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'bridge', 'bridge' => $bridge)
+			));
+
+			if (in_array($bridge, $this->mcm->getUpladableBridges($relation))) {
+				$menu->addChild($this->mcm->generateLabel('Upload ' . $bridge), array(
+				    'route' => 'maci_admin_view',
+				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader', 'bridge' => $bridge)
+				));
 			}
 
 		}

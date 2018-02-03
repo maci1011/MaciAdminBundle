@@ -1051,7 +1051,11 @@ class AdminController
         }
 
         return 'show';
+    }
 
+    public function getRelationSetterAction($map, $association)
+    {
+        return $this->getRelationDefaultAction($map, $association) === 'show' ? 'set' : 'add';
     }
 
     public function isRelationEnable($map,$association)

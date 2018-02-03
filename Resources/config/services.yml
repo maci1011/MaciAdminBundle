@@ -17,6 +17,7 @@ services:
             - { name: knp_menu.menu_builder, method: createSectionsMenu, alias: admin_sections }
             - { name: knp_menu.menu_builder, method: createActionsMenu, alias: admin_actions }
             - { name: knp_menu.menu_builder, method: createItemActionsMenu, alias: admin_item_actions }
+            - { name: knp_menu.menu_builder, method: createItemRelationActionsMenu, alias: admin_item_relation_actions }
 
     maci.admin.twig_extension:
         class: Maci\AdminBundle\Twig\MaciAdminExtension

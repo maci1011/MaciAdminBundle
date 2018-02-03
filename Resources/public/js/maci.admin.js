@@ -22,7 +22,7 @@ $(document).ready(function(e) {
     	$(bartr).children().first().attr('colspan', $(bartr).prev().find('th').length);
     	bar = $(bartr).find('.nav.navbar-nav').first();
 
-    	var checkBar = function() {
+    	var updateBar = function() {
     		$(bartr).find('.multipleActionsBarSelectedValue').first().text(
     			tbody.find("input[name^=list-item-checkbox]:checked").length
     		);
@@ -33,7 +33,7 @@ $(document).ready(function(e) {
 	    	tbody.find('input[name^=list-item-checkbox]').each(function(i,el) {
 	    		$(el)[0].checked = true;
 	    	});
-	    	checkBar();
+	    	updateBar();
     	});
 
     	bar.find('.deselect-all').first().click(function(e) {
@@ -41,7 +41,7 @@ $(document).ready(function(e) {
 	    	tbody.find('input[name^=list-item-checkbox]').each(function(i,el) {
 	    		$(el)[0].checked = false;
 	    	});
-	    	checkBar();
+	    	updateBar();
     	});
 
     	bar.find('.action').not('.select-all, .deselect-all').each(function(i,el) {
@@ -75,13 +75,13 @@ $(document).ready(function(e) {
 	    	});
     	});
 
-    	checkBar();
-
 	    tbody.find("input[name^=list-item-checkbox]").each(function(i,el) {
 	    	$(el).click(function(e) {
-	    		checkBar();
+	    		updateBar();
 	    	});
 	    });
+
+    	updateBar();
     });
 
     $( "div[sortable]" ).each(function(i,el) {
