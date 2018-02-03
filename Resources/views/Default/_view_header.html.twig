@@ -9,9 +9,9 @@
 </div>
 
 
-{% if id is defined and id %}
+{% if item is defined and item %}
 
-<h2>Item ID: {{ id }}</h2>
+<h2>Item: {{ item }}</h2>
 
 <div id="itembar" class="actionsbar content-navbar container-fluid">
 	<nav>{{ knp_menu_render('admin_item_actions', {'currentClass': 'active'}) }}</nav>

@@ -563,6 +563,7 @@ class AdminController
             'actions' => $this->getListLabels($this->getActions($map)),
             'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
+            'item' => $this->getCurrentItem(),
             'is_entity_uploadable' => $this->isUploadable($map),
             'list_filters_form' => $this->getFiltersForm($map)->createView(),
             'main_actions' => $this->getListLabels($this->getMainActions($map)),
