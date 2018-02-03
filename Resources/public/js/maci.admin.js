@@ -48,7 +48,6 @@ $(document).ready(function(e) {
 	    	$(el).click(function(e) {
 	    		e.preventDefault();
 	    		if (!tbody.find("input[name^=list-item-checkbox]:checked").length) {
-	    			alert('There are no selected items!');
 	    			return;
 	    		}
 	    		var cm = $(el).attr('confirm');
