@@ -125,12 +125,14 @@
 
 				{% elseif type == 'relation' %}
 
+				{% if relation_action == 'list' %}
 				<li>
 					<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relations', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'item' }) }}">
 						<span class="glyphicon glyphicon-remove"></span>
 						Remove Items
 					</a>
 				</li>
+				{% endif %}
 
 				<li>
 					<a class="action remove" confirm="Are you sure to remove %items% associations?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relations', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'association' }) }}">
