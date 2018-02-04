@@ -79,11 +79,9 @@
 	{% elseif type == 'relation' %}
 	<td>
 
-		{% if relation_action == 'list' %}
 		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': item.id, 'rm': 'item'}) }}" method="post">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove Item
 		</a>
-		{% endif %}
 
 		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': item.id, 'rm': 'association'}) }}" method="post">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove Association
