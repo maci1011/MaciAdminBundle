@@ -29,7 +29,7 @@
 {% endif %}
 
 <div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
-<table class="table table-striped tablesorter">
+<table class="table table-striped{% if type != 'relation' or not sortable %} tablesorter{% endif %}">
 
 <thead>
 
