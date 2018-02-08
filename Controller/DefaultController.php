@@ -91,7 +91,7 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItems($entity);
 
-        $pager = $this->mcm->getPager($list);
+        $pager = $this->mcm->getPager($entity, $list);
 
         if (!$pager) {
             return false;
@@ -310,15 +310,23 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getRelationItems($relation, $item);
 
-        $pager = $this->mcm->getPager($list);
-
-        if (!$pager) {
-            return false;
-        }
-
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-        $params['pager'] = $pager;
+        if ($this->mcm->isSortable($relation)) {
+
+            $params['list'] = $list;
+
+        } else {
+
+            $pager = $this->mcm->getPager($relation, $list, 0);
+
+            if (!$pager) {
+                return false;
+            }
+
+            $params['pager'] = $pager;
+
+        }
 
         return $params;
     }
@@ -349,7 +357,7 @@ class DefaultController extends Controller
 
         }
 
-        $pager = $this->mcm->getPager($list);
+        $pager = $this->mcm->getPager($relation, $list);
 
         if (!$pager) {
             return false;
@@ -386,7 +394,7 @@ class DefaultController extends Controller
 
         }
 
-        $pager = $this->mcm->getPager($list);
+        $pager = $this->mcm->getPager($relation, $list);
 
         if (!$pager) {
             return false;

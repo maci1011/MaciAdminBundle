@@ -160,7 +160,7 @@
 </table>
 </div>
 
-{% if pager.requiresPagination() %}
+{% if pager is defined and pager.requiresPagination() %}
 <div class="container-fluid">
 <ul class="pagination">
 	<li {% if not pager.hasPrev() %}class="disabled"{% endif %}>

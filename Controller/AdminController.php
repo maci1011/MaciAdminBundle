@@ -1296,10 +1296,10 @@ class AdminController
     ---> Pager
 */
 
-    public function getPager($list)
+    public function getPager($map, $list, $ovrLimit = false, $ovrRange = false)
     {
-        $pageLimit = $this->config['options']['page_limit'];
-        $pageRange = $this->config['options']['page_range'];
+        $pageLimit = $ovrLimit === false ? $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_limit'), $this->config['options']['page_limit']) : $ovrLimit;
+        $pageRange = $ovrRange === false ? $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $this->config['options']['page_range']) : $ovrRange;
 
         $page = $this->request->get('page', 1);
 
