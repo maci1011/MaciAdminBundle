@@ -44,9 +44,9 @@
 
 	<td class="list-item-preview">
 
-	{% if is_image(item.webPath) %}
+	{% if is_image(item.webPreview) %}
 
-		<img src="{{ asset(item.webPath | imagine_filter('maci_admin_list_preview')) }}" alt="Preview" />
+		<img src="{{ asset(item.webPreview | imagine_filter('maci_admin_list_preview')) }}" alt="Preview" />
 
 	{% endif %}
 

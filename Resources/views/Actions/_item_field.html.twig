@@ -52,7 +52,7 @@
 
 	{% else %}
 
-<span class="item-field-value">{{ val }}</span>
+<span class="item-field-value">{{ val[:180] ~ (val|length < 180 ? '' : '...') }}</span>
 
 	{% endif %}
 
