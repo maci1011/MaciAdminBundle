@@ -96,7 +96,7 @@ class Configuration implements ConfigurationInterface
                 ->arrayNode('options')
                     ->addDefaultsIfNotSet()
                     ->children()
-                        ->scalarNode('page_limit')->defaultValue(30)->end()
+                        ->scalarNode('page_limit')->defaultValue(100)->end()
                         ->scalarNode('page_range')->defaultValue(7)->end()
                     ->end()
                 ->end()
