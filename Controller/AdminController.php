@@ -912,32 +912,8 @@ class AdminController
         $root = $query->getRootAlias();
 
         $fields = $this->getFields($map);
-        $hasTrash = $this->hasTrash($map);
-        $search = $this->request->get('s', false);
 
-        if ($search) {
-            $stringFields = $this->getFieldsByType($map);
-            foreach ($stringFields as $field) {
-                $query->orWhere($root . '.' . $field . ' LIKE :search');
-            }
-            $query->setParameter('search', "%$search%");
-        }
-
-        if ($hasTrash) {
-            $trashAttr = $map['trash_attr'];
-            if ( in_array($trashAttr, $fields) ) {
-                $query->andWhere($root . '.' . $trashAttr . ' = :' . $trashAttr);
-                $query->setParameter(':' . $trashAttr, $trashValue);
-            }
-        }
-
-        // $optf = $this->request->get('optf', array());
-        // foreach ($optf as $key => $value) {
-        //     if ($value !== '' && in_array($key, $fields)) {
-        //         $query->andWhere('e.' . $key . ' LIKE :' . $key);
-        //         $query->setParameter(':' . $key, "%$value%");
-        //     }
-        // }
+        $query = $this->addDefaultQueries($map, $query, $trashValue);
 
         $query->orderBy('e.id', 'DESC');
 
@@ -951,7 +927,7 @@ class AdminController
     {
         $relation_items = $this->getRelationItems($relation, $item);
         $inverseField = $this->getRelationInverseField($map, $relation);
-        $repo = $relation;
+        $mainMap = $relation;
 
         if ($bridge) {
             $bridge_items = array();
@@ -963,12 +939,14 @@ class AdminController
             $relation_items = $bridge_items;
             // todo: same option as below
             $inverseField = $this->getRelationInverseField($relation, $bridge);
-            $repo = $bridge;
+            $mainMap = $bridge;
         }
 
-        $repo = $this->getRepository($repo);
+        $repo = $this->getRepository($mainMap);
         $query = $repo->createQueryBuilder('r');
         $root = $query->getRootAlias();
+
+        $query = $this->addDefaultQueries($mainMap, $query);
 
         $index = 0;
         foreach ($relation_items as $obj) {
@@ -1423,6 +1401,57 @@ class AdminController
             return $methodName;
         }
         return false;
+    }
+
+/*
+    ---> Add Queries
+*/
+
+    public function addDefaultQueries($map, $query, $trashValue = false)
+    {
+        // $query = $this->addFiltersQuery($map, $query);
+        $query = $this->addSearchQuery($map, $query);
+        $query = $this->addTrashQuery($map, $query, $trashValue);
+
+        return $query;
+    }
+
+    public function addFiltersQuery($map, $query)
+    {
+        $optf = $this->request->get('optf', array());
+        foreach ($optf as $key => $value) {
+            if ($value !== '' && in_array($key, $fields)) {
+                $query->andWhere($query->getRootAlias() . '.' . $key . ' LIKE :' . $key);
+                $query->setParameter(':' . $key, "%$value%");
+            }
+        }
+        return $query;
+    }
+
+    public function addSearchQuery($map, $query)
+    {
+        $search = $this->request->get('s', false);
+        if ($search) {
+            $stringFields = $this->getFieldsByType($map);
+            foreach ($stringFields as $field) {
+                $query->orWhere($query->getRootAlias() . '.' . $field . ' LIKE :search');
+            }
+            $query->setParameter('search', "%$search%");
+        }
+        return $query;
+    }
+
+    public function addTrashQuery($map, $query, $trashValue = false)
+    {
+        $hasTrash = $this->hasTrash($map);
+        if ($hasTrash) {
+            $trashAttr = $map['trash_attr'];
+            if ( in_array($trashAttr, $fields) ) {
+                $query->andWhere($query->getRootAlias() . '.' . $trashAttr . ' = :' . $trashAttr);
+                $query->setParameter(':' . $trashAttr, $trashValue);
+            }
+        }
+        return $query;
     }
 
 /*

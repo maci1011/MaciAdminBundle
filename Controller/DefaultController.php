@@ -365,6 +365,7 @@ class DefaultController extends Controller
         }
 
         $params['pager'] = $pager;
+        $params['relation_search'] = true;
 
         return $params;
     }
@@ -402,6 +403,7 @@ class DefaultController extends Controller
         }
 
         $params['pager'] = $pager;
+        $params['relation_search'] = true;
 
         return $params;
     }
