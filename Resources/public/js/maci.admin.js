@@ -19,7 +19,7 @@ $(document).ready(function(e) {
 
     $('.list table .multipleActionsBar').each(function(i,bartr) {
 	    var bar, visible = false, tbody = $(bartr).parents('.list').find('tbody').first();
-    	$(bartr).children().first().attr('colspan', $(bartr).prev().find('th').length);
+    	$(bartr).children().first().attr('colspan', tbody.children().first().children().length);
     	bar = $(bartr).find('.nav.navbar-nav').first();
 
     	var updateBar = function() {

@@ -698,6 +698,23 @@ class AdminController
         return $fields;
     }
 
+    public function getFieldsByType($map, $types = ['string','text'])
+    {
+        $metadata = $this->getMetadata($map);
+
+        $fieldMappings = (array) $metadata->fieldMappings;
+
+        $fields = [];
+
+        foreach ($fieldMappings as $field => $mapping) {
+            if (in_array($mapping['type'], $types)) {
+                $fields [] = $field;
+            }
+        }
+
+        return $fields;
+    }
+
     public function getFieldType($map, $field)
     {
         $metadata = $this->getMetadata($map);
@@ -875,13 +892,12 @@ class AdminController
         if (!count($list)) return false;
         
         foreach ($list as $item) {
-            $id = $item->getId();
             if (method_exists($item, 'setRemoved')) {
                 $item->setRemoved(true);
-                $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $map['label'] . '] moved to trash.');
+                $this->session->getFlashBag()->add('success', 'Item [' . $item . '] for [' . $map['label'] . '] moved to trash.');
             } else {
                 $this->om->remove($item);
-                $this->session->getFlashBag()->add('success', 'Item [' . $id . '] for [' . $map['label'] . '] removed.');
+                $this->session->getFlashBag()->add('success', 'Item [' . $item . '] for [' . $map['label'] . '] removed.');
             }
         }
         $this->om->flush();
@@ -889,16 +905,26 @@ class AdminController
         return true;
     }
 
-    public function getItems($map)
+    public function getItems($map, $trashValue = false)
     {
         $repo = $this->getRepository($map);
         $query = $repo->createQueryBuilder('e');
         $root = $query->getRootAlias();
-        $fields = $this->getFields($map);
 
-        if ($this->hasTrash($map)) {
+        $fields = $this->getFields($map);
+        $hasTrash = $this->hasTrash($map);
+        $search = $this->request->get('s', false);
+
+        if ($search) {
+            $stringFields = $this->getFieldsByType($map);
+            foreach ($stringFields as $field) {
+                $query->orWhere($root . '.' . $field . ' LIKE :search');
+            }
+            $query->setParameter('search', "%$search%");
+        }
+
+        if ($hasTrash) {
             $trashAttr = $map['trash_attr'];
-            $trashValue = (bool) ( $this->request->get('action', '') === 'trash' );
             if ( in_array($trashAttr, $fields) ) {
                 $query->andWhere($root . '.' . $trashAttr . ' = :' . $trashAttr);
                 $query->setParameter(':' . $trashAttr, $trashValue);
@@ -1153,6 +1179,13 @@ class AdminController
         return false;
     }
 
+    public function getTableName($map)
+    {
+        $metadata = $this->getMetadata($map);
+
+        return $metadata->table['name'];
+    }
+
     public function getTemplate($map, $action)
     {
         if ( array_key_exists($action, $map['templates']) && $this->templating->exists($map['templates'][$action]['template']) ) {
@@ -1187,9 +1220,9 @@ class AdminController
     ---> Relations Manager
 */
 
-    public function getManagerSuccessMessage($managerMethod, $entity, $relation, $id)
+    public function getManagerSuccessMessage($managerMethod, $entity, $relation, $object)
     {
-        $message = 'Item [' . (strlen($id) ? $id : 'new') . '] ';
+        $message = 'Item [' . ((string) $object) . '] ';
         if (strpos($managerMethod, 'Remover') !== false) {
             return $message . 'Removed.';
         } else if (strpos($managerMethod, 'Adder')) {
@@ -1229,7 +1262,7 @@ class AdminController
     {
         foreach ($list as $obj) {
             if ($this->manageRelation($managerMethod, $entity, $relation, $item, $obj)) {
-                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $obj->getId()));
+                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $obj));
             }
         }
         $this->om->flush();
@@ -1275,7 +1308,7 @@ class AdminController
                 if (strpos($managerMethod, 'Remover') === false) {
                     $this->om->persist($newItem);
                 }
-                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $obj->getId()));
+                $this->session->getFlashBag()->add('success', $this->getManagerSuccessMessage($managerMethod, $entity, $relation, $obj));
             }
         }
         $this->om->flush();

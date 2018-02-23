@@ -1,0 +1,76 @@
+
+{% if multipleCheckbox %}
+
+<tr class="multipleActionsBar">
+<td colspan="0">
+<nav>
+<ul class="nav navbar-nav">
+
+	<li>
+		<p class="navbar-text">
+			<span class="glyphicon glyphicon-ok-circle"></span>
+		</p>
+	</li>
+
+	<li>
+		<p class="navbar-text multipleActionsBarSelectedLabel">
+			Selected Items: [ <span class="multipleActionsBarSelectedValue"></span> ]
+		</p>
+	</li>
+
+	<li>
+		<a class="action select-all" href="#">
+			<span class="glyphicon glyphicon-ok"></span>
+			Select All
+		</a>
+	</li>
+
+	<li>
+		<a class="action deselect-all" href="#">
+			<span class="glyphicon glyphicon-unchecked"></span>
+			Deselect All
+		</a>
+	</li>
+
+	{% if type == 'list' %}
+
+	<li>
+		<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
+			<span class="glyphicon glyphicon-remove"></span>
+			Remove
+		</a>
+	</li>
+
+	{% elseif type == 'add' %}
+
+	<li>
+		<a class="action btn-primary" confirm="Are you sure to add %items% items?" href="#">
+			<span class="glyphicon glyphicon-plus"></span>
+			Add Items
+		</a>
+	</li>
+
+	{% elseif type == 'relation' %}
+
+	<li>
+		<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relations', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'item' }) }}">
+			<span class="glyphicon glyphicon-remove"></span>
+			Remove Items
+		</a>
+	</li>
+
+	<li>
+		<a class="action remove" confirm="Are you sure to remove %items% associations?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'relations', 'id': id, 'relation': relation, 'relAction': 'remove', 'rm': 'association' }) }}">
+			<span class="glyphicon glyphicon-remove"></span>
+			Remove Associations
+		</a>
+	</li>
+
+	{% endif %}
+
+</ul>
+</nav>
+</td>
+</tr>
+
+{% endif %}

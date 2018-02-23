@@ -1,0 +1,24 @@
+
+{% if pager is defined and pager.requiresPagination() %}
+<div class="container-fluid">
+<nav class="pagination-container">
+<ul class="pagination">
+	{% if pager.hasPrev() %}
+	<li>
+		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.prev })) }}">«</a>
+	</li>
+	{% endif %}
+	{% for page in pager.getPageRange() %}
+    	<li {% if pager.current(page) %}class="active"{% endif %}>
+    		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": page })) }}">{{ page }}</a>
+    	</li>
+	{% endfor %}
+	{% if pager.hasNext() %}
+	<li>
+		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.next })) }}">»</a>
+	</li>
+	{% endif %}
+</ul>
+</nav>
+</div>
+{% endif %}

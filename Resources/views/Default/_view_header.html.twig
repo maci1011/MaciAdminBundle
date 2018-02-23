@@ -5,7 +5,12 @@
 <h1>{{ entity_label }}</h1>
 
 <div id="entitybar" class="actionsbar content-navbar container-fluid">
-	<nav>{{ knp_menu_render('admin_actions', {'currentClass': 'active'}) }}</nav>
+	<nav>
+		{{ knp_menu_render('admin_actions', {'currentClass': 'active'}) }}
+		{% if entity_search is defined and entity_search %}
+		{% include "MaciAdminBundle:Default:_view_header_search_form.html.twig" %}
+		{% endif %}
+	</nav>
 </div>
 
 
@@ -14,7 +19,9 @@
 <h2>Item: {{ item }}</h2>
 
 <div id="itembar" class="actionsbar content-navbar container-fluid">
-	<nav>{{ knp_menu_render('admin_item_actions', {'currentClass': 'active'}) }}</nav>
+	<nav>
+		{{ knp_menu_render('admin_item_actions', {'currentClass': 'active'}) }}
+	</nav>
 </div>
 
 
@@ -23,7 +30,12 @@
 <h3>Relation: {{ relation }}</h3>
 
 <div id="relationbar" class="actionsbar content-navbar container-fluid">
-	<nav>{{ knp_menu_render('admin_item_relation_actions', {'currentClass': 'active'}) }}</nav>
+	<nav>
+		{{ knp_menu_render('admin_item_relation_actions', {'currentClass': 'active'}) }}
+		{% if relation_search is defined and relation_search %}
+		{% include "MaciAdminBundle:Default:_view_header_search_form.html.twig" %}
+		{% endif %}
+	</nav>
 </div>
 
 

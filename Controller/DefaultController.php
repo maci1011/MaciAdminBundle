@@ -42,7 +42,7 @@ class DefaultController extends Controller
 
     public function trashAction()
     {
-        return $this->mcmList();
+        return $this->mcmList(true);
     }
 
     public function showAction()
@@ -84,12 +84,12 @@ class DefaultController extends Controller
         return $this->mcm->getDefaultParams();
     }
 
-    public function mcmList()
+    public function mcmList($trash = false)
     {
         $entity = $this->mcm->getCurrentEntity();
         if (!$entity) return false;
 
-        $list = $this->mcm->getItems($entity);
+        $list = $this->mcm->getItems($entity, $trash);
 
         $pager = $this->mcm->getPager($entity, $list);
 
@@ -98,7 +98,8 @@ class DefaultController extends Controller
         }
 
         return array_merge($this->mcm->getDefaultEntityParams($entity), array(
-            'pager' => $pager
+            'pager' => $pager,
+            'entity_search' => true
         ));
     }
 

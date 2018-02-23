@@ -233,6 +233,17 @@ table.tablesorter thead tr .header.headerSortDown {
     background-color: #ccc;
 }
 
+/*   -----> Pagination <-----   */
+
+nav.pagination-container {
+    padding: 15px 0;
+    text-align: center;
+}
+
+ul.pagination {
+    margin: 0;
+}
+
 /*   -----> Filters <-----   */
 
 .admin-form.form-filters {
