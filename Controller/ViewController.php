@@ -84,6 +84,10 @@ class ViewController extends Controller
             return $this->redirect($this->generateUrl($params['redirect'],$params['redirect_params']));
         }
 
+        if (array_key_exists('redirect_url', $params)) {
+            return $this->redirect($params['redirect_url']);
+        }
+
         if ($request->isXmlHttpRequest()) {
             $params['template'] = (array_key_exists('template',$params) ? $this->renderView($params['template'], array(
                 'params' => $params

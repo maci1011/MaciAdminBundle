@@ -328,7 +328,7 @@ class AdminController
 
     public function getRelationActions($entity)
     {
-        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader', 'reorder', 'setListFilters');
+        return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader', 'reorder');
     }
 
 /*
@@ -695,6 +695,12 @@ class AdminController
     public function getRelationUrl($map, $relation, $action = false, $id = null, $opt = array())
     {
         $action_params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id, $opt);
+        return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+    }
+
+    public function getBridgeUrl($map, $relation, $bridge, $action = false, $id = null, $opt = array())
+    {
+        $action_params = $this->getDefaultBridgeRedirectParams($map, $relation, $bridge, $action, $id, $opt);
         return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
     }
 

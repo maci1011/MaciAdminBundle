@@ -294,9 +294,9 @@ class DefaultController extends Controller
 
         }
 
-        $relation = $this->mcm->getCurrentRelation();
-        if ($relation) {
-            return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+        $redirect = $this->request->get('redirect');
+        if ($redirect) {
+            return array('redirect_url' => $redirect);
         }
 
         return $this->mcm->getDefaultEntityRedirectParams($entity, 'list', null, $opt);
@@ -331,8 +331,6 @@ class DefaultController extends Controller
         } else if ($relAction === 'reorder') {
             return $this->mcmRelationsReorder();
 
-        } else if ($relAction === 'setListFilters') {
-            return $this->mcmSetPagerOptions();
         }
 
         return false;
@@ -359,7 +357,7 @@ class DefaultController extends Controller
 
         } else {
 
-            $pager = $this->mcm->getPager($relation, $list, $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $this->request->get('relAction'))['redirect_params']);
+            $pager = $this->mcm->getPager($relation, $list, array('redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))));
 
             if (!$pager) {
                 return false;
@@ -397,7 +395,7 @@ class DefaultController extends Controller
 
         }
 
-        $pager = $this->mcm->getPager($relation, $list, $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $this->request->get('relAction'))['redirect_params']);
+        $pager = $this->mcm->getPager($relation, $list, array('redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))));
 
         if (!$pager) {
             return false;
@@ -435,7 +433,7 @@ class DefaultController extends Controller
 
         }
 
-        $pager = $this->mcm->getPager($relation, $list, $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $this->request->get('bridge'))['redirect_params']);
+        $pager = $this->mcm->getPager($bridge, $list, array('redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))));
 
         if (!$pager) {
             return false;
