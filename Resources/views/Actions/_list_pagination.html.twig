@@ -11,7 +11,7 @@
 			{% if pager.hasPrev() %}
 			<li>
 				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.prev })) }}">
-					Previous
+					<span class="glyphicon glyphicon-chevron-left"></span>
 				</a>
 			</li>
 			{% endif %}
@@ -23,7 +23,7 @@
 			{% if pager.hasNext() %}
 			<li>
 				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.next })) }}">
-					Next
+					<span class="glyphicon glyphicon-chevron-right"></span>
 				</a>
 			</li>
 			{% endif %}
@@ -32,13 +32,13 @@
 </ul>
 {% endif %}
 
-
 {% if pager.form %}
 <form method="post" action="{{ pager.form.vars.action }}" class="admin-form pagination-form navbar-form navbar-right container-fluid">
 	{% if pager.requiresPagination() %}
 	<div class="form-group">
 		<label class="control-label required" for="form_page">Page:</label>
-		<input id="form_page" name="form[page]" required="required" class="form-control" value="{{ pager.form.vars.value.page }}" type="number">
+		<input id="form_page" name="form[page]" required="required" class="form-control" value="{{ pager.form.vars.value.page }}" type="number" max="{{ pager.maxPages }}">
+		<label class="control-label required post-label">of [ {{ pager.maxPages }} ].</label>
 	</div>
 	{% endif %}
 	<div class="form-group">
@@ -51,6 +51,12 @@
 	</div>
 </form>
 {% endif %}
+
+<ul class="nav navbar-nav navbar-right">
+	<li>
+		<span class="navbar-text">Total Items: [ {{ pager.length }} ]</span>
+	</li>
+</ul>
 
 
 </nav>

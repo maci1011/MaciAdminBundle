@@ -97,7 +97,7 @@ class Configuration implements ConfigurationInterface
                     ->addDefaultsIfNotSet()
                     ->children()
                         ->scalarNode('page_limit')->defaultValue(100)->end()
-                        ->scalarNode('page_range')->defaultValue(7)->end()
+                        ->scalarNode('page_range')->defaultValue(3)->end()
                     ->end()
                 ->end()
             ->end()
