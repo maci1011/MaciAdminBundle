@@ -305,7 +305,8 @@ class AdminController
     {
         $actions = array();
         if(in_array('list', $this->getMainActions($entity))) {
-            $actions[] = 'set_list_filters';
+            $actions[] = 'setListFilters';
+            $actions[] = 'setPagerOptions';
         }
         return $actions;
     }
@@ -1016,6 +1017,47 @@ class AdminController
         return $map;
     }
 
+    public function getPager($map, $list, $opt = array())
+    {
+        return new MaciPager($list, $this->request->get('page', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map), $this->getPagerForm($map, $opt)->createView());
+    }
+
+    public function getPagerForm($map, $opt = array())
+    {
+        $options = array(
+            'page' => $this->request->get('page', 1),
+            'page_limit' => $this->getPager_PageLimit($map),
+            'page_range' => $this->getPager_PageRange($map)
+        );
+        return $this->createFormBuilder($options)
+            ->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $opt))
+            ->add('page', IntegerType::class)
+            ->add('page_limit', IntegerType::class)
+            ->add('set', SubmitType::class)
+            ->getForm()
+        ;
+    }
+
+    public function getPager_PageLimit($map)
+    {
+        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_limit'), $this->config['options']['page_limit']);
+    }
+
+    public function setPager_PageLimit($map, $value)
+    {
+        return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_limit'), $value);
+    }
+
+    public function getPager_PageRange($map)
+    {
+        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $this->config['options']['page_range']);
+    }
+
+    // public function setPager_PageRange($map)
+    // {
+    //     return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $value);
+    // }
+
     public function getRelation($map,$association)
     {
         if (!$this->isRelationEnable($map,$association)) {
@@ -1304,23 +1346,7 @@ class AdminController
     }
 
 /*
-    ---> Pager
-*/
-
-    public function getPager($map, $list, $ovrLimit = false, $ovrRange = false)
-    {
-        $pageLimit = $ovrLimit === false ? $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_limit'), $this->config['options']['page_limit']) : $ovrLimit;
-        $pageRange = $ovrRange === false ? $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $this->config['options']['page_range']) : $ovrRange;
-
-        $page = $this->request->get('page', 1);
-
-        $pager = new MaciPager($list, $pageLimit, $page, $pageRange);
-
-        return $pager;
-    }
-
-/*
-    ---> search a method
+    ---> search an object method
 */
 
     public function searchMethod($object,$field,$prefix = null)
@@ -1404,7 +1430,7 @@ class AdminController
     }
 
 /*
-    ---> Add Queries
+    ---> Queries
 */
 
     public function addDefaultQueries($map, $query, $trashValue = false)
@@ -1445,6 +1471,7 @@ class AdminController
     {
         $hasTrash = $this->hasTrash($map);
         if ($hasTrash) {
+            $fields = $this->getFields($map);
             $trashAttr = $map['trash_attr'];
             if ( in_array($trashAttr, $fields) ) {
                 $query->andWhere($query->getRootAlias() . '.' . $trashAttr . ' = :' . $trashAttr);

@@ -65,14 +65,19 @@ class DefaultController extends Controller
         return $this->mcmRemove();
     }
 
-    public function relationsAction()
-    {
-        return $this->mcmRelations();
-    }
-
     public function uploaderAction()
     {
         return $this->mcmUploader();
+    }
+
+    public function setPagerOptionsAction()
+    {
+        return $this->mcmSetPagerOptions();
+    }
+
+    public function relationsAction()
+    {
+        return $this->mcmRelations();
     }
 
 /*
@@ -265,6 +270,29 @@ class DefaultController extends Controller
         return array('success' => true);
     }
 
+    public function mcmSetPagerOptions()
+    {
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
+
+        $form = $this->mcm->getPagerForm($entity);
+
+        $form->handleRequest($this->request);
+
+        $opt = [];
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            $this->mcm->setPager_PageLimit($entity, $form->get('page_limit')->getData());
+
+            $page = (int) $form->get('page')->getData();
+            if (1<$page) $opt['page'] = $page;
+
+        }
+
+        return $this->mcm->getDefaultEntityRedirectParams($entity, 'list', null, $opt);
+    }
+
 /*
     ---> Generic Relations Actions
 */
@@ -319,7 +347,7 @@ class DefaultController extends Controller
 
         } else {
 
-            $pager = $this->mcm->getPager($relation, $list, 0);
+            $pager = $this->mcm->getPager($relation, $list);
 
             if (!$pager) {
                 return false;

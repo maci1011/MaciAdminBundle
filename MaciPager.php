@@ -14,18 +14,15 @@ class MaciPager
 
 	protected $length;
 
-	protected $fields_list;
+	protected $form;
 
-	protected $filters_form;
-
-	public function __construct($result = null, $limit = 10, $page = 1, $range = 5)
+	public function __construct($result = null, $page = 1, $limit = 10, $range = 5, $form = false)
 	{
 		$this->result = $result;
 		$this->limit = $limit;
 		$this->page = $page;
 		$this->range = $range;
-		$this->fields_list = array();
-		$this->filters_form = false;
+		$this->form = $form;
 	}
 
 	public function getResult()
@@ -66,6 +63,16 @@ class MaciPager
 	public function setRange($range)
 	{
 		$this->range = $range;
+	}
+
+	public function getForm()
+	{
+		return $this->form;
+	}
+
+	public function setForm($form)
+	{
+		$this->form = $form;
 	}
 
 	/* Utils */
@@ -147,7 +154,7 @@ class MaciPager
 		return $return;
 	}
 
-	public function current($candidate)
+	public function isCurrent($candidate)
 	{
 		return $candidate == $this->page;
 	}

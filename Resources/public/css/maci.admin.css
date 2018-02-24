@@ -235,13 +235,18 @@ table.tablesorter thead tr .header.headerSortDown {
 
 /*   -----> Pagination <-----   */
 
-nav.pagination-container {
-    padding: 15px 0;
+.pagination-container {
+    padding: 15px;
     text-align: center;
 }
 
 ul.pagination {
     margin: 0;
+    padding: 8px;
+}
+
+form.pagination-form {
+    display: inline-block;
 }
 
 /*   -----> Filters <-----   */

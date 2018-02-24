@@ -1,0 +1,10 @@
+
+{% if pager is defined and pager.form %}
+
+{{ form_start(pager.form, {'attr':{'class':'admin-form pagination-form form-inline container-fluid'}}) }}
+
+{{ form_rest(pager.form) }}
+
+{{ form_end(pager.form) }}
+
+{% endif %}
