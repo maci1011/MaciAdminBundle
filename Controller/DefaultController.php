@@ -102,6 +102,10 @@ class DefaultController extends Controller
             return false;
         }
 
+        if ($this->request->get('page') && $this->request->get('page') != $pager->getPage()) {
+            return $this->mcm->getDefaultEntityRedirectParams($entity, ($trash ? 'trash' : 'list'), null, (1<$pager->getPage() ? array('page'=>$pager->getPage()) : []));
+        }
+
         return array_merge($this->mcm->getDefaultEntityParams($entity), array(
             'pager' => $pager,
             'entity_search' => true

@@ -20,9 +20,9 @@ class MaciPager
 	{
 		$this->result = $result;
 		$this->limit = $limit;
-		$this->page = $page;
 		$this->range = $range;
 		$this->form = $form;
+		$this->setPage($page);
 	}
 
 	public function getResult()
@@ -42,7 +42,7 @@ class MaciPager
 
 	public function setPage($page)
 	{
-		$this->page = $page;
+		$this->page = ($this->getMaxPages() < $page) ? 1 : $page;
 	}
 
 	public function getLimit()
@@ -89,7 +89,7 @@ class MaciPager
 
 	public function getOffset()
 	{
-		return ($this->page - 1) * $this->limit;
+		return ($this->getPage() - 1) * $this->limit;
 	}
 
 	public function requiresPagination()
@@ -99,30 +99,30 @@ class MaciPager
 
 	public function hasPrev()
 	{
-		return ( $this->page > 1 );
+		return ( $this->getPage() > 1 );
 	}
 
 	public function hasNext()
 	{
-		return ( $this->getMaxPages() > $this->page );
+		return ( $this->getMaxPages() > $this->getPage() );
 	}
 
 	public function getNext()
 	{
-		return $this->page + 1;
+		return $this->getPage() + 1;
 	}
 
 	public function getPrev()
 	{
-		return $this->page - 1;	
+		return $this->getPage() - 1;	
 	}
 
 	public function getPageRange()
 	{
 		$return = array();
 
-		$min = max(1, $this->page - $this->range);
-		$max = min($this->getMaxPages(), $this->page + $this->range);
+		$min = max(1, $this->getPage() - $this->range);
+		$max = min($this->getMaxPages(), $this->getPage() + $this->range);
 
 		for ($i = $min; $i <= $max; $i++) {
 			$return []= $i;
@@ -156,6 +156,6 @@ class MaciPager
 
 	public function isCurrent($candidate)
 	{
-		return $candidate == $this->page;
+		return $candidate == $this->getPage();
 	}
 }
