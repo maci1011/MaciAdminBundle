@@ -179,10 +179,6 @@ table.tablesorter thead tr .header.headerSortDown {
     padding: 0;
 }
 
-.list-default tr.multipleActionsBar > td > nav {
-    height: 50px;
-}
-
 .list-default tr.list-item.add-item td {
     background-color: #FEEBA9;
 }
