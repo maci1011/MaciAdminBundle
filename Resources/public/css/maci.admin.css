@@ -140,10 +140,13 @@ table.tablesorter thead tr .header.headerSortDown {
 /*   -----> List <-----   */
 
 .list-default {
-    padding-bottom: 5px;
     overflow-x: auto;
     overflow-y: hidden;
     width: 100%;
+}
+
+.list-default > .table {
+    margin: 0;
 }
 
 .list-default tr.list-header .list-title {
@@ -234,11 +237,6 @@ table.tablesorter thead tr .header.headerSortDown {
 }
 
 /*   -----> Pagination <-----   */
-
-.pagination-container {
-    padding: 15px;
-    text-align: center;
-}
 
 ul.pagination {
     margin: 0;
