@@ -294,6 +294,11 @@ class DefaultController extends Controller
 
         }
 
+        $relation = $this->mcm->getCurrentRelation();
+        if ($relation) {
+            return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+        }
+
         return $this->mcm->getDefaultEntityRedirectParams($entity, 'list', null, $opt);
     }
 
@@ -325,6 +330,9 @@ class DefaultController extends Controller
 
         } else if ($relAction === 'reorder') {
             return $this->mcmRelationsReorder();
+
+        } else if ($relAction === 'setListFilters') {
+            return $this->mcmSetPagerOptions();
         }
 
         return false;
@@ -351,7 +359,7 @@ class DefaultController extends Controller
 
         } else {
 
-            $pager = $this->mcm->getPager($relation, $list);
+            $pager = $this->mcm->getPager($relation, $list, $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $this->request->get('relAction'))['redirect_params']);
 
             if (!$pager) {
                 return false;
@@ -378,8 +386,6 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item);
 
-        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
-
         if ( $this->request->getMethod() === 'POST') {
 
             $this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
@@ -387,15 +393,17 @@ class DefaultController extends Controller
             if ($this->request->isXmlHttpRequest())
                 return array('success' => true);
             else
-                return $params = $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+                return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 
         }
 
-        $pager = $this->mcm->getPager($relation, $list);
+        $pager = $this->mcm->getPager($relation, $list, $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $this->request->get('relAction'))['redirect_params']);
 
         if (!$pager) {
             return false;
         }
+
+        $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
         $params['pager'] = $pager;
         $params['relation_search'] = true;
@@ -419,8 +427,6 @@ class DefaultController extends Controller
 
         $list = $this->mcm->getItemsForRelation($entity, $relation, $item, $bridge);
 
-        $params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
-
         if ($this->request->getMethod() === 'POST') {
 
             $this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
@@ -429,11 +435,13 @@ class DefaultController extends Controller
 
         }
 
-        $pager = $this->mcm->getPager($relation, $list);
+        $pager = $this->mcm->getPager($relation, $list, $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $this->request->get('bridge'))['redirect_params']);
 
         if (!$pager) {
             return false;
         }
+
+        $params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
 
         $params['pager'] = $pager;
         $params['relation_search'] = true;
