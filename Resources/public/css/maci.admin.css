@@ -127,6 +127,7 @@ h4 {
     background-repeat: no-repeat;
     background-position: center right;
     cursor: pointer;
+    padding-right: 21px;
 }
 
 .list-default table.tablesorter thead tr .header.headerSortUp {
