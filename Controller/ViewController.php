@@ -114,10 +114,10 @@ class ViewController extends Controller
                 $section = $secname;
                 $_entity = $admin->getEntity($section, $entity);
                 if ($item) {
-                    $actions = $admin->getListLabels($admin->getSingleActions($_entity));
+                    $actions = $admin->getArrayWithLabels($admin->getSingleActions($_entity));
                     $id = $item->getId();
                 } else {
-                    $actions = $admin->getListLabels($admin->getMainActions($_entity));
+                    $actions = $admin->getArrayWithLabels($admin->getMainActions($_entity));
                 }
                 break;
             }

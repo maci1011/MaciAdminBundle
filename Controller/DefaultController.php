@@ -288,6 +288,8 @@ class DefaultController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
 
             $this->mcm->setPager_PageLimit($entity, $form->get('page_limit')->getData());
+            $this->mcm->setPager_OrderByField($entity, $form->get('order_by_field')->getData());
+            $this->mcm->setPager_OrderBySort($entity, $form->get('order_by_sort')->getData());
 
             $page = (int) $form->get('page')->getData();
             if (1<$page) $opt['page'] = $page;

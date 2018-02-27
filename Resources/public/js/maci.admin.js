@@ -17,7 +17,7 @@ $(document).ready(function(e) {
     	admin.setRichTextEditor( $(this) );
     });
 
-    $('.list table .multipleActionsBar').each(function(i,bartr) {
+    $('.list.list-default table .multipleActionsBar').each(function(i,bartr) {
 	    var bar, visible = false, tbody = $(bartr).parents('.list').find('tbody').first();
     	$(bartr).children().first().attr('colspan', tbody.children().first().children().length);
     	bar = $(bartr).find('.nav.navbar-nav').first();
@@ -101,14 +101,15 @@ $(document).ready(function(e) {
 		});
     });
 
-    $('.tablesorter').each(function(i,el) {
+    $('.list.list-default .tablesorter').each(function(i,el) {
+    	var _headers = {};
+    	$(el).find('.list-header').each(function(j,hd) {
+    		if ($(hd).hasClass('no-sort')){
+				_headers[j] = { sorter: false };
+			}
+    	});
     	$(el).tablesorter({
-    		headers: {
-    			0: {
-    				sorter: !$(el).parents('.list').first().hasClass('list-multiple')
-    			}
-    		},
-    		sortList: [[1,1]]
+    		headers: _headers
     	});
     });
 

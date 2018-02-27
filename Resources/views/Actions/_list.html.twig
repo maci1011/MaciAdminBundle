@@ -38,7 +38,7 @@
 <tr class="list-header-container">
 
 	{% if multipleCheckbox %}
-	<th class="list-header">&nbsp;</th>
+	<th class="list-header no-sort">&nbsp;</th>
 	{% endif %}
 
 	{% for field in fields %}
@@ -48,7 +48,7 @@
 		<span class="list-title">Id</span>
 	</th>
 	{% elseif field == '_preview' %}
-	<th class="list-header _preview">
+	<th class="list-header no-sort _preview">
 		<span class="list-title">Preview</span>
 	</th>
 	{% elseif field == '_string' %}
@@ -64,11 +64,11 @@
 	{% endfor %}
 
 	{% if type == 'list' or type == 'relation' %}
-	<th class="list-header-last list-header-remove">
+	<th class="list-header list-header-last list-header-remove no-sort">
 		<span class="list-title">Actions</span>
 	</th>
 	{% elseif type == 'set' %}
-	<th class="list-header-last list-header-set">
+	<th class="list-header list-header-last list-header-set no-sort">
 		<span class="list-title">Set Item</span>
 	</th>
 	{% endif %}

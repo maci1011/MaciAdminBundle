@@ -16,12 +16,11 @@ class MaciPager
 
 	protected $form;
 
-	public function __construct($result = null, $page = 1, $limit = 10, $range = 5, $form = false)
+	public function __construct($result = null, $page = 1, $limit = 10, $range = 5)
 	{
 		$this->result = $result;
 		$this->limit = $limit;
 		$this->range = $range;
-		$this->form = $form;
 		$this->setPage($page);
 	}
 

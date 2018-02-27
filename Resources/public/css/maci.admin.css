@@ -122,18 +122,21 @@ h4 {
 
 /*   -----> Tablesorter <-----   */
 
-table.tablesorter thead tr .header {
+.list-default table.tablesorter thead tr .header {
+    background-image: url("./tablesorter/bg.gif");
     background-repeat: no-repeat;
     background-position: center right;
     cursor: pointer;
 }
 
-table.tablesorter thead tr .header.headerSortUp {
+.list-default table.tablesorter thead tr .header.headerSortUp {
     background-image: url("./tablesorter/asc.gif");
+    background-color: #F8CFCF;
 }
 
-table.tablesorter thead tr .header.headerSortDown {
+.list-default table.tablesorter thead tr .header.headerSortDown {
     background-image: url("./tablesorter/desc.gif");
+    background-color: #CFE2F8;
 }
 
 

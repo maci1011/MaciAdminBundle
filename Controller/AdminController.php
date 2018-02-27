@@ -561,15 +561,11 @@ class AdminController
             'entity_label' => $map['label'],
             'action' =>  $action,
             'action_label' => $this->generateLabel($action),
-            'actions' => $this->getListLabels($this->getActions($map)),
             'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
             'item' => $this->getCurrentItem(),
             'is_entity_uploadable' => $this->isUploadable($map),
             'list_filters_form' => $this->getFiltersForm($map)->createView(),
-            'main_actions' => $this->getListLabels($this->getMainActions($map)),
-            'multiple_actions' => $this->getListLabels($this->getMultipleActions($map)),
-            'single_actions' => $this->getListLabels($this->getSingleActions($map)),
             'sortable' => false,
             'template' => $this->getTemplate($map,$action),
             'uploader' => ($this->isUploadable($map) ? $this->generateUrl('maci_admin_view', array(
@@ -704,14 +700,14 @@ class AdminController
         return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
     }
 
-    public function getFields($map)
+    public function getFields($map, $ri = true)
     {
         $metadata = $this->getMetadata($map);
 
         $fields = (array) $metadata->fieldNames;
 
         // Remove the primary key field if it's not managed manually
-        if (!$metadata->isIdentifierNatural()) {
+        if ($ri && !$metadata->isIdentifierNatural()) {
             $fields = array_diff($fields, $metadata->identifier);
         }
 
@@ -902,6 +898,12 @@ class AdminController
         return $list;
     }
 
+    public function getIdentifier($map)
+    {
+        $identifiers = $this->getMetadata($map)->getIdentifier();
+        return $identifiers[0];
+    }
+
     public function getItem($map, $id)
     {
         return $this->getRepository($map)->findOneById($id);
@@ -935,8 +937,6 @@ class AdminController
 
         $query = $this->addDefaultQueries($map, $query, $trashValue);
 
-        $query->orderBy('e.id', 'DESC');
-
         $query = $query->getQuery();
         $list = $query->getResult();
 
@@ -966,8 +966,6 @@ class AdminController
         $query = $repo->createQueryBuilder('r');
         $root = $query->getRootAlias();
 
-        $query = $this->addDefaultQueries($mainMap, $query);
-
         $index = 0;
         foreach ($relation_items as $obj) {
             $parameter = ':id_' . $index;
@@ -982,7 +980,7 @@ class AdminController
             $query->setParameter(':pid', call_user_method(('get'.ucfirst($inverseField)), $item));
         }
 
-        $query->orderBy($root . '.' . $inverseField, 'DESC');
+        $query = $this->addDefaultQueries($mainMap, $query);
 
         $query = $query->getQuery();
 
@@ -1038,21 +1036,46 @@ class AdminController
 
     public function getPager($map, $list, $opt = array())
     {
-        return new MaciPager($list, $this->request->get('page', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map), $this->getPagerForm($map, $opt)->createView());
+        $pager = new MaciPager($list, $this->request->get('page', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
+        $pager->setForm($this->getPagerForm($map, $pager, $opt));
+        return $pager;
     }
 
-    public function getPagerForm($map, $opt = array())
+    public function getPagerForm($map, $pager = false, $opt = array())
     {
         $options = array(
             'page' => $this->request->get('page', 1),
             'page_limit' => $this->getPager_PageLimit($map),
-            'page_range' => $this->getPager_PageRange($map)
+            'page_range' => $this->getPager_PageRange($map),
+            'order_by_field' => $this->getPager_OrderByField($map),
+            'order_by_sort' => $this->getPager_OrderBySort($map)
         );
+        $page_attr = $pager ? array('max' => $pager->getMaxPages()) : array();
         return $this->createFormBuilder($options)
             ->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $opt))
-            ->add('page', IntegerType::class)
-            ->add('page_limit', IntegerType::class)
-            ->add('set', SubmitType::class)
+            ->add('page', IntegerType::class, array(
+                'label' => 'Page:',
+                'attr' => $page_attr
+            ))
+            ->add('page_limit', IntegerType::class, array(
+                'label' => 'Items for Page:'
+            ))
+            ->add('order_by_field', ChoiceType::class, array(
+                'label' => 'Order By:',
+                'choices' => $this->getArrayWithLabels($this->getListFields($map, false))
+            ))
+            ->add('order_by_sort', ChoiceType::class, array(
+                'label' => 'Sort',
+                'label_attr' => array(
+                    'class' => 'sr-only'
+                ),
+                'choices' => array('Asc' => 'ASC', 'Desc' => 'DESC')
+            ))
+            ->add('set', SubmitType::class,  array(
+                'attr' => array(
+                    'class' => 'btn btn-primary'
+                )
+            ))
             ->getForm()
         ;
     }
@@ -1076,6 +1099,26 @@ class AdminController
     // {
     //     return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $value);
     // }
+
+    public function getPager_OrderByField($map)
+    {
+        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.order_by_field'), $this->getIdentifier($map));
+    }
+
+    public function setPager_OrderByField($map, $value)
+    {
+        return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.order_by_field'), $value);
+    }
+
+    public function getPager_OrderBySort($map)
+    {
+        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.order_by_sort'), 'DESC');
+    }
+
+    public function setPager_OrderBySort($map, $value)
+    {
+        return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.order_by_sort'), $value);
+    }
 
     public function getRelation($map,$association)
     {
@@ -1160,9 +1203,7 @@ class AdminController
         }
 
         if (!$inverseField) {
-            $relationMetadataClass = $this->getMetadata($relation);
-            $identifiers = $relationMetadataClass->getIdentifier();
-            $inverseField = $identifiers[0];
+            $inverseField = $this->getIdentifier($relation);
         }
 
         return $inverseField;
@@ -1457,6 +1498,7 @@ class AdminController
         // $query = $this->addFiltersQuery($map, $query);
         $query = $this->addSearchQuery($map, $query);
         $query = $this->addTrashQuery($map, $query, $trashValue);
+        $query = $this->addOrderByQuery($map, $query);
 
         return $query;
     }
@@ -1500,6 +1542,12 @@ class AdminController
         return $query;
     }
 
+    public function addOrderByQuery($map, $query)
+    {
+        $query->orderBy($query->getRootAlias() . '.' . $this->getPager_OrderByField($map), $this->getPager_OrderBySort($map));
+        return $query;
+    }
+
 /*
     ---> Utils
 */
@@ -1513,11 +1561,11 @@ class AdminController
         return $ids;
     }
 
-    public function getListLabels($array)
+    public function getArrayWithLabels($array)
     {
         $list = array();
         foreach ($array as $item) {
-            $list[$item] = $this->generateLabel($item);
+            $list[$this->generateLabel($item)] = $item;
         }
         return $list;
     }
