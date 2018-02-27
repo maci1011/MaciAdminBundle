@@ -754,6 +754,25 @@ class AdminController
         return call_user_method($getter,$object);
     }
 
+    public function getListFields($map)
+    {
+        $object = $this->getNewItem($map);
+        $list = [$this->getIdentifier($map)];
+        if (array_key_exists('list', $map) && count($map['list'])) {
+            return array_merge($list, $map['list']);
+        }
+        if (method_exists($object, 'getAbsolutePath') && method_exists($object, 'getWebPath')) {
+            $list[] = '_preview';
+        }
+        $fields = array_keys($this->getFields($map));
+        foreach ($fields as $field) {
+            if ($field == $map['sort_attr']) continue;
+            if ($field == $map['trash_attr']) continue;
+            $list[] = lcfirst($this->getCamel($field));
+        }
+        return $list;
+    }
+
     public function getFiltersForm($entity)
     {
         $form = $entity['name'];
@@ -874,28 +893,6 @@ class AdminController
         }
 
         return $form->getForm();
-    }
-
-    public function getListFields($map)
-    {
-        $object = $this->getNewItem($map);
-        $list = [];
-        if (method_exists($object, 'getId')) {
-            $list[] = 'id';
-        }
-        if (array_key_exists('list', $map) && count($map['list'])) {
-            return array_merge($list, $map['list']);
-        }
-        if (method_exists($object, 'getAbsolutePath') && method_exists($object, 'getWebPath')) {
-            $list[] = '_preview';
-        }
-        $fields = array_keys($this->getFields($map));
-        foreach ($fields as $field) {
-            if ($field == $map['sort_attr']) continue;
-            if ($field == $map['trash_attr']) continue;
-            $list[] = lcfirst($this->getCamel($field));
-        }
-        return $list;
     }
 
     public function getIdentifier($map)
@@ -1062,7 +1059,7 @@ class AdminController
             ))
             ->add('order_by_field', ChoiceType::class, array(
                 'label' => 'Order By:',
-                'choices' => $this->getArrayWithLabels($this->getListFields($map, false))
+                'choices' => $this->getArrayWithLabels($this->getFields($map, false))
             ))
             ->add('order_by_sort', ChoiceType::class, array(
                 'label' => 'Sort',
