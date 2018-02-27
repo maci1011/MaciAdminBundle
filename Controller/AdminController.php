@@ -759,15 +759,15 @@ class AdminController
         $object = $this->getNewItem($map);
         $list = [$this->getIdentifier($map)];
         if (array_key_exists('list', $map) && count($map['list'])) {
-            return array_merge($list, $map['list']);
+            return array_merge($list, $map['list'], ($this->isSortable($map) ? [$map['sort_attr']] : []));
         }
         if (method_exists($object, 'getAbsolutePath') && method_exists($object, 'getWebPath')) {
             $list[] = '_preview';
         }
         $fields = array_keys($this->getFields($map));
         foreach ($fields as $field) {
-            if ($field == $map['sort_attr']) continue;
             if ($field == $map['trash_attr']) continue;
+            if ($field == $map['sort_attr'] && !$this->isSortable($map)) continue;
             $list[] = lcfirst($this->getCamel($field));
         }
         return $list;
