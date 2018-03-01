@@ -46,7 +46,7 @@
 
 	{% if is_image(item.webPreview) %}
 
-		<img src="{{ asset(item.webPreview | imagine_filter('maci_admin_list_preview')) }}" alt="Preview" />
+		{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
 
 	{% endif %}
 

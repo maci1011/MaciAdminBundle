@@ -88,54 +88,113 @@ class AdminController
 /*
     ---> Sections Functions
 */
+    public function setDefaultConfig($map, $defaults)
+    {
+        if (array_key_exists('config', $map)) {
+            $config = array_merge($defaults, $map['config']);
+            if (!count($config['roles'])) $config['roles'] = $defaults['roles'];
+            if (!count($config['actions'])) $config['actions'] = $defaults['actions'];
+            return $config;
+        }
+        return $defaults;
+    }
 
     // Init _sections and _auth_sections
     private function initSections()
     {
-        $this->_sections = $this->config['sections'];
+        $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
+        $this->_sections = $this->session->get('maci_admin._sections');
+        $this->_defaults = $this->session->get('maci_admin._defaults');
+
+        if (is_array($this->_auth_sections)) return;
+
+        // Authorized Sections
         $this->_auth_sections = [];
-        // sections loop
-        foreach ($this->_sections as $name => $section) {
-            // section default values
-            if (!array_key_exists('config', $this->_sections[$name])) {
-                $this->_sections[$name]['config'] = [];
-            }
-            // section roles
-            if (!array_key_exists('roles', $this->_sections[$name]['config'])) {
-                $this->_sections[$name]['config']['roles'] = ['ROLE_ADMIN'];
-            }
-            foreach ($this->_sections[$name]['config']['roles'] as $role) {
+        // Sections
+        $this->_sections = [];
+
+        if (!array_key_exists('sections', $this->config)) return;
+
+        $this->_defaults = [
+            'actions'       => [
+                'list' => ['template' => 'MaciAdminBundle:Actions:list.html.twig'],
+                'new' => ['template' => 'MaciAdminBundle:Actions:new.html.twig'],
+                'trash' => ['template' => 'MaciAdminBundle:Actions:trash.html.twig'],
+                'uploader' => ['template' => 'MaciAdminBundle:Actions:uploader.html.twig'],
+                'show' => ['template' => 'MaciAdminBundle:Actions:show.html.twig'],
+                'edit' => ['template' => 'MaciAdminBundle:Actions:edit.html.twig'],
+                'remove' => ['template' => 'MaciAdminBundle:Actions:remove.html.twig'],
+                'relations' => ['template' => 'MaciAdminBundle:Actions:relations.html.twig'],
+                'relations_add' => ['template' => 'MaciAdminBundle:Actions:relations_add.html.twig'],
+                'relations_list' => ['template' => 'MaciAdminBundle:Actions:relations_list.html.twig'],
+                'relations_remove' => ['template' => 'MaciAdminBundle:Actions:relations_remove.html.twig'],
+                'relations_set' => ['template' => 'MaciAdminBundle:Actions:relations_set.html.twig'],
+                'relations_show' => ['template' => 'MaciAdminBundle:Actions:relations_show.html.twig'],
+                'relations_uploader' => ['template' => 'MaciAdminBundle:Actions:relations_uploader.html.twig']
+            ],
+            'page_limit'    => 100,
+            'page_range'    => 2,
+            'enabled'       => true,
+            'roles'         => ['ROLE_ADMIN'],
+            'sortable'      => false,
+            'sort_field'    => 'position',
+            'trash'         => true,
+            'trash_field'   => 'removed',
+            'uploadable'    => true,
+            'upload_field'  => 'file',
+            'upload_path_field'  => 'path'
+        ];
+
+        $this->_defaults = $this->setDefaultConfig(['config' => (array_key_exists('config', $this->config) ? $this->config['config'] : [])], $this->_defaults);
+
+        foreach ($this->config['sections'] as $name => $section) {
+            if (!array_key_exists('entities', $section) || !count($section['entities'])) continue;
+            // Section Settings
+            $section_config = $this->setDefaultConfig($section, $this->_defaults);
+            $section['authorized'] = false;
+            foreach ($section_config['roles'] as $role) {
                 if ($this->authorizationChecker->isGranted($role)) {
-                    $this->_auth_sections[] = $name;
+                    $section['authorized'] = true;
                     break;
                 }
             }
-            //  section definitions
-            $this->_sections[$name]['config']['name'] = $name;
-            if (!array_key_exists('label', $this->_sections[$name]['config'])) {
-                $this->_sections[$name]['config']['label'] = $this->generateLabel($name);
-            }
-            //  entities default values
-            if (!array_key_exists('entities', $this->_sections[$name])) {
-                $this->_sections[$name]['entities'] = [];
-            }
-            //  entities loop
-            foreach ($this->_sections[$name]['entities'] as $entity_name => $entity) {
+            // Section Entities
+            $entities = []; 
+            foreach ($section['entities'] as $entity_name => $entity) {
+                $entity_config = $this->setDefaultConfig($entity, $section_config);
+                $entity['authorized'] = false;
+                foreach ($entity_config['roles'] as $role) {
+                    if ($this->authorizationChecker->isGranted($role)) {
+                        $section['authorized'] = true;
+                        $entity['authorized'] = true;
+                        break;
+                    }
+                }
+                if (!$entity['authorized']) continue;
                 //  entity definitions
-                $this->_sections[$name]['entities'][$entity_name]['section'] = $name;
-                $this->_sections[$name]['entities'][$entity_name]['name'] = $entity_name;
-                $this->_sections[$name]['entities'][$entity_name]['class'] = $this->getClass($entity);
+                $entity['section'] = $name;
+                $entity['name'] = $entity_name;
+                $entity['class'] = $this->getClass($entity);
                 if (!array_key_exists('label', $entity)) {
-                    $this->_sections[$name]['entities'][$entity_name]['label'] = $this->generateLabel($entity_name);
+                    $entity['label'] = $this->generateLabel($entity_name);
                 }
-                if (!array_key_exists('templates', $entity)) {
-                    $this->_sections[$name]['entities'][$entity_name]['templates'] = [];
-                }
-                if (!array_key_exists('uploadable', $entity)) {
-                    $this->_sections[$name]['entities'][$entity_name]['uploadable'] = false;
-                }
+                // Add Entity
+                $entities[$entity_name] = $entity;
             }
+            if (!$section['authorized'] || !count($entities)) continue;
+            //  section properties
+            $section['name'] = $name;
+            $section['entities'] = $entities;
+            if (!array_key_exists('label', $section)) {
+                $section['label'] = $this->generateLabel($name);
+            }
+            // Add Section
+            $this->_auth_sections[] = $section['name'];
+            $this->_sections[$name] = $section;
         }
+        $this->session->set('maci_admin._auth_sections', $this->_auth_sections);
+        $this->session->set('maci_admin._sections', $this->_sections);
+        $this->session->set('maci_admin._defaults', $this->_defaults);
     }
 
     public function getAuthSections()
@@ -164,7 +223,7 @@ class AdminController
     public function getSectionConfig($section)
     {
         if (array_key_exists($section, $this->_sections)) {
-            return $this->_sections[$section]['config'];
+            return $this->setDefaultConfig($this->_sections[$section], $this->_defaults);
         }
         return false;
     }
@@ -172,7 +231,7 @@ class AdminController
     public function getSectionLabel($section)
     {
         if (array_key_exists($section, $this->_sections)) {
-            return $this->_sections[$section]['config']['label'];
+            return $this->_sections[$section]['label'];
         }
         return false;
     }
@@ -180,15 +239,15 @@ class AdminController
     public function getSectionDashboard($section)
     {
         if ($this->hasSectionDashboard($section)) {
-            return $this->_sections[$section]['config']['dashboard'];
+            return $this->_sections[$section]['dashboard'];
         }
         return false;
     }
 
     public function hasSectionDashboard($section)
     {
-        if (array_key_exists($section, $this->_sections) && array_key_exists('dashboard', $this->_sections[$section]['config'])) {
-            return $this->templating->exists($this->_sections[$section]['config']['dashboard']);
+        if (array_key_exists($section, $this->_sections) && array_key_exists('dashboard', $this->_sections[$section])) {
+            return $this->templating->exists($this->_sections[$section]['dashboard']);
         }
         return false;
     }
@@ -204,7 +263,7 @@ class AdminController
     public function hasEntities($section)
     {
         if (array_key_exists($section, $this->_sections)) {
-            return !!count($this->_sections[$section]['entities']);
+            return (bool) count($this->_sections[$section]['entities']);
         }
         return false;
     }
@@ -246,30 +305,6 @@ class AdminController
         return false;
     }
 
-    public function getEntityLabel($section, $entity)
-    {
-        if ($this->hasEntity($section, $entity)) {
-            return $this->_sections[$section]['entities'][$entity]['label'];
-        }
-        return false;
-    }
-
-    public function getEntityTemplate($section, $entity, $action)
-    {
-        if ($this->hasEntityTemplate($section, $entity, $action)) {
-            return $this->_sections[$section]['entities'][$entity]['templates'][$action]['template'];
-        }
-        return false;
-    }
-
-    public function hasEntityTemplate($section, $entity, $action)
-    {
-        if ($this->hasEntity($section, $entity) && array_key_exists($action, $this->_sections[$section]['entities'][$entity]['templates'])) {
-            return $this->templating->exists($this->_sections[$section]['entities'][$entity]['templates'][$action]['template']);
-        }
-        return false;
-    }
-
 /*
     ---> Actions Functions
 */
@@ -298,7 +333,7 @@ class AdminController
 
     public function getMultipleActions($entity)
     {
-        return array();
+        return array('reorder');
     }
 
     public function getSettingsActions($entity)
@@ -529,15 +564,13 @@ class AdminController
     public function getDefaultMap()
     {
         $map = array();
-        $map['class'] = null;
-        $map['filters'] = array();
-        $map['label'] = null;
+        // $map['class'] = null;
+        // $map['label'] = null;
+        // $map['name'] = null;
+        // $map['section'] = null;
         $map['list'] = array();
-        $map['name'] = null;
-        $map['sort_attr'] = 'position';
-        $map['templates'] = array();
-        $map['trash_attr'] = 'removed';
-        $map['uploadable'] = false;
+        $map['filters'] = array();
+        $map['config'] = $this->_defaults;
         return $map;
     }
 
@@ -566,7 +599,10 @@ class AdminController
             'item' => $this->getCurrentItem(),
             'is_entity_uploadable' => $this->isUploadable($map),
             'list_filters_form' => $this->getFiltersForm($map)->createView(),
-            'sortable' => false,
+            'sortable' => ($this->isSortable($map) ? $this->generateUrl('maci_admin_view', array(
+                'section'=>$map['section'],'entity'=>$map['name'],
+                'action'=>'reorder'
+            )) : false),
             'template' => $this->getTemplate($map,$action),
             'uploader' => ($this->isUploadable($map) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],'action'=>'uploader'
@@ -589,7 +625,7 @@ class AdminController
             'uploadable_bridges' => $this->getUpladableBridges($relation),
             'is_relation_uploadable' => $this->isUploadable($relation),
             'list_filters_form' => $this->getFiltersForm($relation),
-            'sortable' => ($relAction === 'list' && $this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
+            'sortable' => ($this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'relations','id'=>$this->request->get('id'),
                 'relation'=>$relation['association'],'relAction'=>'reorder'
@@ -700,6 +736,15 @@ class AdminController
         return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
     }
 
+    public function getDefaultProperty($map, $prop)
+    {
+        return (!array_key_exists('config', $map) || !array_key_exists($prop, $map['config']) ?
+            (array_key_exists('section', $map) && array_key_exists($prop, $this->getSectionConfig($map['section'])) ?
+                $this->getSectionConfig($map['section'])[$prop] : $this->_defaults[$prop]
+            ) : $map['config'][$prop]
+        );
+    }
+
     public function getFields($map, $ri = true)
     {
         $metadata = $this->getMetadata($map);
@@ -751,7 +796,7 @@ class AdminController
             $this->session->getFlashBag()->add('error', 'Getter Method for ' . $field . ' in ' . get_class($object) . ' not found.');
             return false;
         }
-        return call_user_method($getter,$object);
+        return call_user_func_array(array($object,$getter),array());
     }
 
     public function getListFields($map)
@@ -759,18 +804,20 @@ class AdminController
         $object = $this->getNewItem($map);
         $list = [$this->getIdentifier($map)];
         if (array_key_exists('list', $map) && count($map['list'])) {
-            return array_merge($list, $map['list'], ($this->isSortable($map) ? [$map['sort_attr']] : []));
+            $list = array_merge($list, $map['list']);
+            $field = $this->getDefaultProperty($map, 'sort_field');
+            if ($this->isSortable($map) && !in_array($field, $list)) $list[] = $field;
+            return array_unique($list, SORT_REGULAR);
         }
         if (method_exists($object, 'getAbsolutePath') && method_exists($object, 'getWebPath')) {
             $list[] = '_preview';
         }
         $fields = array_keys($this->getFields($map));
         foreach ($fields as $field) {
-            if ($field == $map['trash_attr']) continue;
-            if ($field == $map['sort_attr'] && !$this->isSortable($map)) continue;
+            if ($field == $map['trash_field']) continue;
             $list[] = lcfirst($this->getCamel($field));
         }
-        return $list;
+        return array_unique($list, SORT_REGULAR);
     }
 
     public function getFiltersForm($entity)
@@ -781,7 +828,7 @@ class AdminController
         foreach ($filters as $field => $filter) {
             $method = $this->getSetterMethod($object, $field);
             if ( $method ) {
-                call_user_method_array($method, $object, array($filter));
+                call_user_func_array(array($object, $method), array($filter));
             }
         }
         return $this->generateForm($entity, $object, true);
@@ -832,8 +879,11 @@ class AdminController
             )));
         }
 
+        $isUploadable = $this->isUploadable($map);
+        $upload_path_field = $this->getDefaultProperty($map,'upload_path_field');
+
         foreach ($fields as $field) {
-            if (in_array($field, array('created','updated',$map['trash_attr']))) {
+            if ($this->hasTrash($map) && $field === $this->getDefaultProperty($map,'trash_field')) {
                 continue;
             }
             if ($isFilterForm) {
@@ -848,9 +898,9 @@ class AdminController
             if ( method_exists($object, $method) ) {
                 $form->add($field, ChoiceType::class, array(
                     'empty_data' => '',
-                    'choices' => call_user_method($method, $object)
+                    'choices' => call_user_func_array(array($object, $method), array())
                 ));
-            } else if ( $field === 'path' && method_exists($object, 'setFile') ) {
+            } else if ( $isUploadable && $field === $upload_path_field ) {
                 $form->add('file', FileType::class, array('required' => false));
             } else {
                 if ($isFilterForm && in_array($this->getFieldType($map, $field), ['string', 'text'])) {
@@ -949,7 +999,7 @@ class AdminController
         if ($bridge) {
             $bridge_items = array();
             foreach ($relation_items as $obj) {
-                $brcall = call_user_method($this->getGetterMethod($obj, $bridge['bridge']), $obj);
+                $brcall = call_user_func_array(array($obj, $this->getGetterMethod($obj, $bridge['bridge'])), array());
                 $brcall = is_array($brcall) ? $brcall : array($brcall);
                 $bridge_items = array_merge($bridge_items, $brcall);
             }
@@ -967,14 +1017,14 @@ class AdminController
         foreach ($relation_items as $obj) {
             $parameter = ':id_' . $index;
             $query->andWhere($root . '.' . $inverseField . ' != ' . $parameter);
-            $query->setParameter($parameter, call_user_method(('get'.ucfirst($inverseField)), $obj));
+            $query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), array()));
             $index++;
         }
 
         // todo: an option fot this
         if ($this->getClass($map) === $this->getClass($relation) && !$bridge) {
             $query->andWhere($root . '.' . $inverseField . ' != :pid');
-            $query->setParameter(':pid', call_user_method(('get'.ucfirst($inverseField)), $item));
+            $query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), array()));
         }
 
         $query = $this->addDefaultQueries($mainMap, $query);
@@ -986,7 +1036,7 @@ class AdminController
 
     public function selectItemsFromRequestIds($map, $list)
     {
-        $ids = split(',', $this->request->get('ids', ''));
+        $ids = explode(',', $this->request->get('ids', ''));
         if (!count($ids)) {
             return false;
         }
@@ -1017,7 +1067,7 @@ class AdminController
         $class = $this->getClass($map);
         $item = new $class;
         if (method_exists($item, 'setLocale')) {
-            call_user_method('setLocale', $item, $this->request->getLocale());
+            call_user_func_array(array($item, 'setLocale'), array($this->request->getLocale()));
         }
         return $item;
     }
@@ -1043,7 +1093,6 @@ class AdminController
         $options = array(
             'page' => $this->request->get('page', 1),
             'page_limit' => $this->getPager_PageLimit($map),
-            'page_range' => $this->getPager_PageRange($map),
             'order_by_field' => $this->getPager_OrderByField($map),
             'order_by_sort' => $this->getPager_OrderBySort($map)
         );
@@ -1079,7 +1128,7 @@ class AdminController
 
     public function getPager_PageLimit($map)
     {
-        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_limit'), $this->config['options']['page_limit']);
+        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_limit'), (array_key_exists('page_limit', $map) ? $map['page_limit'] : $this->_defaults['page_limit']));
     }
 
     public function setPager_PageLimit($map, $value)
@@ -1089,7 +1138,7 @@ class AdminController
 
     public function getPager_PageRange($map)
     {
-        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $this->config['options']['page_range']);
+        return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), (array_key_exists('page_range', $map) ? $map['page_range'] : $this->_defaults['page_range']));
     }
 
     // public function setPager_PageRange($map)
@@ -1130,16 +1179,21 @@ class AdminController
 
         $relation = $this->getNewMap($metadata);
 
-        $entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
-        if ($entity) {
-            $relation = $entity;
-        }
-
-        $relation['association'] = $association;
-
         if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
             $relation = array_merge($relation, $map['relations'][$association]);
         }
+
+        $entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
+        if ($entity) {
+            $relation = array_merge($entity, $relation);
+            foreach ($relation as $key => $value) {
+                if (is_array($relation[$key]) && !count($relation[$key])) $relation[$key] = $entity[$key];
+            }
+        }
+
+        array_unique($relation, SORT_REGULAR);
+
+        $relation['association'] = $association;
 
         return $relation;
     }
@@ -1166,10 +1220,11 @@ class AdminController
 
     public function isRelationEnable($map,$association)
     {
-        if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
-            return $map['relations'][$association]['enabled'];
+        if (array_key_exists('relations', $map) &&
+            array_key_exists($association, $map['relations'])) {
+            return $this->getDefaultProperty($map['relations'][$association], 'enabled');
         }
-        return true;
+        return $this->getDefaultProperty($map, 'enabled');
     }
 
     public function getRelationInverseField($map, $relation)
@@ -1250,7 +1305,7 @@ class AdminController
 
     public function isSortable($map)
     {
-        if ($map['sort_attr'] && in_array($map['sort_attr'], $this->getFields($map))) {
+        if ($this->getDefaultProperty($map, 'sortable') && in_array($this->getDefaultProperty($map, 'sort_field'), $this->getFields($map))) {
             return true;
         }
         return false;
@@ -1265,8 +1320,11 @@ class AdminController
 
     public function getTemplate($map, $action)
     {
-        if ( array_key_exists($action, $map['templates']) && $this->templating->exists($map['templates'][$action]['template']) ) {
-            return $map['templates'][$action]['template'];
+        if (array_key_exists('config', $map) &&
+            array_key_exists('actions', $map['config']['actions']) &&
+            array_key_exists($action, $map['config']['actions']) &&
+            $this->templating->exists($map['config']['actions'][$action]['template']) ) {
+            return $map['config']['actions'][$action]['template'];
         }
         $bundleName = $this->getBundleName($map);
         $template = $bundleName . ':Mcm' . $this->getCamel($map['name']) . ':_' . $action . '.html.twig';
@@ -1277,12 +1335,16 @@ class AdminController
         if ( $this->templating->exists($template) ) {
             return $template;
         }
-        return 'MaciAdminBundle:Actions:' . $action .'.html.twig';
+        if (array_key_exists($action, $this->_defaults['actions']) &&
+            $this->templating->exists($this->_defaults['actions'][$action]['template']) ) {
+            return $this->_defaults['actions'][$action]['template'];
+        }
+        return 'MaciAdminBundle:Actions:template_not_found.html.twig';
     }
 
     public function hasTrash($map)
     {
-        if ($map['trash_attr'] && in_array($map['trash_attr'], $this->getFields($map))) {
+        if ($this->getDefaultProperty($map, 'trash') && in_array($this->getDefaultProperty($map, 'trash_field'), $this->getFields($map))) {
             return true;
         }
         return false;
@@ -1290,7 +1352,10 @@ class AdminController
 
     public function isUploadable($map)
     {
-        return (bool) $map['uploadable'];
+        if ($this->getDefaultProperty($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getDefaultProperty($map, 'upload_field'))) {
+            return true;
+        }
+        return false;
     }
 
 /*
@@ -1312,12 +1377,12 @@ class AdminController
     public function setRelation($managerMethod, $entity, $field, $item, $obj)
     {
         $managerMethod = 'get' . $managerMethod . 'Method';
-        $manager = call_user_method($managerMethod, $this, $item, $field);
+        $manager = call_user_func_array(array($this, $managerMethod), array($item, $field));
         if (!$manager) {
             $this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
             return false;
         }
-        call_user_method($manager, $item, ((strpos($managerMethod, 'Remover') !== false && !$this->getRemoverMethod($item, $field)) ? null : $obj));
+        call_user_func_array(array($item, $manager), array((strpos($managerMethod, 'Remover') !== false && !$this->getRemoverMethod($item, $field)) ? null : $obj));
         return true;
     }
 
@@ -1530,7 +1595,7 @@ class AdminController
         $hasTrash = $this->hasTrash($map);
         if ($hasTrash) {
             $fields = $this->getFields($map);
-            $trashAttr = $map['trash_attr'];
+            $trashAttr = $map['trash_field'];
             if ( in_array($trashAttr, $fields) ) {
                 $query->andWhere($query->getRootAlias() . '.' . $trashAttr . ' = :' . $trashAttr);
                 $query->setParameter(':' . $trashAttr, $trashValue);

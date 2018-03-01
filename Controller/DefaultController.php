@@ -70,6 +70,11 @@ class DefaultController extends Controller
         return $this->mcmUploader();
     }
 
+    public function reorderAction()
+    {
+        return $this->mcmReorder();
+    }
+
     public function setPagerOptionsAction()
     {
         return $this->mcmSetPagerOptions();
@@ -268,6 +273,52 @@ class DefaultController extends Controller
         $item->setFile($file);
 
         $this->om->persist($item);
+
+        $this->om->flush();
+
+        return array('success' => true);
+    }
+
+    public function mcmReorder()
+    {
+        if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+            return false;
+        }
+
+        $ids = $this->request->get('ids', array());
+
+        if (count($ids)<2) {
+            return array('success' => false, 'error' => 'Reorder: No ids.');
+        }
+
+        $entity = $this->mcm->getCurrentEntity();
+        if (!$entity) return false;
+
+        $item = $this->mcm->getCurrentItem();
+        if (!$item) return false;
+
+        if ( !$this->mcm->isSortable($entity) ) {
+            return array('success' => false, 'error' => 'Reorder: Entity [' . $entity['label'] . '] is not Sortable.');
+        }
+
+        $id_method = $this->mcm->getGetterMethod($this->mcm->getNewItem($entity), $this->mcm->getIdentifier($entity));
+        if ( !$id_method ) {
+            return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
+        }
+
+        $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($entity), $entity['sort_field']);
+        if ( !$sort_method ) {
+            return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
+        }
+
+        $list = $this->mcm->getItems($entity);
+
+        foreach ($list as $el) {
+            $id = call_user_func_array(array($el, $id_method), array());
+            if (in_array($id, $ids)) {
+                call_user_func_array(array($el, $sort_method), array(array_search($id, $ids)));
+            }
+        }
 
         $this->om->flush();
 
@@ -616,19 +667,27 @@ class DefaultController extends Controller
         $relation = $this->mcm->getCurrentRelation();
         if (!$relation) return false;
 
-        if ( !method_exists($this->mcm->getNewItem($relation), 'setPosition') ) {
-            return array('success' => false, 'error' => 'Reorder: Method not found.');
+        if ( !$this->mcm->isSortable($relation) ) {
+            return array('success' => false, 'error' => 'Reorder: Relation [' . $relation['association'] . '] for entity [' . $entity['label'] . '] is not Sortable.');
         }
 
-        $repo = $this->mcm->getRepository($relation);
-        $counter = 0;
+        $id_method = $this->mcm->getGetterMethod($this->mcm->getNewItem($relation), $this->mcm->getIdentifier($relation));
+        if ( !$id_method ) {
+            return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
+        }
 
-        foreach ($ids as $id) {
-            $item = $repo->findOneById($id);
-            if ( $item ) {
-                $item->setPosition($counter);
+        $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($relation), $relation['sort_field']);
+        if ( !$sort_method ) {
+            return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
+        }
+
+        $list = $this->mcm->getRelationItems($relation, $item);
+
+        foreach ($list as $el) {
+            $id = call_user_func_array(array($el, $id_method), array());
+            if (in_array($id, $ids)) {
+                call_user_func_array(array($el, $sort_method), array(array_search($id, $ids)));
             }
-            $counter++;
         }
 
         $this->om->flush();

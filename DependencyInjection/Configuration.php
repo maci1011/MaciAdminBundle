@@ -12,6 +12,68 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  */
 class Configuration implements ConfigurationInterface
 {
+    public function setInheritConfig($rootNode)
+    {
+        $rootNode
+            ->arrayNode('config')
+                ->children()
+                    ->scalarNode('page_limit')->end()
+                    ->scalarNode('page_range')->end()
+                    ->booleanNode('enabled')->end()
+                    ->arrayNode('roles')
+                        ->prototype('scalar')->end()
+                    ->end()
+                    ->booleanNode('sortable')->end()
+                    ->scalarNode('sort_field')->end()
+                    ->arrayNode('actions')
+                        ->prototype('array')
+                            ->beforeNormalization()
+                                ->ifString()
+                                ->then(function($v) { return array('template' => $v); })
+                            ->end()
+                            ->children()
+                                ->scalarNode('template')->defaultValue(null)->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                    ->booleanNode('trash')->end()
+                    ->scalarNode('trash_field')->end()
+                    ->booleanNode('uploadable')->end()
+                    ->scalarNode('upload_field')->end()
+                    ->scalarNode('upload_path_field')->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    public function setViewNodes($rootNode)
+    {
+        $rootNode
+            ->arrayNode('bridges')
+                ->beforeNormalization()
+                    ->ifString()
+                    ->then(function($v) { return array($v); })
+                ->end()
+                ->prototype('scalar')->end()
+            ->end()
+            ->arrayNode('filters')
+                ->beforeNormalization()
+                    ->ifString()
+                    ->then(function($v) { return array($v); })
+                ->end()
+                ->prototype('scalar')->end()
+            ->end()
+            ->scalarNode('label')->end()
+            ->arrayNode('list')
+                ->beforeNormalization()
+                    ->ifString()
+                    ->then(function($v) { return array($v); })
+                ->end()
+                ->prototype('scalar')->end()
+            ->end()
+        ;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -20,84 +82,42 @@ class Configuration implements ConfigurationInterface
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('maci_admin');
 
-        $rootNode
-            ->children()
+        $currentRoot = $rootNode
+            ->children();
+                $this->setInheritConfig($currentRoot);
+                $currentRoot = $currentRoot
                 ->arrayNode('sections')
                     ->prototype('array')
-                        ->children()
+                        ->children();
+                            $this->setInheritConfig($currentRoot);
+                            $currentRoot = $currentRoot
+                            ->scalarNode('dashboard')->end()
+                            ->scalarNode('label')->end()
                             ->arrayNode('entities')
                                 ->prototype('array')
                                     ->beforeNormalization()
                                         ->ifString()
                                         ->then(function($v) { return array('class' => $v); })
                                     ->end()
-                                    ->children()
+                                    ->children();
+                                        $this->setInheritConfig($currentRoot);
+                                        $this->setViewNodes($currentRoot);
+                                        $currentRoot = $currentRoot
                                         ->scalarNode('class')->isRequired()->end()
-                                        ->arrayNode('bridges')
-                                            ->beforeNormalization()
-                                                ->ifString()
-                                                ->then(function($v) { return array($v); })
-                                            ->end()
-                                            ->prototype('scalar')->end()
-                                        ->end()
-                                        ->booleanNode('enabled')->defaultValue(true)->end()
-                                        ->arrayNode('filters')
-                                            ->beforeNormalization()
-                                                ->ifString()
-                                                ->then(function($v) { return array($v); })
-                                            ->end()
-                                            ->prototype('scalar')->end()
-                                        ->end()
                                         ->scalarNode('form')->end()
-                                        ->scalarNode('label')->end()
-                                        ->arrayNode('list')
-                                            ->beforeNormalization()
-                                                ->ifString()
-                                                ->then(function($v) { return array($v); })
-                                            ->end()
-                                            ->prototype('scalar')->end()
-                                        ->end()
-                                        ->scalarNode('sort_attr')->defaultValue('position')->end()
-                                        ->arrayNode('templates')
-                                            ->prototype('array')
-                                                ->beforeNormalization()
-                                                    ->ifString()
-                                                    ->then(function($v) { return array('template' => $v); })
-                                                ->end()
-                                                ->children()
-                                                    ->scalarNode('template')->defaultValue(null)->end()
-                                                ->end()
-                                            ->end()
-                                        ->end()
-                                        ->scalarNode('trash_attr')->defaultValue('removed')->end()
-                                        ->booleanNode('uploadable')->defaultValue(false)->end()
                                         ->arrayNode('relations')
                                             ->prototype('array')
-                                                ->children()
-                                                    ->booleanNode('enabled')->defaultValue(true)->end()
+                                                ->children();
+                                                    $this->setInheritConfig($currentRoot);
+                                                    $this->setViewNodes($currentRoot);
+                                                    $currentRoot = $currentRoot
                                                 ->end()
                                             ->end()
                                         ->end()
-                                    ->end()
-                                ->end()
-                            ->end()
-                            ->arrayNode('config')
-                                ->children()
-                                    ->scalarNode('label')->end()
-                                    ->scalarNode('dashboard')->end()
-                                    ->arrayNode('roles')
-                                        ->prototype('scalar')->end()
                                     ->end()
                                 ->end()
                             ->end()
                         ->end()
-                    ->end()
-                ->end()
-                ->arrayNode('options')
-                    ->addDefaultsIfNotSet()
-                    ->children()
-                        ->scalarNode('page_limit')->defaultValue(100)->end()
-                        ->scalarNode('page_range')->defaultValue(2)->end()
                     ->end()
                 ->end()
             ->end()

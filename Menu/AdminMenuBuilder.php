@@ -27,15 +27,9 @@ class AdminMenuBuilder
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
 		foreach ($this->mcm->getAuthSections() as $name) {
-			$config = $this->mcm->getSectionConfig($name);
-			if (array_key_exists('label', $config)) {
-				$label = $config['label'];
-			} else {
-				$label = str_replace('_', ' ', $name);
-        		$label = ucwords($label);
-			}
+			$section = $this->mcm->getSection($name);
 			if ($name != $this->request->get('section')) {
-				$menu->addChild($label, array(
+				$menu->addChild($section['label'], array(
 				    'route' => 'maci_admin_view',
 				    'routeParameters' => array('section' => $name)
 				));
@@ -67,13 +61,7 @@ class AdminMenuBuilder
 			}
 
 			foreach ($this->mcm->getEntities($section) as $name => $entity) {
-				if (array_key_exists('label', $entity)) {
-					$label = $entity['label'];
-				} else {
-					$label = str_replace('_', ' ', $name);
-	        		$label = ucwords($label);
-				}
-				$menu->addChild($label, array(
+				$menu->addChild($entity['label'], array(
 				    'route' => 'maci_admin_view',
 				    'routeParameters' => array('section' => $section, 'entity' => $name, 'action' => 'list')
 				));
@@ -131,20 +119,15 @@ class AdminMenuBuilder
 			if ($action === 'relations') {
 				if ( count($associations) ) {
 					foreach ($associations as $relation) {
-						if ($relation === 'translations') {
-							continue;
-						}
-						$label = $this->mcm->generateLabel($relation);
 						$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
-						$menu->addChild($label, array(
+						$menu->addChild($this->mcm->generateLabel($relation), array(
 						    'route' => 'maci_admin_view',
 						    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
 						));
 					}
 				}
 			} else {
-				$label = $this->mcm->generateLabel($action);
-				$menu->addChild($label, array(
+				$menu->addChild($this->mcm->generateLabel($action), array(
 				    'route' => 'maci_admin_view',
 				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id)
 				));

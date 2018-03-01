@@ -17,8 +17,8 @@ class MaciAdminExtension extends \Twig_Extension
     public function getFunctions()
     {
         return array(
-            'asset_exists' => new \Twig_Function_Method($this, 'asset_exists'),
-            'is_image' => new \Twig_Function_Method($this, 'is_image'),
+            new \Twig_SimpleFunction('asset_exists', array($this, 'asset_exists')),
+            new \Twig_SimpleFunction('is_image', array($this, 'is_image')),
         );
     }
 
@@ -51,7 +51,7 @@ class MaciAdminExtension extends \Twig_Extension
 
         $file = realpath($this->kernel->getRootDir() . '/../web/' . $path);
 
-        $smime = split('/', mime_content_type($file));
+        $smime = explode('/', mime_content_type($file));
 
         if ($smime[0] === 'image') {
             return true;

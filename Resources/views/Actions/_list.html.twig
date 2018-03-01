@@ -30,7 +30,7 @@
 
 {% include "MaciAdminBundle:Actions:_list_pagination.html.twig" %}
 
-<div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
+<div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if type in ['list','relation'] and sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
 <table class="table table-striped tablesorter">
 
 <thead>

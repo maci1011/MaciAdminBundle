@@ -7,54 +7,62 @@
 {% else %}
 
 
-	{% set fldLabel = (field|capitalize ~ 'Label') %}
-	{% set fldValue = (field|capitalize ~ 'Value') %}
+{% set fldLabel = (field|capitalize ~ 'Label') %}
+{% set fldValue = (field|capitalize ~ 'Value') %}
 
 
-	{% if attribute(item, fldLabel) is defined %}
+{% if attribute(item, fldLabel) is defined %}
 
-		{% set val = attribute(item, fldLabel) %}
+	{% set val = attribute(item, fldLabel) %}
 
-	{% elseif attribute(item, fldValue) is defined %}
+{% elseif attribute(item, fldValue) is defined %}
 
-		{% set val = attribute(item, fldValue) %}
+	{% set val = attribute(item, fldValue) %}
 
-	{% else %}
+{% elseif field == '_preview' %}
 
-		{% set val = attribute(item, field) %}
+	{% set val = attribute(item, 'webPreview') %}
 
-	{% endif %}
+{% else %}
+
+	{% set val = attribute(item, field) %}
+
+{% endif %}
 
 
-	{% if val.timestamp is defined %}
+{% if val.timestamp is defined %}
 
 <span class="item-field-value">{{ val|date('d/m/Y H:i:s') }}</span>
 
-	{% elseif val is iterable %}
+{% elseif val is iterable %}
 
 <ul class="item-field-value">
 
-	{% for child in val %}
+{% for child in val %}
 
-	<li>{{ val }}</li>
+<li>{{ val }}</li>
 
-	{% endfor %}
+{% endfor %}
 
 </ul>
 
-	{% elseif val is same as(true) %}
+{% elseif val is same as(true) %}
 
 <span class="glyphicon glyphicon-ok"></span>
 
-	{% elseif val is same as(false) %}
+{% elseif val is same as(false) %}
 
 <span class="glyphicon glyphicon-remove"></span>
 
-	{% else %}
+{% elseif field == '_preview' %}
+
+<img src="{{ asset(val | imagine_filter('maci_admin_list_preview')) }}" alt="{{ val }}" title="{{ val }}" />
+
+{% else %}
 
 <span class="item-field-value">{{ val[:180] ~ (val|length < 180 ? '' : '...') }}</span>
 
-	{% endif %}
+{% endif %}
 
 
 {% endif %}

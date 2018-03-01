@@ -14,15 +14,15 @@ MaciAdminBundle lets you simply create administration backends for Symfony 2.7.*
 
 ### Missing:
  - tests
- - filters
- - documentation with examples
+ - filters (but there is the search)
+ - more examples in documentation
  - some other little thing
 
 
 ### Features:
  - sections for differents roles
- - entities actions: list, show, new, edit, trash, remove
- - entities relations: list, add and remove
+ - entities actions: list, new, trash, show, edit, relations, remove, uploader and reorder
+ - entities relations: list, set/add, remove (item/association), uploader and reorder
 
 
 **Requirements**
@@ -141,34 +141,75 @@ Full configuration
 # app/config/config.yml
 maci_admin:
     sections:
-        media:
+        medias:
             entities:
+                # in this example an entity 'media' is associated to an 'album' trough a 'media item'
+                # then: Album >1toM< MediaItem >Mto1< Media
+                # 'media', 'album' and 'media item' are here in a section named 'medias'
                 album: 'AppBundle:Album'
                 media:
-                    label: Media
+                    bridges: [] # default
                     class: 'AppBundle:Media'
-                    list: ['_preview', 'name', 'type']
-                    templates:
-                        list: 'AppBundle:Default:list.html.twig'
-                        # or: show, new, edit, trash, remove
+                    form: 'AppBundle\Form\Type\FormType'
+                    label: 'Image' #example, default is the name of the section capitalized
+                    list: ['_preview', 'name', 'type'] # columns in list views, default is [] (= all fields)
                     relations:
                         items:
-                            enabled: true # by default
-                    form: 'AppBundle\Form\Type\FormType'
-                    trash_attr: 'removed'
+                            # these options are inherited from the -section- config:
+                            label: 'Image Items' #example
+                            list: []
+                            enabled: true
+                            roles: []
+                            sortable: false # if true, in this example allow to sort the 'media items' of an 'album'
+                            sort_field: 'position'
+                            templates: []
+                            trash: true
+                            trash_field: 'removed'
+                            uploadable: true
+                            upload_field: 'file'
+                    # these options are inherited from the -section- config:
+                    enabled: true
+                    roles: []
+                    sortable: false
+                    sort_field: 'position'
+                    templates: # default is []
+                        list: 'AppBundle:Default:list.html.twig'
+                        # other actions: new, trash, show, edit, relation, remove, uploader
+                    trash: true
+                    trash_field: 'removed'
                     uploadable: true
-                # Relations of this example: Album >1toM< MediaItem >Mto1< Media
+                    upload_field: 'file'
                 media_item:
                     class: 'AppBundle:MediaItem'
-                    bridges: 'media' # or ['media','foo'] allow to add directly media to, in this example, an album
-                    sort_attr: 'position' # allow to sort items in relations, here, the items of an album
+                    bridges: 'media' # or ['media', ...] in this example allow to add directly media to an album
             config:
+                dashboard: 'AppBundle:Default:media_dashboard.html.twig' # optional
+                # these options are inherited from the default inherited config:
+                enabled: true
                 roles: [ROLE_ADMIN]
-                dashboard: 'AppBundle:Default:media_dashboard.html.twig'
+                sortable: false
+                sort_field: 'position'
+                templates: []
+                trash: true
+                trash_field: 'removed'
+                uploadable: true
+                upload_field: 'file'
+        # other optional sections
         blog:
             entities:
                 post: 'AppBundle:Post'
                 tag: 'AppBundle:Tag'
+    config:
+        # default inherited config:
+        enabled: true
+        roles: [ROLE_ADMIN]
+        sortable: false # if true, allow to sort items in the 'list' action, usually this is needed only in relations
+        sort_field: 'position' # sort is made by field 'position'
+        templates: []
+        trash: true # allow to trash items of an entity
+        trash_field: 'removed' # trash folder is filtered by field 'removed'
+        uploadable: true
+        upload_field: 'file'
 ```
 
 
