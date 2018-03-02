@@ -175,6 +175,7 @@ maci_admin:
                     actions: # default is []
                         list: 'AppBundle:Default:list.html.twig'
                         show:
+                            controller: 'appbundle.controller'
                             template: 'AppBundle:Default:list.html.twig'
                         # actions are: list, show, new, trash, show, edit, relation, remove, uploader,
                         #   relations_list, relations_add, ('list' and 'add' for the sides of relations with multiple elements, like -MANY-toOne)
@@ -206,7 +207,8 @@ maci_admin:
                 tag: 'AppBundle:Tag'
     config:
         # default inherited config:
-        controller: 'maci.admin.controller' # the service controller that contain the Action functions
+        controller: 'maci.admin.controller' # the service controller that contain the Action functions, see
+        #   the ViewController for more informations
         enabled: true
         roles: [ROLE_ADMIN]
         sortable: false # if true, allow to sort items in the 'list' action, usually this is needed only in relations

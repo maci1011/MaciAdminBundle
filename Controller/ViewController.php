@@ -20,6 +20,8 @@ class ViewController extends Controller
 
     public function viewAction(Request $request)
     {
+        // --- Check the Auths and the Route
+
         $admin = $this->container->get('maci.admin');
         $sections = $admin->getAuthSections();
         if (!count($sections)) {
@@ -70,8 +72,11 @@ class ViewController extends Controller
             $controllerAction = 'relations_' . $relAction;
         }
 
-        $controller = $admin->getController($controllerMap, $controllerAction);
-        $controller = $this->container->get('maci.admin.default');
+        // --- The Controller with the Actions is getted here
+
+        $controller = $this->container->get($admin->getController($controllerMap, $controllerAction));
+
+        // --- Check if the Action Exists
 
         $callAction = ( $action . 'Action' );
         if (!method_exists($controller, $callAction)) {
@@ -79,12 +84,16 @@ class ViewController extends Controller
             return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
 
+        // --- Call the Action that must return a $params array for the response
+
         $params = call_user_func_array(array($controller, $callAction), array());
 
         if ($params===false) {
             $request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');
             return $this->redirect($this->generateUrl('maci_admin_not_found'));
         }
+
+        // --- Return the Response for each case
 
         if (array_key_exists('redirect', $params)) {
             return $this->redirect($this->generateUrl($params['redirect'],$params['redirect_params']));
@@ -100,6 +109,8 @@ class ViewController extends Controller
             )) : null);
             return new JsonResponse($params, 200);
         }
+
+        // --- Return the View Template that include the action template
 
         return $this->render('MaciAdminBundle:Default:view.html.twig', array(
             'template' => $params['template'],
