@@ -367,8 +367,48 @@ class AdminController
         return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader', 'reorder');
     }
 
+    public function getController($map, $action)
+    {
+        if (array_key_exists('config', $map) &&
+            array_key_exists('actions', $map['config']['actions']) &&
+            array_key_exists($action, $map['config']['actions']) &&
+            $this->templating->exists($map['config']['actions'][$action]['controller']) ) {
+            return $map['config']['actions'][$action]['controller'];
+        }
+        if (array_key_exists($action, $this->_defaults['actions']) &&
+            array_key_exists('controller', $this->_defaults['actions'][$action]) &&
+            $this->templating->exists($this->_defaults['actions'][$action]['controller']) ) {
+            return $this->_defaults['actions'][$action]['controller'];
+        }
+        return $this->_defaults['controller'];
+    }
+
+    public function getTemplate($map, $action)
+    {
+        if (array_key_exists('config', $map) &&
+            array_key_exists('actions', $map['config']['actions']) &&
+            array_key_exists($action, $map['config']['actions']) &&
+            $this->templating->exists($map['config']['actions'][$action]['template']) ) {
+            return $map['config']['actions'][$action]['template'];
+        }
+        $bundleName = $this->getBundleName($map);
+        $template = $bundleName . ':Mcm' . $this->getCamel($map['name']) . ':_' . $action . '.html.twig';
+        if ( $this->templating->exists($template) ) {
+            return $template;
+        }
+        $template = $bundleName . ':Mcm:_' . $action . '.html.twig';
+        if ( $this->templating->exists($template) ) {
+            return $template;
+        }
+        if (array_key_exists($action, $this->_defaults['actions']) &&
+            $this->templating->exists($this->_defaults['actions'][$action]['template']) ) {
+            return $this->_defaults['actions'][$action]['template'];
+        }
+        return 'MaciAdminBundle:Actions:template_not_found.html.twig';
+    }
+
 /*
-    ---> Generic Functions
+    ---> Generic Maps (-> Entities/Relations) Functions
 */
 
     public function getAssociations($map)
@@ -454,22 +494,6 @@ class AdminController
     public function getBundleNamespace($map)
     {
         return $this->getBundle($map)->getNamespace();
-    }
-
-    public function getController($map, $action)
-    {
-        if (array_key_exists('config', $map) &&
-            array_key_exists('actions', $map['config']['actions']) &&
-            array_key_exists($action, $map['config']['actions']) &&
-            $this->templating->exists($map['config']['actions'][$action]['controller']) ) {
-            return $map['config']['actions'][$action]['controller'];
-        }
-        if (array_key_exists($action, $this->_defaults['actions']) &&
-            array_key_exists('controller', $this->_defaults['actions'][$action]) &&
-            $this->templating->exists($this->_defaults['actions'][$action]['controller']) ) {
-            return $this->_defaults['actions'][$action]['controller'];
-        }
-        return $this->_defaults['controller'];
     }
 
     public function getClass($map)
@@ -765,9 +789,7 @@ class AdminController
     public function getFields($map, $ri = true)
     {
         $metadata = $this->getMetadata($map);
-
         $fields = (array) $metadata->fieldNames;
-
         // Remove the primary key field if it's not managed manually
         if ($ri && !$metadata->isIdentifierNatural()) {
             $fields = array_diff($fields, $metadata->identifier);
@@ -779,11 +801,8 @@ class AdminController
     public function getFieldsByType($map, $types = ['string','text'])
     {
         $metadata = $this->getMetadata($map);
-
         $fieldMappings = (array) $metadata->fieldMappings;
-
         $fields = [];
-
         foreach ($fieldMappings as $field => $mapping) {
             if (in_array($mapping['type'], $types)) {
                 $fields [] = $field;
@@ -796,9 +815,7 @@ class AdminController
     public function getFieldType($map, $field)
     {
         $metadata = $this->getMetadata($map);
-
         $fields = (array) $metadata->fieldMappings;
-
         if (!in_array($field, array_keys($fields))) {
             return false;
         }
@@ -976,7 +993,6 @@ class AdminController
     public function removeItems($map, $list)
     {
         if (!count($list)) return false;
-        
         foreach ($list as $item) {
             if (method_exists($item, 'setRemoved')) {
                 $item->setRemoved(true);
@@ -987,7 +1003,6 @@ class AdminController
             }
         }
         $this->om->flush();
-        
         return true;
     }
 
@@ -996,14 +1011,10 @@ class AdminController
         $repo = $this->getRepository($map);
         $query = $repo->createQueryBuilder('e');
         $root = $query->getRootAlias();
-
         $fields = $this->getFields($map);
-
         $query = $this->addDefaultQueries($map, $query, $trashValue);
-
         $query = $query->getQuery();
         $list = $query->getResult();
-
         return $list;
     }
 
@@ -1012,7 +1023,6 @@ class AdminController
         $relation_items = $this->getRelationItems($relation, $item);
         $inverseField = $this->getRelationInverseField($map, $relation);
         $mainMap = $relation;
-
         if ($bridge) {
             $bridge_items = array();
             foreach ($relation_items as $obj) {
@@ -1025,11 +1035,9 @@ class AdminController
             $inverseField = $this->getRelationInverseField($relation, $bridge);
             $mainMap = $bridge;
         }
-
         $repo = $this->getRepository($mainMap);
         $query = $repo->createQueryBuilder('r');
         $root = $query->getRootAlias();
-
         $index = 0;
         foreach ($relation_items as $obj) {
             $parameter = ':id_' . $index;
@@ -1037,17 +1045,13 @@ class AdminController
             $query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), array()));
             $index++;
         }
-
         // todo: an option fot this
         if ($this->getClass($map) === $this->getClass($relation) && !$bridge) {
             $query->andWhere($root . '.' . $inverseField . ' != :pid');
             $query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), array()));
         }
-
         $query = $this->addDefaultQueries($mainMap, $query);
-
         $query = $query->getQuery();
-
         return $query->getResult();
     }
 
@@ -1158,10 +1162,10 @@ class AdminController
         return $this->session->get(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), (array_key_exists('page_range', $map) ? $map['page_range'] : $this->_defaults['page_range']));
     }
 
-    // public function setPager_PageRange($map)
-    // {
-    //     return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $value);
-    // }
+    public function setPager_PageRange($map)
+    {
+        return $this->session->set(('maci_admin.' . $map['section'] . '.' . $map['name'] . '.page_range'), $value);
+    }
 
     public function getPager_OrderByField($map)
     {
@@ -1188,18 +1192,14 @@ class AdminController
         if (!$this->isRelationEnable($map,$association)) {
             return false;
         }
-
         $metadata = $this->getAssociationMetadata($map,$association);
         if (!$metadata) {
             return false;
         }
-
         $relation = $this->getNewMap($metadata);
-
         if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
             $relation = array_merge($relation, $map['relations'][$association]);
         }
-
         $entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
         if ($entity) {
             $relation = array_merge($entity, $relation);
@@ -1207,26 +1207,20 @@ class AdminController
                 if (is_array($relation[$key]) && !count($relation[$key])) $relation[$key] = $entity[$key];
             }
         }
-
         array_unique($relation, SORT_REGULAR);
-
         $relation['association'] = $association;
-
         return $relation;
     }
 
     public function getRelationDefaultAction($map, $association)
     {
         $relationMetadata = $this->getAssociationMetadata($map, $association);
-
         if (!$relationMetadata) {
             return false;
         }
-
         if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY) {
             return 'list';
         }
-
         return 'show';
     }
 
@@ -1247,10 +1241,10 @@ class AdminController
     public function getRelationInverseField($map, $relation)
     {
         $relationMetadata = $this->getAssociationMetadata($map, $relation['association']);
-
         $joinTable = false;
         $joinColumns = false;
         $inverseJoinColumns = false;
+        $inverseField = false;
         if (array_key_exists('joinTable', $relationMetadata)) {
             $joinTable = $relationMetadata['joinTable'];
             if (array_key_exists('joinColumns', $joinTable)) {
@@ -1260,28 +1254,21 @@ class AdminController
         } else if (array_key_exists('joinColumns', $relationMetadata)) {
             $joinColumns = $relationMetadata['joinColumns'];
         }
-
-        $inverseField = false;
-
         if ($joinColumns) {
             $sourceField = $joinColumns[0]['referencedColumnName'];
         }
-
         if ($inverseJoinColumns) {
             $inverseField = $inverseJoinColumns[0]['referencedColumnName'];
         }
-
         if (!$inverseField) {
             $inverseField = $this->getIdentifier($relation);
         }
-
         return $inverseField;
     }
 
     public function getRelationItems($relation, $object)
     {
         $getted = $this->getFieldValue($relation['association'], $object);
-
         if (is_object($getted)) {
             if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection') {
                 return $getted;
@@ -1289,7 +1276,6 @@ class AdminController
                 return array($getted);
             }
         }
-
         return array();
     }
 
@@ -1322,41 +1308,13 @@ class AdminController
 
     public function isSortable($map)
     {
-        if ($this->getDefaultMapKey($map, 'sortable') && in_array($this->getDefaultMapKey($map, 'sort_field'), $this->getFields($map))) {
-            return true;
-        }
-        return false;
+        return ( $this->getDefaultMapKey($map, 'sortable') && in_array($this->getDefaultMapKey($map, 'sort_field'), $this->getFields($map)) );
     }
 
     public function getTableName($map)
     {
         $metadata = $this->getMetadata($map);
-
         return $metadata->table['name'];
-    }
-
-    public function getTemplate($map, $action)
-    {
-        if (array_key_exists('config', $map) &&
-            array_key_exists('actions', $map['config']['actions']) &&
-            array_key_exists($action, $map['config']['actions']) &&
-            $this->templating->exists($map['config']['actions'][$action]['template']) ) {
-            return $map['config']['actions'][$action]['template'];
-        }
-        $bundleName = $this->getBundleName($map);
-        $template = $bundleName . ':Mcm' . $this->getCamel($map['name']) . ':_' . $action . '.html.twig';
-        if ( $this->templating->exists($template) ) {
-            return $template;
-        }
-        $template = $bundleName . ':Mcm:_' . $action . '.html.twig';
-        if ( $this->templating->exists($template) ) {
-            return $template;
-        }
-        if (array_key_exists($action, $this->_defaults['actions']) &&
-            $this->templating->exists($this->_defaults['actions'][$action]['template']) ) {
-            return $this->_defaults['actions'][$action]['template'];
-        }
-        return 'MaciAdminBundle:Actions:template_not_found.html.twig';
     }
 
     public function hasTrash($map)
