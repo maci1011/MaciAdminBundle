@@ -162,7 +162,7 @@ maci_admin:
                             roles: []
                             sortable: false # if true, in this example allow to sort the 'media items' of an 'album'
                             sort_field: 'position'
-                            templates: []
+                            actions: []
                             trash: true
                             trash_field: 'removed'
                             uploadable: true
@@ -172,9 +172,14 @@ maci_admin:
                     roles: []
                     sortable: false
                     sort_field: 'position'
-                    templates: # default is []
+                    actions: # default is []
                         list: 'AppBundle:Default:list.html.twig'
-                        # other actions: new, trash, show, edit, relation, remove, uploader
+                        show:
+                            template: 'AppBundle:Default:list.html.twig'
+                        # actions are: list, show, new, trash, show, edit, relation, remove, uploader,
+                        #   relations_list, relations_add, ('list' and 'add' for the sides of relations with multiple elements, like -MANY-toOne)
+                        #   relations_show, relations_set ('list' and 'set' for the sides of relations with a single element, like -ONE-toMany),
+                        #   relations_uploader (in this example this action can be used to directly upload some media in an album)
                     trash: true
                     trash_field: 'removed'
                     uploadable: true
@@ -189,7 +194,7 @@ maci_admin:
                 roles: [ROLE_ADMIN]
                 sortable: false
                 sort_field: 'position'
-                templates: []
+                actions: []
                 trash: true
                 trash_field: 'removed'
                 uploadable: true
@@ -201,11 +206,12 @@ maci_admin:
                 tag: 'AppBundle:Tag'
     config:
         # default inherited config:
+        controller: 'maci.admin.controller' # the service controller that contain the Action functions
         enabled: true
         roles: [ROLE_ADMIN]
         sortable: false # if true, allow to sort items in the 'list' action, usually this is needed only in relations
         sort_field: 'position' # sort is made by field 'position'
-        templates: []
+        actions: []
         trash: true # allow to trash items of an entity
         trash_field: 'removed' # trash folder is filtered by field 'removed'
         uploadable: true

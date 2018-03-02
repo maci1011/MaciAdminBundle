@@ -47,6 +47,8 @@ class ViewController extends Controller
         if (!$action) {
             return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
         }
+        $controllerMap = $_entity;
+        $controllerAction = $action;
         if ($action === 'relations') {
             if (!$admin->getCurrentItem()) {
                 return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list')));
@@ -63,8 +65,12 @@ class ViewController extends Controller
                 $relAction = $admin->getRelationDefaultAction($_entity, $relation);
                 return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relation,'relAction'=>$relAction)));
             }
+            $_relation = $admin->getCurrentRelation();
+            $controllerMap = $_relation;
+            $controllerAction = 'relations_' . $relAction;
         }
 
+        $controller = $admin->getController($controllerMap, $controllerAction);
         $controller = $this->container->get('maci.admin.default');
 
         $callAction = ( $action . 'Action' );

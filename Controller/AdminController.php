@@ -132,9 +132,10 @@ class AdminController
                 'relations_show' => ['template' => 'MaciAdminBundle:Actions:relations_show.html.twig'],
                 'relations_uploader' => ['template' => 'MaciAdminBundle:Actions:relations_uploader.html.twig']
             ],
+            'controller'    => 'maci.admin.default',
+            'enabled'       => true,
             'page_limit'    => 100,
             'page_range'    => 2,
-            'enabled'       => true,
             'roles'         => ['ROLE_ADMIN'],
             'sortable'      => false,
             'sort_field'    => 'position',
@@ -455,6 +456,22 @@ class AdminController
         return $this->getBundle($map)->getNamespace();
     }
 
+    public function getController($map, $action)
+    {
+        if (array_key_exists('config', $map) &&
+            array_key_exists('actions', $map['config']['actions']) &&
+            array_key_exists($action, $map['config']['actions']) &&
+            $this->templating->exists($map['config']['actions'][$action]['controller']) ) {
+            return $map['config']['actions'][$action]['controller'];
+        }
+        if (array_key_exists($action, $this->_defaults['actions']) &&
+            array_key_exists('controller', $this->_defaults['actions'][$action]) &&
+            $this->templating->exists($this->_defaults['actions'][$action]['controller']) ) {
+            return $this->_defaults['actions'][$action]['controller'];
+        }
+        return $this->_defaults['controller'];
+    }
+
     public function getClass($map)
     {
         if (class_exists($map['class'])) return $map['class'];
@@ -736,12 +753,12 @@ class AdminController
         return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
     }
 
-    public function getDefaultProperty($map, $prop)
+    public function getDefaultMapKey($map, $key)
     {
-        return (!array_key_exists('config', $map) || !array_key_exists($prop, $map['config']) ?
-            (array_key_exists('section', $map) && array_key_exists($prop, $this->getSectionConfig($map['section'])) ?
-                $this->getSectionConfig($map['section'])[$prop] : $this->_defaults[$prop]
-            ) : $map['config'][$prop]
+        return (!array_key_exists('config', $map) || !array_key_exists($key, $map['config']) ?
+            (array_key_exists('section', $map) && array_key_exists($key, $this->getSectionConfig($map['section'])) ?
+                $this->getSectionConfig($map['section'])[$key] : $this->_defaults[$key]
+            ) : $map['config'][$key]
         );
     }
 
@@ -805,7 +822,7 @@ class AdminController
         $list = [$this->getIdentifier($map)];
         if (array_key_exists('list', $map) && count($map['list'])) {
             $list = array_merge($list, $map['list']);
-            $field = $this->getDefaultProperty($map, 'sort_field');
+            $field = $this->getDefaultMapKey($map, 'sort_field');
             if ($this->isSortable($map) && !in_array($field, $list)) $list[] = $field;
             return array_unique($list, SORT_REGULAR);
         }
@@ -880,10 +897,10 @@ class AdminController
         }
 
         $isUploadable = $this->isUploadable($map);
-        $upload_path_field = $this->getDefaultProperty($map,'upload_path_field');
+        $upload_path_field = $this->getDefaultMapKey($map,'upload_path_field');
 
         foreach ($fields as $field) {
-            if ($this->hasTrash($map) && $field === $this->getDefaultProperty($map,'trash_field')) {
+            if ($this->hasTrash($map) && $field === $this->getDefaultMapKey($map,'trash_field')) {
                 continue;
             }
             if ($isFilterForm) {
@@ -1222,9 +1239,9 @@ class AdminController
     {
         if (array_key_exists('relations', $map) &&
             array_key_exists($association, $map['relations'])) {
-            return $this->getDefaultProperty($map['relations'][$association], 'enabled');
+            return $this->getDefaultMapKey($map['relations'][$association], 'enabled');
         }
-        return $this->getDefaultProperty($map, 'enabled');
+        return $this->getDefaultMapKey($map, 'enabled');
     }
 
     public function getRelationInverseField($map, $relation)
@@ -1305,7 +1322,7 @@ class AdminController
 
     public function isSortable($map)
     {
-        if ($this->getDefaultProperty($map, 'sortable') && in_array($this->getDefaultProperty($map, 'sort_field'), $this->getFields($map))) {
+        if ($this->getDefaultMapKey($map, 'sortable') && in_array($this->getDefaultMapKey($map, 'sort_field'), $this->getFields($map))) {
             return true;
         }
         return false;
@@ -1344,7 +1361,7 @@ class AdminController
 
     public function hasTrash($map)
     {
-        if ($this->getDefaultProperty($map, 'trash') && in_array($this->getDefaultProperty($map, 'trash_field'), $this->getFields($map))) {
+        if ($this->getDefaultMapKey($map, 'trash') && in_array($this->getDefaultMapKey($map, 'trash_field'), $this->getFields($map))) {
             return true;
         }
         return false;
@@ -1352,7 +1369,7 @@ class AdminController
 
     public function isUploadable($map)
     {
-        if ($this->getDefaultProperty($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getDefaultProperty($map, 'upload_field'))) {
+        if ($this->getDefaultMapKey($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getDefaultMapKey($map, 'upload_field'))) {
             return true;
         }
         return false;
