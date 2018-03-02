@@ -116,6 +116,7 @@ Open the `app/config/config.yml` file and add the following configuration:
 maci_admin:
     sections:
         all:
+            dashboard: 'AppBundle:Default:my_dashboard.html.twig' # optional
             entities:
                 product: 'AppEntityBundle:Product'
                 category: 'AppEntityBundle:Category'
@@ -124,7 +125,6 @@ maci_admin:
                     list: ['title', 'path', 'template', 'locale']
             config: # optional
                 roles: [ROLE_ADMIN] # default
-                dashboard: 'AppBundle:Default:my_dashboard.html.twig' # optional
 ```
 
 **Congratulations! You've just created your first fully-featured backend!**
@@ -142,6 +142,7 @@ Full configuration
 maci_admin:
     sections:
         medias:
+            dashboard: 'AppBundle:Default:media_dashboard.html.twig' # optional
             entities:
                 # in this example an entity 'media' is associated to an 'album' trough a 'media item'
                 # then: Album >1toM< MediaItem >Mto1< Media
@@ -155,42 +156,40 @@ maci_admin:
                     list: ['_preview', 'name', 'type'] # columns in list views, default is [] (= all fields)
                     relations:
                         items:
-                            # these options are inherited from the -section- config:
                             label: 'Image Items' #example
                             list: []
-                            enabled: true
-                            roles: []
-                            sortable: false # if true, in this example allow to sort the 'media items' of an 'album'
-                            sort_field: 'position'
-                            actions: []
-                            trash: true
-                            trash_field: 'removed'
-                            uploadable: true
-                            upload_field: 'file'
-                    # these options are inherited from the -section- config:
-                    enabled: true
-                    roles: []
-                    sortable: false
-                    sort_field: 'position'
-                    actions: # default is []
-                        list: 'AppBundle:Default:list.html.twig'
-                        show:
-                            controller: 'appbundle.controller'
-                            template: 'AppBundle:Default:list.html.twig'
-                        # actions are: list, show, new, trash, show, edit, relation, remove, uploader,
-                        #   relations_list, relations_add, ('list' and 'add' for the sides of relations with multiple elements, like -MANY-toOne)
-                        #   relations_show, relations_set ('list' and 'set' for the sides of relations with a single element, like -ONE-toMany),
-                        #   relations_uploader (in this example this action can be used to directly upload some media in an album)
-                    trash: true
-                    trash_field: 'removed'
-                    uploadable: true
-                    upload_field: 'file'
+                            config: # -relation- config, inherited from the -section- config:
+                                enabled: true
+                                roles: []
+                                sortable: false # if true, in this example allow to sort the 'media items' of an 'album'
+                                sort_field: 'position'
+                                actions: []
+                                trash: true
+                                trash_field: 'removed'
+                                uploadable: true
+                                upload_field: 'file'
+                    config: # -entity- config, inherited from the -section- config:
+                        enabled: true
+                        roles: []
+                        sortable: false
+                        sort_field: 'position'
+                        actions: # default is []
+                            list: 'AppBundle:Default:list.html.twig'
+                            show:
+                                controller: 'appbundle.controller'
+                                template: 'AppBundle:Default:list.html.twig'
+                            # actions are: list, show, new, trash, show, edit, relation, remove, uploader,
+                            #   relations_list, relations_add, ('list' and 'add' for the sides of relations with multiple elements, like -MANY-toOne)
+                            #   relations_show, relations_set ('list' and 'set' for the sides of relations with a single element, like -ONE-toMany),
+                            #   relations_uploader (in this example this action can be used to directly upload some media in an album)
+                        trash: true
+                        trash_field: 'removed'
+                        uploadable: true
+                        upload_field: 'file'
                 media_item:
                     class: 'AppBundle:MediaItem'
                     bridges: 'media' # or ['media', ...] in this example allow to add directly media to an album
-            config:
-                dashboard: 'AppBundle:Default:media_dashboard.html.twig' # optional
-                # these options are inherited from the default inherited config:
+            config: # -section- config, inherited from the -default- config:
                 enabled: true
                 roles: [ROLE_ADMIN]
                 sortable: false
@@ -205,8 +204,7 @@ maci_admin:
             entities:
                 post: 'AppBundle:Post'
                 tag: 'AppBundle:Tag'
-    config:
-        # default inherited config:
+    config: # -default- config:
         controller: 'maci.admin.controller' # the service controller that contain the Action functions, see
         #   the ViewController for more informations
         enabled: true
