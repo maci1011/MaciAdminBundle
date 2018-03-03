@@ -148,7 +148,7 @@ maci_admin:
                 # then: Album >1toM< MediaItem >Mto1< Media
                 # 'media', 'album' and 'media item' are here in a section named 'medias'
                 album: 'AppBundle:Album'
-                media:
+                media: # an 'entity map'
                     bridges: [] # default
                     class: 'AppBundle:Media'
                     form: 'AppBundle\Form\Type\FormType'
@@ -156,9 +156,10 @@ maci_admin:
                     list: ['_preview', 'name', 'type'] # columns in list views, default is [] (= all fields)
                     relations:
                         items:
+                            # label and list are inherited from the 'entity map'
                             label: 'Image Items' #example
                             list: []
-                            config: # -relation- config, inherited from the -section- config:
+                            config: # -relation- config, inherited from the -entity- config:
                                 enabled: true
                                 roles: []
                                 sortable: false # if true, in this example allow to sort the 'media items' of an 'album'
@@ -205,8 +206,7 @@ maci_admin:
                 post: 'AppBundle:Post'
                 tag: 'AppBundle:Tag'
     config: # -default- config:
-        controller: 'maci.admin.controller' # the service controller that contain the Action functions, see
-        #   the ViewController for more informations
+        controller: 'maci.admin.controller' # the service controller that contain the Action functions, see the ViewController for more informations
         enabled: true
         roles: [ROLE_ADMIN]
         sortable: false # if true, allow to sort items in the 'list' action, usually this is needed only in relations

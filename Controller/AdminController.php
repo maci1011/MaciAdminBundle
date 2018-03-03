@@ -88,7 +88,7 @@ class AdminController
 /*
     ---> Sections Functions
 */
-    public function setDefaultConfig($map, $defaults)
+    public function getDefaultConfig($map, $defaults)
     {
         if (array_key_exists('config', $map)) {
             $config = array_merge($defaults, $map['config']);
@@ -102,11 +102,10 @@ class AdminController
     // Init _sections and _auth_sections
     private function initSections()
     {
-        $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
-        $this->_sections = $this->session->get('maci_admin._sections');
-        $this->_defaults = $this->session->get('maci_admin._defaults');
-
-        if (is_array($this->_auth_sections)) return;
+        // $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
+        // $this->_sections = $this->session->get('maci_admin._sections');
+        // $this->_defaults = $this->session->get('maci_admin._defaults');
+        // if (is_array($this->_auth_sections)) return;
 
         // Authorized Sections
         $this->_auth_sections = [];
@@ -146,12 +145,12 @@ class AdminController
             'upload_path_field'  => 'path'
         ];
 
-        $this->_defaults = $this->setDefaultConfig(['config' => (array_key_exists('config', $this->config) ? $this->config['config'] : [])], $this->_defaults);
+        $this->_defaults = $this->getDefaultConfig(['config' => (array_key_exists('config', $this->config) ? $this->config['config'] : [])], $this->_defaults);
 
         foreach ($this->config['sections'] as $name => $section) {
             if (!array_key_exists('entities', $section) || !count($section['entities'])) continue;
             // Section Settings
-            $section_config = $this->setDefaultConfig($section, $this->_defaults);
+            $section_config = $this->getDefaultConfig($section, $this->_defaults);
             $section['authorized'] = false;
             foreach ($section_config['roles'] as $role) {
                 if ($this->authorizationChecker->isGranted($role)) {
@@ -162,7 +161,7 @@ class AdminController
             // Section Entities
             $entities = []; 
             foreach ($section['entities'] as $entity_name => $entity) {
-                $entity_config = $this->setDefaultConfig($entity, $section_config);
+                $entity_config = $this->getDefaultConfig($entity, $section_config);
                 $entity['authorized'] = false;
                 foreach ($entity_config['roles'] as $role) {
                     if ($this->authorizationChecker->isGranted($role)) {
@@ -224,7 +223,7 @@ class AdminController
     public function getSectionConfig($section)
     {
         if (array_key_exists($section, $this->_sections)) {
-            return $this->setDefaultConfig($this->_sections[$section], $this->_defaults);
+            return $this->getDefaultConfig($this->_sections[$section], $this->_defaults);
         }
         return false;
     }
@@ -411,6 +410,11 @@ class AdminController
     ---> Generic Maps (-> Entities/Relations) Functions
 */
 
+    public function isAuthorized($map)
+    {
+        return $map['authorized'];
+    }
+
     public function getAssociations($map)
     {
         $metadata = $this->getMetadata($map);
@@ -502,6 +506,27 @@ class AdminController
         $repo = $this->getRepository($map);
         if ($repo) return $repo->getClassName();
         return false;
+    }
+
+    public function getConfig($map)
+    {
+        $config = $this->_defaults;
+        if (!$map) {
+            return $config;
+        } else if (array_key_exists('entity_root', $map)) {
+            $config = $this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section']));
+        } else if (array_key_exists('section', $map)) {
+            $config = $this->getSectionConfig($map['section']);
+        }
+        if (array_key_exists('config', $map)) {
+            return $this->getDefaultConfig($map, $config);
+        }
+        return $config;
+    }
+
+    public function getConfigKey($map, $key)
+    {
+        return $this->getConfig($map)[$key];
     }
 
     public function getCurrentAction()
@@ -777,15 +802,6 @@ class AdminController
         return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
     }
 
-    public function getDefaultMapKey($map, $key)
-    {
-        return (!array_key_exists('config', $map) || !array_key_exists($key, $map['config']) ?
-            (array_key_exists('section', $map) && array_key_exists($key, $this->getSectionConfig($map['section'])) ?
-                $this->getSectionConfig($map['section'])[$key] : $this->_defaults[$key]
-            ) : $map['config'][$key]
-        );
-    }
-
     public function getFields($map, $ri = true)
     {
         $metadata = $this->getMetadata($map);
@@ -839,7 +855,7 @@ class AdminController
         $list = [$this->getIdentifier($map)];
         if (array_key_exists('list', $map) && count($map['list'])) {
             $list = array_merge($list, $map['list']);
-            $field = $this->getDefaultMapKey($map, 'sort_field');
+            $field = $this->getConfigKey($map, 'sort_field');
             if ($this->isSortable($map) && !in_array($field, $list)) $list[] = $field;
             return array_unique($list, SORT_REGULAR);
         }
@@ -914,10 +930,10 @@ class AdminController
         }
 
         $isUploadable = $this->isUploadable($map);
-        $upload_path_field = $this->getDefaultMapKey($map,'upload_path_field');
+        $upload_path_field = $this->getConfigKey($map,'upload_path_field');
 
         foreach ($fields as $field) {
-            if ($this->hasTrash($map) && $field === $this->getDefaultMapKey($map,'trash_field')) {
+            if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) {
                 continue;
             }
             if ($isFilterForm) {
@@ -1206,8 +1222,13 @@ class AdminController
             foreach ($relation as $key => $value) {
                 if (is_array($relation[$key]) && !count($relation[$key])) $relation[$key] = $entity[$key];
             }
+            if (!$this->isAuthorized($relation)) {
+                return false;
+            }
         }
         array_unique($relation, SORT_REGULAR);
+        $relation['entity_root_section'] = $entity['section'];
+        $relation['entity_root'] = $entity['name'];
         $relation['association'] = $association;
         return $relation;
     }
@@ -1233,9 +1254,9 @@ class AdminController
     {
         if (array_key_exists('relations', $map) &&
             array_key_exists($association, $map['relations'])) {
-            return $this->getDefaultMapKey($map['relations'][$association], 'enabled');
+            return $this->getConfigKey($map['relations'][$association], 'enabled');
         }
-        return $this->getDefaultMapKey($map, 'enabled');
+        return $this->getConfigKey($map, 'enabled');
     }
 
     public function getRelationInverseField($map, $relation)
@@ -1308,7 +1329,7 @@ class AdminController
 
     public function isSortable($map)
     {
-        return ( $this->getDefaultMapKey($map, 'sortable') && in_array($this->getDefaultMapKey($map, 'sort_field'), $this->getFields($map)) );
+        return ( $this->getConfigKey($map, 'sortable') && in_array($this->getConfigKey($map, 'sort_field'), $this->getFields($map)) );
     }
 
     public function getTableName($map)
@@ -1319,7 +1340,7 @@ class AdminController
 
     public function hasTrash($map)
     {
-        if ($this->getDefaultMapKey($map, 'trash') && in_array($this->getDefaultMapKey($map, 'trash_field'), $this->getFields($map))) {
+        if ($this->getConfigKey($map, 'trash') && in_array($this->getConfigKey($map, 'trash_field'), $this->getFields($map))) {
             return true;
         }
         return false;
@@ -1327,7 +1348,7 @@ class AdminController
 
     public function isUploadable($map)
     {
-        if ($this->getDefaultMapKey($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getDefaultMapKey($map, 'upload_field'))) {
+        if ($this->getConfigKey($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getConfigKey($map, 'upload_field'))) {
             return true;
         }
         return false;
