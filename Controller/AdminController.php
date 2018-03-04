@@ -859,7 +859,7 @@ class AdminController
             if ($this->isSortable($map) && !in_array($field, $list)) $list[] = $field;
             return array_unique($list, SORT_REGULAR);
         }
-        if (method_exists($object, 'getAbsolutePath') && method_exists($object, 'getWebPath')) {
+        if (method_exists($object, 'getPreview')) {
             $list[] = '_preview';
         }
         $fields = array_keys($this->getFields($map));
