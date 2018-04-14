@@ -1067,10 +1067,12 @@ class AdminController
         $root = $query->getRootAlias();
         $index = 0;
         foreach ($relation_items as $obj) {
-            $parameter = ':id_' . $index;
-            $query->andWhere($root . '.' . $inverseField . ' != ' . $parameter);
-            $query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), array()));
-            $index++;
+            if (is_object($obj)) {
+                $parameter = ':id_' . $index;
+                $query->andWhere($root . '.' . $inverseField . ' != ' . $parameter);
+                $query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), array()));
+                $index++;
+            }
         }
         // todo: an option fot this
         if ($this->getClass($map) === $this->getClass($relation) && !$bridge) {
