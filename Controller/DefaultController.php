@@ -306,7 +306,7 @@ class DefaultController extends Controller
             return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
         }
 
-        $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($entity), $entity['sort_field']);
+        $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($entity), $this->mcm->getConfigKey($entity, 'sort_field'));
         if ( !$sort_method ) {
             return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
         }
@@ -676,7 +676,7 @@ class DefaultController extends Controller
             return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
         }
 
-        $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($relation), $relation['sort_field']);
+        $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($relation), $this->mcm->getConfigKey($relation, 'sort_field'));
         if ( !$sort_method ) {
             return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
         }
