@@ -130,6 +130,16 @@ class MaciPager
 		return $return;
 	}
 
+	public function hasRangeFirst()
+	{
+		return in_array( 1 , $this->getPageRange() );
+	}
+
+	public function hasRangeLast()
+	{
+		return in_array( $this->getMaxPages() , $this->getPageRange() );
+	}
+
 	public function getPageList()
 	{
 		$return = array();

@@ -238,13 +238,14 @@ h4 {
 
 /*   -----> Pagination <-----   */
 
+.pagination-container {
+    padding-top: 10px;
+    padding-bottom: 20px;
+}
+
 ul.pagination {
     margin: 0;
     padding: 8px;
-}
-
-form.pagination-form {
-    display: inline-block;
 }
 
 form.pagination-form.navbar-form .form-control {

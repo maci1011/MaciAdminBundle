@@ -44,7 +44,7 @@
 
 	<td class="list-item-preview">
 
-	{% if is_image(item.webPreview) %}
+	{% if item.webPreview is defined and is_image(item.webPreview) %}
 
 		{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
 

@@ -124,7 +124,7 @@ class AdminController
             'controller'    => 'maci.admin.default',
             'enabled'       => true,
             'page_limit'    => 100,
-            'page_range'    => 2,
+            'page_range'    => 5,
             'roles'         => ['ROLE_ADMIN'],
             'sortable'      => false,
             'sort_field'    => 'position',
@@ -874,8 +874,9 @@ class AdminController
             $list[] = '_preview';
         }
         $fields = array_keys($this->getFields($map));
+        $trash_field = $this->getConfigKey($map, 'trash_field');
         foreach ($fields as $field) {
-            if ($field == $map['trash_field']) continue;
+            if ($field == $trash_field) continue;
             $list[] = lcfirst($this->getCamel($field));
         }
         return array_unique($list, SORT_REGULAR);
@@ -1507,6 +1508,12 @@ class AdminController
                 if (method_exists($object, $methodName)) {
                     return $methodName;
                 }
+            }
+        }
+        if (strpos($field, '_')) {
+            $methodName = $this->searchMethod($object, str_replace('_', '', $field), $prefix);
+            if ($methodName) {
+                return $methodName;
             }
         }
         return false;
