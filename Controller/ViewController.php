@@ -6,6 +6,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
+use MAdminController;
+
 class ViewController extends Controller
 {
     public function indexAction(Request $request)
@@ -22,7 +24,7 @@ class ViewController extends Controller
     {
         // --- Check the Auths and the Route
 
-        $admin = $this->container->get('maci.admin');
+        $admin = $this->container->get(AdminController::class);
         $sections = $admin->getAuthSections();
         if (!count($sections)) {
             return $this->redirect($this->generateUrl('homepage'));
@@ -120,7 +122,7 @@ class ViewController extends Controller
 
     public function adminBarAction($entity, $item = false)
     {
-        $admin = $this->container->get('maci.admin');
+        $admin = $this->container->get(AdminController::class);
         $sections = $admin->getAuthSections();
         $id = false;
         $section = false;
@@ -149,4 +151,5 @@ class ViewController extends Controller
             'actions' => $actions
         ));
     }
+
 }

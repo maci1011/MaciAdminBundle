@@ -26,6 +26,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 use Maci\AdminBundle\MaciPager;
+use Maci\AdminBundle\Controller\DefaultController;
 
 class AdminController
 {
@@ -64,7 +65,7 @@ class AdminController
         AuthorizationCheckerInterface $authorizationChecker,
         Session $session,
         RequestStack $requestStack,
-        \AppKernel $kernel,
+        \App\Kernel $kernel,
         FormFactory $formFactory,
         FormRegistry $formRegistry,
         Router $router,
@@ -121,7 +122,7 @@ class AdminController
                 'relations_show' => ['template' => 'MaciAdminBundle:Actions:relations_show.html.twig'],
                 'relations_uploader' => ['template' => 'MaciAdminBundle:Actions:relations_uploader.html.twig']
             ],
-            'controller'    => 'maci.admin.default',
+            'controller'    => DefaultController::class,
             'enabled'       => true,
             'page_limit'    => 100,
             'page_range'    => 5,

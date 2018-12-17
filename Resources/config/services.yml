@@ -1,13 +1,19 @@
 
 services:
 
-    maci.admin:
-        class: Maci\AdminBundle\Controller\AdminController
+    Maci\AdminBundle\Controller\AdminController:
         arguments: ["@doctrine.orm.entity_manager","@security.authorization_checker","@session","@request_stack","@kernel","@form.factory","@form.registry","@router","@templating","%maci.admin.config%"]
+        public: true
+
+    maci.admin:
+        alias: Maci\AdminBundle\Controller\AdminController
+    
+    Maci\AdminBundle\Controller\DefaultController:
+        arguments: ["@doctrine.orm.entity_manager","@session","@request_stack","@maci.admin"]
+        public: true
 
     maci.admin.default:
-        class: Maci\AdminBundle\Controller\DefaultController
-        arguments: ["@doctrine.orm.entity_manager","@session","@request_stack","@maci.admin"]
+        alias: Maci\AdminBundle\Controller\DefaultController
 
     maci.admin.menu_builder:
         class: Maci\AdminBundle\Menu\AdminMenuBuilder
