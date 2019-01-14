@@ -25,42 +25,11 @@
 
 	{% for field in fields %}
 
-	{% if field == 'id' %}
-
-	<td class="list-item-id">
-		<input name="id" type="hidden" value="{{ item.id }}" />
-		{% if action == 'relations' %}
-		<a href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
-			{{ item.id }}
-		</a>
-		{% else %}
-		<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
-			{{ item.id }}
-		</a>
-		{% endif %}
-	</td>
-
-	{% elseif field == '_preview' %}
-
-	<td class="list-item-preview">
-
-	{% if item.webPreview is defined and is_image(item.webPreview) %}
-
-		{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
-
-	{% endif %}
-
-	</td>
-
-	{% else %}
-
 	<td>
 
 		{% include "MaciAdminBundle:Actions:_item_field.html.twig" %}
 
 	</td>
-
-	{% endif %}
 
 	{% endfor %}
 
