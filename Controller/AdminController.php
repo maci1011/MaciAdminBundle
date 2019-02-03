@@ -949,6 +949,9 @@ class AdminController
             if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) {
                 continue;
             }
+            if (in_array($field, array('updated', 'created'))) {
+                continue;
+            }
             if ($isFilterForm) {
                 $form->add($field . '_checkbox', CheckboxType::class, array(
                     'label' => 'Set Filter',
@@ -1002,6 +1005,10 @@ class AdminController
         } else {
             $form->add('save', SubmitType::class, array(
                 'attr'=>array('class'=>'btn btn-success')
+            ));
+            $form->add('save_and_list', SubmitType::class, array(
+                'label'=>'Save & Return to List',
+                'attr'=>array('class'=>'btn btn-primary')
             ));
         }
 

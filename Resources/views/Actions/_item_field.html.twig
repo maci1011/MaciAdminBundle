@@ -1,18 +1,15 @@
 
 {% if field == 'id' %}
-
-<td class="list-item-id">
-	<input name="id" type="hidden" value="{{ item.id }}" />
-	{% if action == 'relations' %}
-	<a href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
-		{{ item.id }}
-	</a>
-	{% else %}
-	<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
-		{{ item.id }}
-	</a>
-	{% endif %}
-</td>
+<input name="id" type="hidden" value="{{ item.id }}" />
+{% if action == 'relations' %}
+<a href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
+	{{ item.id }}
+</a>
+{% else %}
+<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
+	{{ item.id }}
+</a>
+{% endif %}
 
 {% elseif field == '_string' %}
 

@@ -160,13 +160,13 @@ h4 {
     display: block;
 }
 
-.list-default tr.list-header > th.list-header.id > span {
+.list-default tr.list-header > th.list-header.header-id > span {
     padding: 0;
     text-align: center;
     width: 50px;
 }
 
-.list-default tr.list-header > th.list-header-actions > span {
+.list-default tr.list-header > th.list-header.header-actions > span {
     width: 140px;
 }
 
@@ -208,7 +208,7 @@ h4 {
     padding-left: 15px;
 }
 
-.list-default tr.list-item > td.list-item-id {
+.list-default tr.list-item > td.list-item-field.field-id {
     width: 40px;
 }
 
@@ -224,15 +224,15 @@ h4 {
     display: inline-block;
 }
 
-.list-default tr.list-item > td.list-item-id > a,
-.list-default tr.list-item > td.list-item-id > span,
-.list-default tr.list-item > td.list-item-id > p {
+.list-default tr.list-item > td.list-item-field.field-id > a,
+.list-default tr.list-item > td.list-item-field.field-id > span,
+.list-default tr.list-item > td.list-item-field.field-id > p {
     width: 50px;
     text-align: center;
     display: block;
 }
 
-.list-default tr.list-item > td.list-item-id > a:hover {
+.list-default tr.list-item > td.list-item-field.field-id > a:hover {
     background-color: #ccc;
 }
 
