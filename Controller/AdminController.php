@@ -429,9 +429,9 @@ class AdminController
             'relation' => $relation['association'],
             'relation_label' => $relation['label'],
             'relation_section' => $relation['section'],
-            'relation_entity_root_section' => $relation['entity_root_section'],
             'relation_entity' => $relation['name'],
             'relation_entity_root' => $relation['entity_root'],
+            'relation_entity_root_section' => $relation['entity_root_section'],
             'relation_action' => $relAction,
             'relation_action_label' => $this->generateLabel($relAction),
             'bridges' => $this->getBridges($relation),
@@ -1164,8 +1164,22 @@ class AdminController
             }
         }
         array_unique($relation, SORT_REGULAR);
-        $relation['entity_root_section'] = $entity['section'];
-        $relation['entity_root'] = $entity['name'];
+        if (!array_key_exists('section', $relation)) {
+            $relation['section'] = '___unset___';
+        }
+        if (!array_key_exists('entity', $relation)) {
+            $relation['entity'] = '___unset___';
+        }
+        if ($entity['section'] == null) {
+            $relation['entity_root_section'] = '___unset___';
+        } else {
+            $relation['entity_root_section'] = $entity['section'];
+        }
+        if ($entity['name'] == null) {
+            $relation['entity_root'] = '___unset___';
+        } else {
+            $relation['entity_root'] = $entity['name'];
+        }
         $relation['association'] = $association;
         return $relation;
     }

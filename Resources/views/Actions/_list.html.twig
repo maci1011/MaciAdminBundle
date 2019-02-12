@@ -64,9 +64,11 @@
 	{% endfor %}
 
 	{% if type == 'list' or type == 'relation' %}
+	{% if relation_entity_root_section != '___unset___' %}
 	<th class="list-header header-actions list-header-last list-header-remove">
 		<span class="list-title">Actions</span>
 	</th>
+	{% endif %}
 	{% elseif type == 'set' %}
 	<th class="list-header header-actions list-header-last list-header-set">
 		<span class="list-title">Set Item</span>

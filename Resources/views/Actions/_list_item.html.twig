@@ -46,6 +46,7 @@
 
 	</td>
 	{% elseif type == 'relation' %}
+	{% if relation_entity_root_section != '___unset___' %}
 	<td>
 
 		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': item.id, 'rm': 'item'}) }}" method="post">
@@ -57,6 +58,7 @@
 		</a>
 
 	</td>
+	{% endif %}
 	{% elseif type == 'set' %}
 	<td>
 

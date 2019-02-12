@@ -1,14 +1,20 @@
 
 {% if field == 'id' %}
+
 <input name="id" type="hidden" value="{{ item.id }}" />
-{% if action == 'relations' %}
+
+{% if action == 'relations' and relation_entity_root_section != '___unset___' %}
 <a href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
 	{{ item.id }}
 </a>
-{% else %}
+{% elseif action != 'relations' and section != '___unset___' %}
 <a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
 	{{ item.id }}
 </a>
+{% else %}
+<span class="item-field-value field-id">
+	{{ item.id }}
+</span>
 {% endif %}
 
 {% elseif field == '_string' %}
@@ -46,15 +52,7 @@
 
 {% elseif val is iterable %}
 
-<ul class="item-field-value">
-
-{% for child in val %}
-
-<li>{{ val }}</li>
-
-{% endfor %}
-
-</ul>
+{% include "MaciAdminBundle:Actions:_item_field_iterable.html.twig" %}
 
 {% elseif val is same as(true) %}
 

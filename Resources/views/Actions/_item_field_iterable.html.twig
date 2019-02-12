@@ -1,0 +1,20 @@
+
+<ul class="navbar nav item-field-value-iterable">
+
+{% for child in val %}
+
+<li class="item-field-value">
+	{% if val is iterable %}
+
+		{% include "MaciAdminBundle:Actions:_item_field_iterable.html.twig" with { 'val': child } %}
+
+	{% else %}
+
+		<span class="navbar-text">{{ val }}</span>
+	
+	{% endif %}
+</li>
+
+{% endfor %}
+
+</ul>
