@@ -70,6 +70,17 @@
 		</form>
 
 	</td>
+	{% elseif type == 'add' %}
+	<td>
+
+		<form action="#" method="post">
+		<input type="hidden" name="ids" value="{{ item.id }}">
+		<button class="action btn btn-sm btn-primary list-item-add">
+			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add to {{ relation|capitalize }}
+		</button>
+		</form>
+
+	</td>
 	{% endif %}
 
 </tr>
