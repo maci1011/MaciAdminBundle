@@ -482,7 +482,10 @@ class DefaultController extends Controller
 
             $this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 
-            return array('success' => true);
+            if ($this->request->isXmlHttpRequest())
+                return array('success' => true);
+            else
+                return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $bridge);
 
         }
 
