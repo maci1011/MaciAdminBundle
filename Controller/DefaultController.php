@@ -485,7 +485,7 @@ class DefaultController extends Controller
             if ($this->request->isXmlHttpRequest())
                 return array('success' => true);
             else
-                return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $bridge);
+                return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge);
 
         }
 

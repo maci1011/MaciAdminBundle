@@ -98,7 +98,10 @@ class ViewController extends Controller
         // --- Return the Response for each case
 
         if (array_key_exists('redirect', $params)) {
-            return $this->redirect($this->generateUrl($params['redirect'],$params['redirect_params']));
+            if (array_key_exists('redirect_params', $params)) {
+                return $this->redirect($this->generateUrl($params['redirect'],$params['redirect_params']));
+            }
+            return $this->redirect($this->generateUrl($params['redirect']));
         }
 
         if (array_key_exists('redirect_url', $params)) {
