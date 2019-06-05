@@ -753,27 +753,36 @@ class AdminController
     public function getBridge($relation, $association)
     {
         $bridge = $this->getRelation($relation, $association);
+        if (!$bridge) return false;
         $bridge['bridge'] = $association;
         return $bridge;
     }
 
-    public function getBridges($map)
+    public function getBridges($relation)
     {
-        if (!array_key_exists('bridges', $map)) {
-            return array();
+        $list = array();
+        if (array_key_exists('bridges', $relation)) {
+            $i=0;
+            foreach ($relation['bridges'] as $bridge) {
+                $metadata = $this->getAssociationMetadata($relation, $bridge);
+                $isnull = $metadata['inversedBy'] === NULL;
+                if ($isnull || (!$isnull && $metadata['inversedBy'] == $relation['association'])) {
+                    $list[] = $bridge;
+                }
+            }
         }
-        return $map['bridges'];
+        return $list;
     }
 
-    public function getUpladableBridges($map)
+    public function getUpladableBridges($relation)
     {
-        if (!array_key_exists('bridges', $map)) {
+        if (!array_key_exists('bridges', $relation)) {
             return array();
         }
         $upb = array();
-        foreach ($map['bridges'] as $bridge) {
-            $bm = $this->getBridge($map,$bridge);
-            if ($this->isUploadable($bm)) {
+        foreach ($relation['bridges'] as $bridge) {
+            $bm = $this->getBridge($relation,$bridge);
+            if ($bm && $this->isUploadable($bm)) {
                 $upb[] = $bridge;
             }
         }
