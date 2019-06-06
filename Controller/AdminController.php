@@ -93,10 +93,10 @@ class AdminController
     // Init _sections and _auth_sections
     private function initConfig()
     {
-        // $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
-        // $this->_sections = $this->session->get('maci_admin._sections');
-        // $this->_defaults = $this->session->get('maci_admin._defaults');
-        // if (is_array($this->_auth_sections)) return;
+        $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
+        $this->_sections = $this->session->get('maci_admin._sections');
+        $this->_defaults = $this->session->get('maci_admin._defaults');
+        if (is_array($this->_auth_sections)) return;
 
         // Authorized Sections
         $this->_auth_sections = [];
