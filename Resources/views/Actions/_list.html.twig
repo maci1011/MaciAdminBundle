@@ -34,13 +34,13 @@
 	<th class="list-header header-blank">&nbsp;</th>
 	{% endif %}
 
-	{% if 'id' not in fields %}
+	{% if 'id' not in list_fields %}
 	<th class="list-header header-listId">
 		<span class="list-title">#</span>
 	</th>
 	{% endif %}
 
-	{% for field in fields %}
+	{% for field in list_fields %}
 
 	{% if field == 'id' %}
 	<th class="list-header header-id">

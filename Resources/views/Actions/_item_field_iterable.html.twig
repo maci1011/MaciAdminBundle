@@ -1,20 +1,27 @@
 
-<ul class="navbar nav item-field-value-iterable">
+<div class="item-field-value-iterable container-fluid">
 
-{% for child in val %}
+{% for key, child in val %}
 
-<li class="item-field-value">
-	{% if val is iterable %}
+<div class="item-field-value row">
+	{% if child is iterable %}
+
+		<span class="item-field-iterable-title">{{ key|capitalize }}</span>
 
 		{% include "MaciAdminBundle:Actions:_item_field_iterable.html.twig" with { 'val': child } %}
 
 	{% else %}
 
-		<span class="navbar-text">{{ val }}</span>
-	
+	<div class="col-xs-12 col-sm-6">
+		<span class="item-field-iterable-key">{{ key|capitalize }}:</span>
+	</div>
+	<div class="col-xs-12 col-sm-6">
+		<span class="item-field-iterable-val">{{ child }}</span>
+	</div>
+
 	{% endif %}
-</li>
+</div>
 
 {% endfor %}
 
-</ul>
+</div>

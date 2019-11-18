@@ -23,7 +23,7 @@
 	</td>
 	{% endif %}
 
-	{% if 'id' not in fields %}
+	{% if 'id' not in list_fields %}
 
 	<td class="list-item-field field-listId">
 
@@ -33,7 +33,7 @@
 
 	{% endif %}
 
-	{% for field in fields %}
+	{% for field in list_fields %}
 
 	<td class="list-item-field field-{{ field }}">
 
@@ -45,6 +45,10 @@
 
 	{% if type == 'list' %}
 	<td class="list-item-actions">
+
+		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'show', 'id': pager.identifier(listId)}) }}">
+			<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Show
+		</a>
 
 		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'edit', 'id': pager.identifier(listId)}) }}">
 			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit

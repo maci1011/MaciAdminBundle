@@ -1,16 +1,18 @@
 
 {% if field == 'id' %}
 
-{% set _id = pager.identifier(listId) matches '/^\\d+$/' ? pager.identifier(listId) : (listId + 1) %}
+{% set _identifier = identifier is defined ? identifier : pager is defined ? pager.identifier(listId) : listId %}
 
-<input name="id" type="hidden" value="{{ pager.identifier(listId) }}" />
+{% set _id = _identifier matches '/^\\d+$/' ? _identifier : (listId + 1) %}
+
+<input name="id" type="hidden" value="{{ _identifier }}" />
 
 {% if action == 'relations' and relation_entity_root_section != '___unset___' %}
-<a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': pager.identifier(listId) }) }}" title="Edit Item">
+<a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': _identifier }) }}" title="Edit Item">
 	{{ _id }}
 </a>
 {% elseif action != 'relations' and section != '___unset___' %}
-<a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': pager.identifier(listId) }) }}" title="Edit Item">
+<a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': _identifier }) }}" title="Edit Item">
 	{{ _id }}
 </a>
 {% else %}

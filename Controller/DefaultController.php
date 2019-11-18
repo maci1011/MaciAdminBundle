@@ -126,6 +126,7 @@ class DefaultController extends Controller
         if (!$item) return false;
 
         return array_merge($this->mcm->getDefaultEntityParams($entity), array(
+            'identifier' => $this->mcm->getIdentifierValue($entity, $item),
             'item' => $item
         ));
     }
@@ -188,6 +189,7 @@ class DefaultController extends Controller
         }
 
         return array_merge($this->mcm->getDefaultEntityParams($entity), array(
+            'identifier' => $this->mcm->getIdentifierValue($entity, $item),
             'item' => $item,
             'form' => $form->createView()
         ));
@@ -230,6 +232,7 @@ class DefaultController extends Controller
 
         }
 
+        $params['identifier'] = $this->mcm->getIdentifierValue($entity, $item);
         $params['item'] = $item;
         $params['form'] = $form->createView();
 
@@ -640,6 +643,7 @@ class DefaultController extends Controller
         }
 
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
+        $params['identifier'] = $this->mcm->getIdentifierValue($relation, $item);
         $params['item'] = $relItem;
         $params['form'] = $form->createView();
         $params['rid'] = $this->mcm->getIdentifierValue($relation, $relItem);

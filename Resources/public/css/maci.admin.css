@@ -239,6 +239,12 @@ h4 {
     background-color: #ccc;
 }
 
+.item-field-value-iterable > .row {
+    margin: 0;
+    padding: 5px 15px 5px 15px;
+    border-bottom: 1px solid #aaa;
+}
+
 /*   -----> Pagination <-----   */
 
 .pagination-container {

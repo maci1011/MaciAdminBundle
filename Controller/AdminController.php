@@ -406,7 +406,8 @@ class AdminController
             'entity_label' => $map['label'],
             'action' =>  $action,
             'action_label' => $this->generateLabel($action),
-            'fields' => $this->getListFields($map),
+            'fields' => $this->getFields($map),
+            'list_fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
             'item' => $this->getCurrentItem(),
             'item_identifier' => $this->getIdentifier($map),
@@ -1099,7 +1100,7 @@ class AdminController
         $repo = $this->getRepository($map);
         $query = $repo->createQueryBuilder('e');
         $root = $query->getRootAlias();
-        $fields = $this->getFields($map);
+        // $fields = $this->getFields($map);
         $query = $this->addDefaultQueries($map, $query, $trashValue);
         $query = $query->getQuery();
         $list = $query->getResult();
