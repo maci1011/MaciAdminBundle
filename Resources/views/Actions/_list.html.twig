@@ -1,14 +1,7 @@
 
-{% if list is not defined %}
-{% if pager is defined %}
-{% set list = pager.pageList %}
-{% else %}
-{% set list = false %}
-{% endif %}
-{% endif %}
+{% set listLen = pager.pageList|length %}
 
-
-{% if list|length %}
+{% if listLen %}
 
 {#% include "MaciAdminBundle:Actions:_filters.html.twig" %#}
 
@@ -24,13 +17,13 @@
 {% set multipleCheckbox = (type in multipleArrayViews) %}
 {% endif %}
 
-{% if list|length == 1 %}
+{% if listLen == 1 %}
 {% set multipleCheckbox = false %}
 {% endif %}
 
 {% include "MaciAdminBundle:Actions:_list_pagination.html.twig" %}
 
-<div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if type in ['list','relation'] and sortable and 1 < list|length %} sortable="{{ sortable }}"{% endif %}>
+<div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if type in ['list','relation'] and sortable and 1 < listLen %} sortable="{{ sortable }}"{% endif %}>
 <table class="table table-striped tablesorter">
 
 <thead>
@@ -39,6 +32,12 @@
 
 	{% if multipleCheckbox %}
 	<th class="list-header header-blank">&nbsp;</th>
+	{% endif %}
+
+	{% if 'id' not in fields %}
+	<th class="list-header header-listId">
+		<span class="list-title">#</span>
+	</th>
 	{% endif %}
 
 	{% for field in fields %}
@@ -87,9 +86,9 @@
 
 <tbody>
 
-{% for item in list %}
+{% for item in pager.pageList %}
 
-	{% include "MaciAdminBundle:Actions:_list_item.html.twig" %}
+	{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'listId': loop.index0} %}
 
 {% endfor %}
 

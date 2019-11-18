@@ -61,13 +61,13 @@ class ViewController extends Controller
             if (!$relation) {
                 $relations = $admin->getAssociations($_entity);
                 $relAction = $admin->getRelationDefaultAction($_entity, $relation[0]);
-                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relations[0],'relAction'=>$relAction)));
+                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$request->get('id'),'relation'=>$relations[0],'relAction'=>$relAction)));
             }
             $relAction = $request->get('relAction');
             if (!$relAction || !in_array($relAction, $admin->getRelationActions($section,$entity,$relation))) {
                 $_entity = $admin->getEntity($section, $entity);
                 $relAction = $admin->getRelationDefaultAction($_entity, $relation);
-                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$id,'relation'=>$relation,'relAction'=>$relAction)));
+                return $this->redirect($this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$request->get('id'),'relation'=>$relation,'relAction'=>$relAction)));
             }
             $_relation = $admin->getCurrentRelation();
             $controllerMap = $_relation;

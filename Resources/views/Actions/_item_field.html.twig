@@ -1,19 +1,21 @@
 
 {% if field == 'id' %}
 
-<input name="id" type="hidden" value="{{ item.id }}" />
+{% set _id = pager.identifier(listId) matches '/^\\d+$/' ? pager.identifier(listId) : (listId + 1) %}
+
+<input name="id" type="hidden" value="{{ pager.identifier(listId) }}" />
 
 {% if action == 'relations' and relation_entity_root_section != '___unset___' %}
-<a href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
-	{{ item.id }}
+<a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': pager.identifier(listId) }) }}" title="Edit Item">
+	{{ _id }}
 </a>
 {% elseif action != 'relations' and section != '___unset___' %}
-<a href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': item.id }) }}" title="Edit Item">
-	{{ item.id }}
+<a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': pager.identifier(listId) }) }}" title="Edit Item">
+	{{ _id }}
 </a>
 {% else %}
-<span class="item-field-value field-id">
-	{{ item.id }}
+<span class="item-field-value id">
+	{{ _id }}
 </span>
 {% endif %}
 

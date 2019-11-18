@@ -139,7 +139,7 @@ class DefaultController extends Controller
 
         // $clone = $this->request->get('clone', false);
 
-        if ((int) $this->request->get('id', 0)) {
+        if ($this->request->get('id', 0)) {
             $item = $this->mcm->getCurrentItem();
             if (!$item) return false;
             // if ($clone) {
@@ -156,7 +156,7 @@ class DefaultController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            $isNew = (bool) ( $item->getId() === null );
+            $isNew = (bool) ( $this->mcm->getIdentifierValue($entity, $item) === null );
 
             if ($isNew) {
                 $this->om->persist($item);
@@ -182,7 +182,7 @@ class DefaultController extends Controller
                 else if ($form->has('save_and_list') && $form->get('save_and_list')->isClicked())
                     return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
                 else
-                    return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $item->getId());
+                    return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $this->mcm->getIdentifierValue($entity, $item));
             }
 
         }
@@ -595,7 +595,7 @@ class DefaultController extends Controller
         $list = $this->mcm->getRelationItems($relation, $item);
 
         $rid = $this->request->get('rid', false);
-        $ids_list = $this->mcm->getListIds($list);
+        $ids_list = $this->mcm->getListIdentifiers($relation, $list);
 
         $relItem = false;
         if (-1 < $index = array_search($rid, $ids_list)) {
@@ -618,7 +618,7 @@ class DefaultController extends Controller
         }
 
         $form = $this->mcm->getRelationRemoveForm($entity, $relation, $relItem, array(
-            'rid' => $relItem->getId(),
+            'rid' => $this->mcm->getIdentifierValue($relation, $relItem),
             'rm' => $this->request->get('rm', 'association')
         ));
 
@@ -642,7 +642,7 @@ class DefaultController extends Controller
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
         $params['item'] = $relItem;
         $params['form'] = $form->createView();
-        $params['rid'] = $relItem->getId();
+        $params['rid'] = $this->mcm->getIdentifierValue($relation, $relItem);
         $params['rm'] = $this->request->get('rm', 'association');
 
         return $params;

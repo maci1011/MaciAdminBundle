@@ -153,14 +153,15 @@ h4 {
     margin: 0;
 }
 
-.list-default tr.list-header .list-title {
+.list-default .list-header .list-title {
     padding: 0 0 0 5px;
     text-transform: uppercase;
     font-size: 10pt;
     display: block;
 }
 
-.list-default tr.list-header > th.list-header.header-id > span {
+.list-default .list-header.header-id > .list-title,
+.list-default .list-header.header-listId > .list-title {
     padding: 0;
     text-align: center;
     width: 50px;
@@ -203,13 +204,15 @@ h4 {
     display: block;
 }
 
-.list-default tr.list-item > td.list-item-checkbox {
+.list-default .list-item > .list-item-checkbox {
     width: 40px;
     padding-left: 15px;
 }
 
-.list-default tr.list-item > td.list-item-field.field-id {
-    width: 40px;
+.list-default .list-item-field > .item-field-value.id {
+    display: block;
+    text-align: center;
+    width: 50px;
 }
 
 .list-default tr.list-item > td > a,
@@ -232,7 +235,7 @@ h4 {
     display: block;
 }
 
-.list-default tr.list-item > td.list-item-field.field-id > a:hover {
+.list-default .list-item-field > .item-field-value.id:hover {
     background-color: #ccc;
 }
 

@@ -81,8 +81,8 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('maci_admin');
+        $treeBuilder = new TreeBuilder('maci_admin');
+        $rootNode = $treeBuilder->getRootNode();
 
         $currentRoot = $rootNode
             ->children();

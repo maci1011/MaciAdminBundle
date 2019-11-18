@@ -4,17 +4,19 @@ namespace Maci\AdminBundle;
 
 class MaciPager
 {
-	protected $result;
+	private $result;
 
-	protected $limit;
+	private $limit;
 
-	protected $page;
+	private $page;
 
-	protected $range;
+	private $range;
 
-	protected $length;
+	private $length;
 
-	protected $form;
+	private $form;
+
+	private $identifiers;
 
 	public function __construct($result = null, $page = 1, $limit = 10, $range = 5)
 	{
@@ -72,6 +74,21 @@ class MaciPager
 	public function setForm($form)
 	{
 		$this->form = $form;
+	}
+
+	public function getIdentifiers()
+	{
+		return $this->identifiers;
+	}
+
+	public function setIdentifiers($identifiers)
+	{
+		$this->identifiers = $identifiers;
+	}
+
+	public function getIdentifier($id)
+	{
+		return $this->identifiers[$id];
 	}
 
 	/* Utils */

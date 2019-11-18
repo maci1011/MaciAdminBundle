@@ -8,6 +8,7 @@ use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -93,10 +94,10 @@ class AdminController
     // Init _sections and _auth_sections
     private function initConfig()
     {
-        $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
-        $this->_sections = $this->session->get('maci_admin._sections');
-        $this->_defaults = $this->session->get('maci_admin._defaults');
-        if (is_array($this->_auth_sections)) return;
+        // $this->_auth_sections = $this->session->get('maci_admin._auth_sections');
+        // $this->_sections = $this->session->get('maci_admin._sections');
+        // $this->_defaults = $this->session->get('maci_admin._defaults');
+        // if (is_array($this->_auth_sections)) return;
 
         // Authorized Sections
         $this->_auth_sections = [];
@@ -408,8 +409,9 @@ class AdminController
             'fields' => $this->getListFields($map),
             'id' => $this->request->get('id'),
             'item' => $this->getCurrentItem(),
+            'item_identifier' => $this->getIdentifier($map),
             'is_entity_uploadable' => $this->isUploadable($map),
-            'list_filters_form' => $this->getFiltersForm($map)->createView(),
+            // 'list_filters_form' => $this->getFiltersForm($map)->createView(),
             'sortable' => ($this->isSortable($map) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'reorder'
@@ -437,7 +439,7 @@ class AdminController
             'bridges' => $this->getBridges($relation),
             'uploadable_bridges' => $this->getUpladableBridges($relation),
             'is_relation_uploadable' => $this->isUploadable($relation),
-            'list_filters_form' => $this->getFiltersForm($relation),
+            // 'list_filters_form' => $this->getFiltersForm($relation),
             'sortable' => ($this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'],'entity'=>$map['name'],
                 'action'=>'relations','id'=>$this->request->get('id'),
@@ -608,7 +610,7 @@ class AdminController
         if (isset($this->current_item)) return $this->current_item;
         $entity = $this->getCurrentEntity();
         if (!$entity) return false;
-        $id = (int) $this->request->get('id');
+        $id = $this->request->get('id');
         if (!$id) return false;
         $item = $this->getItem($entity, $id);
         if ($item) {
@@ -686,7 +688,7 @@ class AdminController
     {
         $actions = array();
         if(in_array('list', $this->getMainActions($entity))) {
-            $actions[] = 'setListFilters';
+            // $actions[] = 'setListFilters';
             $actions[] = 'setPagerOptions';
         }
         return $actions;
@@ -913,7 +915,7 @@ class AdminController
             $form = $map['form'];
         }
         if (class_exists($form)) {
-            return $this->createForm(new $form, $object);
+            return $this->createForm($form, $object);
         }
         $form = ( $this->getBundleNamespace($map) . "\\Form\\Mcm" . $this->getCamel($map['section']) . "\\" . $this->getCamel($map['name']) . "Type" );
         if (class_exists($form)) {
@@ -934,41 +936,70 @@ class AdminController
 
         $fields = $this->getFields($map);
         $form = $this->createFormBuilder($object);
-        $isNew = !$object->getId();
+        $isNew = !$this->getIdentifier($map);
 
-        if ($isFilterForm) {
-            $form->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
-            )));
-        }
-        else if ($isNew) {
+        // if ($isFilterForm) {
+        //     $form->setAction($this->generateUrl('maci_admin_view', array(
+        //         'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
+        //     )));
+        // }
+        // else
+
+        if ($isNew) {
             $form->setAction($this->generateUrl('maci_admin_view', array(
                 'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
             )));
         } else {
             $form->setAction($this->generateUrl('maci_admin_view', array(
-                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$object->getId()
+                'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$this->getIdentifierValue($map, $object)
             )));
         }
 
         $isUploadable = $this->isUploadable($map);
         $upload_path_field = $this->getConfigKey($map,'upload_path_field');
 
+        $fieldMappings = $this->getMetadata($map)->fieldMappings;
+        // var_dump($fields);die();
+
         foreach ($fields as $field) {
+
             if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) {
                 continue;
             }
             if (in_array($field, array('updated', 'created'))) {
                 continue;
             }
-            if ($isFilterForm) {
-                $form->add($field . '_checkbox', CheckboxType::class, array(
-                    'label' => 'Set Filter',
-                    'attr' => ['class' => 'setFilterCheckbox'],
-                    'required' => false,
-                    'mapped' => false
-                ));
+            if (!array_key_exists('type', $fieldMappings[$field])) {
+                continue;
             }
+            if (!in_array(
+                $fieldMappings[$field]['type'],
+                ['text', 'string', 'decimal', 'integer', 'boolean', 'datetime']
+            )) {
+                continue;
+            }
+
+            // if ($isFilterForm) {
+            //     $form->add($field . '_checkbox', CheckboxType::class, array(
+            //         'label' => 'Set Filter',
+            //         'attr' => ['class' => 'setFilterCheckbox'],
+            //         'required' => false,
+            //         'mapped' => false
+            //     ));
+            // }
+
+            // if ($isFilterForm && in_array(
+            //     $this->getFieldType($map, $field),
+            //     ['text', 'string', 'decimal', 'integer', 'boolean', 'datetime']
+            // )) {
+            //     $form->add($field . '_method', ChoiceType::class, array(
+            //         'label' => 'Method',
+            //         'choices' => array('Is' => 'IS', 'Like' => 'LIKE'),
+            //         'mapped' => false
+            //     ));
+            // }
+            // else { vvv }
+            
             $method = ('get' . ucfirst($field) . 'Array');
             if ( method_exists($object, $method) ) {
                 $form->add($field, ChoiceType::class, array(
@@ -978,13 +1009,6 @@ class AdminController
             } else if ( $isUploadable && $field === $upload_path_field ) {
                 $form->add('file', FileType::class, array('required' => false));
             } else {
-                if ($isFilterForm && in_array($this->getFieldType($map, $field), ['string', 'text'])) {
-                    $form->add($field . '_method', ChoiceType::class, array(
-                        'label' => 'Method',
-                        'choices' => array('Is' => 'IS', 'Like' => 'LIKE'),
-                        'mapped' => false
-                    ));
-                }
                 $form->add($field);
             }
         }
@@ -1030,9 +1054,28 @@ class AdminController
         return $identifiers[0];
     }
 
+    public function getIdentifierValue($map, $item)
+    {
+        $identifier = $this->getIdentifier($map);
+        $getter = $this->getGetterMethod($item, $identifier);
+        if ($getter) {
+            return call_user_func_array(array($item, $getter), []);
+        }
+        return false;
+    }
+
+    public function getListIdentifiers($map, $list)
+    {
+        $ids = array();
+        foreach ($list as $item) {
+            $ids[] = $this->getIdentifierValue($map, $item);
+        }
+        return $ids;
+    }
+
     public function getItem($map, $id)
     {
-        return $this->getRepository($map)->findOneById($id);
+        return $this->getRepository($map)->findOneBy([$this->getIdentifier($map) => $id]);
     }
 
     public function removeItems($map, $list)
@@ -1109,7 +1152,7 @@ class AdminController
             return false;
         }
         $obj_list = array();
-        $ids_list = $this->getListIds($list);
+        $ids_list = $this->getListIdentifiers($map, $list);
         $repo = $this->getRepository($map);
         foreach ($ids as $_id) {
             $_id = (int) $_id;
@@ -1125,9 +1168,12 @@ class AdminController
         return $obj_list;
     }
 
-    public function getMetadata($map)
+    public function getMetadata(&$map)
     {
-        return $this->om->getClassMetadata( $this->getClass($map) );
+        if(!array_key_exists('OMclassMetadata', $map)) {
+            $map['OMclassMetadata'] = $this->om->getClassMetadata($this->getClass($map));
+        }
+        return $map['OMclassMetadata'];
     }
 
     public function getNewItem($map)
@@ -1263,7 +1309,7 @@ class AdminController
     public function getRemoveForm($map, $item, $opt = array())
     {
         return $this->createFormBuilder($item)
-            ->setAction($this->getEntityUrl($map, 'remove', $item->getId(), $opt))
+            ->setAction($this->getEntityUrl($map, 'remove', $this->getIdentifierValue($map, $item), $opt))
             ->add('remove', SubmitType::class, array(
                 'attr' => array('class' => 'btn-danger')
             ))
@@ -1322,6 +1368,7 @@ class AdminController
     {
         $pager = new MaciPager($list, $this->request->get('page', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
         $pager->setForm($this->getPagerForm($map, $pager, $opt));
+        $pager->setIdentifiers($this->getListIdentifiers($map, $list));
         return $pager;
     }
 
@@ -1663,15 +1710,6 @@ class AdminController
 /*
     ------------> Utils
 */
-
-    public function getListIds($list)
-    {
-        $ids = array();
-        foreach ($list as $item) {
-            $ids[] = $item->getId();
-        }
-        return $ids;
-    }
 
     public function getArrayWithLabels($array)
     {
