@@ -50,7 +50,13 @@
 {% endif %}
 
 
-{% if val.timestamp is defined %}
+{% if field == '_preview' %}
+
+{% if item.webPreview is defined %}
+<img class="item-preview" src="{{ asset(val | imagine_filter('maci_admin_list_preview')) }}" alt="{{ val }}" title="{{ val }}" />
+{% endif %}
+
+{% elseif val.timestamp is defined %}
 
 <span class="item-field-value">{{ val|date('d/m/Y H:i:s') }}</span>
 
@@ -66,15 +72,13 @@
 
 <span class="glyphicon glyphicon-remove"></span>
 
-{% elseif field == '_preview' %}
-
-{% if item.webPreview is defined %}
-<img class="item-preview" src="{{ asset(val | imagine_filter('maci_admin_list_preview')) }}" alt="{{ val }}" title="{{ val }}" />
-{% endif %}
-
-{% else %}
+{% elseif val|length  %}
 
 <span class="item-field-value">{{ val[:180] ~ (val|length < 180 ? '' : '...') }}</span>
+
+{% else  %}
+
+<span class="item-field-value">{{ val }}</span>
 
 {% endif %}
 

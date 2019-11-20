@@ -167,12 +167,12 @@ h4 {
     width: 50px;
 }
 
-.list-default tr.list-header > th.list-header.header-actions > span {
-    width: 140px;
+.list-default .list-header.header-actions > .list-title {
+    min-width: 188px;
 }
 
-.list-default tr.list-header > th.list-header-add > span,
-.list-default tr.list-header > th.list-header-remove > span {
+.list-default .list-header > .list-header-add > span,
+.list-default .list-header > .list-header-remove > span {
     width: 100px;
 }
 
