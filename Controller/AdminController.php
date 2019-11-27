@@ -937,7 +937,7 @@ class AdminController
 
         $fields = $this->getFields($map);
         $form = $this->createFormBuilder($object);
-        $isNew = !$this->getIdentifier($map);
+        $isNew = !$this->getIdentifierValue($map, $object);
 
         // if ($isFilterForm) {
         //     $form->setAction($this->generateUrl('maci_admin_view', array(
@@ -1057,6 +1057,9 @@ class AdminController
 
     public function getIdentifierValue($map, $item)
     {
+        if(!is_object($item)) {
+            return false;
+        }
         $identifier = $this->getIdentifier($map);
         $getter = $this->getGetterMethod($item, $identifier);
         if ($getter) {
