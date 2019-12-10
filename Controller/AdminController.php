@@ -401,6 +401,7 @@ class AdminController
     public function getDefaultEntityParams($map)
     {
         $action = $this->request->get('action');
+        // var_dump($this->getListFields($map));die();
         return array_merge($this->getDefaultParams(),array(
             'entity' => $map['name'],
             'entity_label' => $map['label'],
@@ -428,7 +429,8 @@ class AdminController
     {
         $relAction = $this->request->get('relAction');
         return array_merge($this->getDefaultEntityParams($map),array(
-            'fields' => $this->getListFields($relation),
+            'fields' => $this->getFields($relation),
+            'list_fields' => $this->getListFields($relation),
             'relation' => $relation['association'],
             'relation_label' => $relation['label'],
             'relation_section' => $relation['section'],
@@ -462,7 +464,8 @@ class AdminController
             $relAction = ( $this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add' );
         }
         return array_merge($this->getDefaultRelationParams($map,$relation),array(
-            'fields' => $this->getListFields($bridge),
+            'fields' => $this->getFields($bridge),
+            'list_fields' => $this->getListFields($bridge),
             'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
             'relation_action' => $relAction,
             'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
