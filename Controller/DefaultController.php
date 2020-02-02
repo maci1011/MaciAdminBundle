@@ -3,12 +3,12 @@
 namespace Maci\AdminBundle\Controller;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
-class DefaultController extends Controller
+class DefaultController extends AbstractController
 {
     private $om;
 

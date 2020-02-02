@@ -2,13 +2,13 @@
 
 namespace Maci\AdminBundle\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 use MAdminController;
 
-class ViewController extends Controller
+class ViewController extends AbstractController
 {
     public function indexAction(Request $request)
     {
