@@ -1,17 +1,22 @@
 
 {% if section and actions %}
 
-<nav class="navbar">
-<ul class="nav navbar-nav">
-<li>
-<span class="navbar-text">{% if id %}{{ entity_label }} [{{ id }}]{% else %}{{ entity_label }} Actions{% endif %}:</span>
-</li>
-{% for acn_label, acn_name in actions %}
-<li>
-<a href="{{ path('maci_admin_view', {'section': section,'entity': entity,'action': acn_name,'id': id}) }}">{{ acn_label }}</a>
-</li>
-{% endfor %}
-</ul>
+<nav class="navbar navbar-light bg-light">
+	<ul class="nav navbar-nav">
+
+		<li>
+			<span class="navbar-text">
+				{% if id %}{{ entity_label }} [{{ id }}]{% else %}{{ entity_label }} Actions{% endif %}:
+			</span>
+		</li>
+
+		{% for acn_label, acn_name in actions %}
+		<li class="nav-item">
+			<a class="nav-link" href="{{ path('maci_admin_view', {'section': section,'entity': entity,'action': acn_name,'id': id}) }}">{{ acn_label }}</a>
+		</li>
+		{% endfor %}
+
+	</ul>
 </nav>
 
 {% endif %}
