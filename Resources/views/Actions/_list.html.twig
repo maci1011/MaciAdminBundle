@@ -1,5 +1,5 @@
 
-{% set listLen = pager.pageList|length %}
+{% set listLen = pager is defined ? pager.pageList|length : list|length %}
 
 {% if listLen %}
 
