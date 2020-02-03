@@ -1,11 +1,11 @@
 
 {% if section and actions %}
 
-<nav class="navbar navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
 	<ul class="nav navbar-nav">
 
-		<li>
-			<span class="navbar-text">
+		<li class="nav-item">
+			<span class="navbar-text px-2">
 				{% if id %}{{ entity_label }} [{{ id }}]{% else %}{{ entity_label }} Actions{% endif %}:
 			</span>
 		</li>

@@ -29,6 +29,7 @@
 
 {% set fldLabel = (field|capitalize ~ 'Label') %}
 {% set fldValue = (field|capitalize ~ 'Value') %}
+{% set fldCamel = (field|replace({'_': ' '})|capitalize|replace({' ': ''})) %}
 
 
 {% if attribute(item, fldLabel) is defined %}
@@ -38,6 +39,10 @@
 {% elseif attribute(item, fldValue) is defined %}
 
 	{% set val = attribute(item, fldValue) %}
+
+{% elseif attribute(item, fldCamel) is defined %}
+
+	{% set val = attribute(item, fldCamel) %}
 
 {% elseif field == '_preview' %}
 
