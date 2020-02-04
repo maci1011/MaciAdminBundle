@@ -57,7 +57,7 @@
 
 {% if field == '_preview' %}
 
-{% if item.webPreview is defined %}
+{% if item.webPreview is defined and val|length %}
 <img class="item-preview" src="{{ asset(val | imagine_filter('maci_admin_list_preview')) }}" alt="{{ val }}" title="{{ val }}" />
 {% endif %}
 
