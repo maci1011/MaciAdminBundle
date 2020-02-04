@@ -407,20 +407,18 @@ class DefaultController extends AbstractController
 
         $params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
+        $pager = $this->mcm->getPager($relation, $list, array('redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))));
+
+        if (!$pager) {
+            return false;
+        }
+
+        $params['pager'] = $pager;
+        $params['relation_search'] = true;
+
         if ($this->mcm->isSortable($relation)) {
 
-            $params['list'] = $list;
-
-        } else {
-
-            $pager = $this->mcm->getPager($relation, $list, array('redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))));
-
-            if (!$pager) {
-                return false;
-            }
-
-            $params['pager'] = $pager;
-            $params['relation_search'] = true;
+            $pager->setLimit(0);
 
         }
 

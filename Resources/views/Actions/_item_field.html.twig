@@ -57,8 +57,8 @@
 
 {% if field == '_preview' %}
 
-{% if item.webPreview is defined and val|length %}
-<img class="item-preview" src="{{ asset(val | imagine_filter('maci_admin_list_preview')) }}" alt="{{ val }}" title="{{ val }}" />
+{% if item.webPreview is defined %}
+<img class="item-preview" src="{{ asset(item.webPreview | imagine_filter('maci_admin_list_preview')) }}" alt="{{ val }}" title="{{ val }}" />
 {% endif %}
 
 {% elseif val.timestamp is defined %}
