@@ -86,11 +86,19 @@
 
 <tbody>
 
+{% if pager is defined %}
+
 {% for item in pager.pageList %}
-
 	{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'listId': loop.index0} %}
-
 {% endfor %}
+
+{% else %}
+
+{% for item in list %}
+	{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'listId': loop.index0} %}
+{% endfor %}
+
+{% endif %}
 
 </tbody>
 
