@@ -246,13 +246,15 @@ class AdminController
             return $map['config']['actions'][$action]['template'];
         }
         $bundleName = $this->getBundleName($map);
-        $template = $bundleName . ':Mcm' . $this->getCamel($map['name']) . ':_' . $action . '.html.twig';
-        if ( $this->templating->exists($template) ) {
-            return $template;
-        }
-        $template = $bundleName . ':Mcm:_' . $action . '.html.twig';
-        if ( $this->templating->exists($template) ) {
-            return $template;
+        if($bundleName) {
+            $template = $bundleName . ':Mcm' . $this->getCamel($map['name']) . ':_' . $action . '.html.twig';
+            if ( $this->templating->exists($template) ) {
+                return $template;
+            }
+            $template = $bundleName . ':Mcm:_' . $action . '.html.twig';
+            if ( $this->templating->exists($template) ) {
+                return $template;
+            }
         }
         if (array_key_exists($action, $this->_defaults['actions']) &&
             $this->templating->exists($this->_defaults['actions'][$action]['template']) ) {
@@ -813,12 +815,12 @@ class AdminController
 
     public function getBundleName($map)
     {
-        return $this->getBundle($map)->getName();
+        return $bundle =$this->getBundle($map) ? $bundle->getName() : false;
     }
 
     public function getBundleNamespace($map)
     {
-        return $this->getBundle($map)->getNamespace();
+        return $bundle =$this->getBundle($map) ? $bundle->getNamespace() : false;
     }
 
     public function getClass($map)
@@ -921,13 +923,16 @@ class AdminController
         if (class_exists($form)) {
             return $this->createForm($form, $object);
         }
-        $form = ( $this->getBundleNamespace($map) . "\\Form\\Mcm" . $this->getCamel($map['section']) . "\\" . $this->getCamel($map['name']) . "Type" );
-        if (class_exists($form)) {
-            return $this->createForm($form, $object);
-        }
-        $form = ( $this->getBundleNamespace($map) . "\\Form\\Mcm\\" . $this->getCamel($map['name']) . "Type" );
-        if (class_exists($form)) {
-            return $this->createForm($form, $object);
+        $bundleNamespace = $this->getBundleNamespace($map);
+        if($bundleNamespace) {
+            $form = ( $bundleNamespace . "\\Form\\Mcm" . $this->getCamel($map['section']) . "\\" . $this->getCamel($map['name']) . "Type" );
+            if (class_exists($form)) {
+                return $this->createForm($form, $object);
+            }
+            $form = ( $bundleNamespace . "\\Form\\Mcm\\" . $this->getCamel($map['name']) . "Type" );
+            if (class_exists($form)) {
+                return $this->createForm($form, $object);
+            }
         }
         return $this->generateForm($map, $object);
     }
