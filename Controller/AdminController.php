@@ -815,12 +815,14 @@ class AdminController
 
     public function getBundleName($map)
     {
-        return $bundle =$this->getBundle($map) ? $bundle->getName() : false;
+        $bundle = $this->getBundle($map);
+        return $bundle ? $bundle->getName() : false;
     }
 
     public function getBundleNamespace($map)
     {
-        return $bundle =$this->getBundle($map) ? $bundle->getNamespace() : false;
+        $bundle = $this->getBundle($map);
+        return $bundle ? $bundle->getNamespace() : false;
     }
 
     public function getClass($map)
