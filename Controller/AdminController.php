@@ -985,7 +985,7 @@ class AdminController
             }
             if (!in_array(
                 $fieldMappings[$field]['type'],
-                ['text', 'string', 'decimal', 'integer', 'boolean', 'datetime']
+                ['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime']
             )) {
                 continue;
             }
