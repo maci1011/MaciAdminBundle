@@ -980,6 +980,9 @@ class AdminController
             if (in_array($field, array('updated', 'created'))) {
                 continue;
             }
+            if (array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id']) {
+                continue;
+            }
             if (!array_key_exists('type', $fieldMappings[$field])) {
                 continue;
             }
@@ -1168,16 +1171,23 @@ class AdminController
         $obj_list = array();
         $ids_list = $this->getListIdentifiers($map, $list);
         $repo = $this->getRepository($map);
-        foreach ($ids as $_id) {
-            $_id = (int) $_id;
-            if (!$_id) {
-                continue;
+        if(count($ids_list)) {
+            foreach ($ids as $_id) {
+                if(is_int($ids_list[0])) {
+                    $_id = (int) $_id;
+                } else if(is_float($ids_list[0])) {
+                    $_id = (float) $_id;
+                }
+                if (!$_id) {
+                    $this->session->getFlashBag()->add('error', 'Id of Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
+                    continue;
+                }
+                if (!in_array($_id, $ids_list)) {
+                    $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
+                    continue;
+                }
+                $obj_list[] = $list[array_search($_id, $ids_list)];
             }
-            if (!in_array($_id, $ids_list)) {
-                $this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
-                continue;
-            }
-            $obj_list[] = $list[array_search($_id, $ids_list)];
         }
         return $obj_list;
     }
