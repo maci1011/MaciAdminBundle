@@ -1,29 +1,25 @@
 
 {% if uploader %}
 
-<form class="maci_uploader_form" action="{{ uploader }}">
+<div class="uploader" data-url="{{ uploader }}">
 
-	<div class="form-group">
+	<div class="uploader-wrapper input">
 
-		<label for="file_uploader">File Uploader</label>
+		<label for="uploader-file-input">File Uploader</label><br/>
 
-		<input id="file_uploader" class="uploader_input" name="file" type="file" multiple="multiple" />
+		<input id="uploader-file-input" class="uploader-input" name="file" type="file" multiple="multiple" />
 
-	</div>
-
-	<div class="form-group">
-
-		<button class="btn btn-default uploader_select">Select Files</button>
+		<button class="btn btn-default uploader-select">Select Files</button>
 
 	</div>
 
-	<div class="uploader_list"></div>
+	<div class="uploader-wrapper list"></div>
 
-	<div class="form-group">
+	<div class="uploader-wrapper actions">
 
-		<button class="btn btn-default uploader_reset">Reset</button>
+		<button class="btn btn-default uploader-reset">Reset</button>
 
-		<button class="btn btn-primary uploader_upload">Upload Files</button>
+		<button class="btn btn-primary uploader-upload">Upload Files</button>
 
 	</div>
 

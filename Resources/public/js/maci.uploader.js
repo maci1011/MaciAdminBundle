@@ -27,7 +27,7 @@ var maciUploader = function (form, options) {
 		$.ajax({
 			type: 'POST',
 			data: data,
-			url: _form.attr('action'),
+			url: _form.attr('data-url'),
 			cache: false,
 			dataType: 'json',
 			processData: false, // Don't process the files
@@ -145,11 +145,11 @@ var maciUploader = function (form, options) {
 	set: function(form, options) {
 		_options = $.isArray(options) ? $.merge(_defaults, options) : _defaults;
 		_form = form;
-		_input = $(_form).find('.uploader_input');
-		_list = $(_form).find('.uploader_list');
-		_select = $(_form).find('.uploader_select');
-		_reset = $(_form).find('.uploader_reset');
-		_upload = $(_form).find('.uploader_upload');
+		_input = $(_form).find('.uploader-input');
+		_select = $(_form).find('.uploader-select');
+		_list = $(_form).find('.uploader-wrapper.list');
+		_reset = $(_form).find('.uploader-reset');
+		_upload = $(_form).find('.uploader-upload');
 		_input.hide().on('change', _obj.setList);
 		_select.click(function(e) {
 			e.preventDefault();

@@ -9,7 +9,7 @@ $(document).ready(function(e) {
 		}, ( 100 * i + 3000 ));
 	});
 
-	$('.maci_uploader_form').each(function() {
+	$('.uploader').each(function() {
 		maciUploader($(this));
 	});
 
