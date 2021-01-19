@@ -139,24 +139,29 @@ class AdminController
 
 		$this->_defaults = $this->getDefaultConfig(['config' => (array_key_exists('config', $this->config) ? $this->config['config'] : [])], $this->_defaults);
 
-		foreach ($this->config['sections'] as $name => $section) {
+		foreach ($this->config['sections'] as $name => $section)
+		{
 			if (!array_key_exists('entities', $section) || !count($section['entities'])) continue;
 			// Section Settings
 			$section_config = $this->getDefaultConfig($section, $this->_defaults);
 			$section['authorized'] = false;
-			foreach ($section_config['roles'] as $role) {
-				if ($this->authorizationChecker->isGranted($role)) {
+			foreach ($section_config['roles'] as $role)
+			{
+				if ($this->authorizationChecker->isGranted($role))
+				{
 					$section['authorized'] = true;
 					break;
 				}
 			}
 			// Section Entities
-			$entities = []; 
-			foreach ($section['entities'] as $entity_name => $entity) {
+			$entities = [];
+			foreach ($section['entities'] as $entity_name => $entity)
+			{
 				$entity_config = $this->getDefaultConfig($entity, $section_config);
 				$entity['authorized'] = false;
 				foreach ($entity_config['roles'] as $role) {
-					if ($this->authorizationChecker->isGranted($role)) {
+					if ($this->authorizationChecker->isGranted($role))
+					{
 						$section['authorized'] = true;
 						$entity['authorized'] = true;
 						break;
@@ -167,7 +172,8 @@ class AdminController
 				$entity['section'] = $name;
 				$entity['name'] = $entity_name;
 				$entity['class'] = $this->getClass($entity);
-				if (!array_key_exists('label', $entity)) {
+				if (!array_key_exists('label', $entity))
+				{
 					$entity['label'] = $this->generateLabel($entity_name);
 				}
 				// Add Entity
@@ -177,7 +183,8 @@ class AdminController
 			//  section properties
 			$section['name'] = $name;
 			$section['entities'] = $entities;
-			if (!array_key_exists('label', $section)) {
+			if (!array_key_exists('label', $section))
+			{
 				$section['label'] = $this->generateLabel($name);
 			}
 			// Add Section
@@ -369,6 +376,19 @@ class AdminController
 			}
 		}
 		return false;
+	}
+
+	public function getLink($section)
+	{
+		if ($this->hasLinks($section)) {
+			return $this->_sections[$section]['link'];
+		}
+		return [];
+	}
+
+	public function hasLinks($section)
+	{
+		return array_key_exists('link', $this->_sections[$section]);
 	}
 
 /*

@@ -67,6 +67,13 @@ class AdminMenuBuilder
 				));
 			}
 
+			foreach ($this->mcm->getLink($section) as $name => $link) {
+				$menu->addChild($this->mcm->generateLabel($name), array(
+				    'route' => $link['route'],
+				    // 'routeParameters' => []
+				));
+			}
+
 		}
 
 		return $menu;

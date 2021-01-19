@@ -1,20 +1,20 @@
 
-{% extends "MaciAdminBundle::base.html.twig" %}
+{% extends "@MaciAdmin/base.html.twig" %}
 
 
 {% block javascripts %}
 
-    {{ parent() }}
+	{{ parent() }}
 
-    <script>
+	<script>
 
-    $("#menu-toggle").click(function(e) {
-        e.preventDefault();
-        $("#wrapper").toggleClass("toggled");
-        $(this).toggleClass('active');
-    });
+	$("#menu-toggle").click(function(e) {
+		e.preventDefault();
+		$("#wrapper").toggleClass("toggled");
+		$(this).toggleClass('active');
+	});
 
-    </script>
+	</script>
 
 {% endblock %}
 
@@ -27,39 +27,42 @@
 <div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
 
 <div class="container">
-    <div class="navbar-header">
-        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-        </button>
-        {% block menu_toggle %}
-        {% if app.request.get('section') %}
-        <span id="menu-toggle" class="active">
-            <span class="glyphicon glyphicon-th-list"></span>
-            {{ app.request.get('section')|upper }}
-        </span>
-        {% endif %}
-        {% endblock menu_toggle %}
-    </div>
-    <div class="collapse navbar-collapse">
-        {% block top_menu %}
-        <nav>
-            {{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}
-        </nav>
-        <nav>
-            <ul class="nav navbar-nav navbar-right">
-                <li>
-                    <span class="navbar-text">Locale: {{ app.request.locale|upper }}</span>
-                </li>
-            </ul>
-        </nav>
-
-        {% include "MaciAdminBundle:Default:_navbar_top.html.twig" %}
-
-        {% endblock top_menu %}
-    </div>
+	<div class="navbar-header">
+		<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		</button>
+		{% block menu_toggle %}
+		{% if app.request.get('section') %}
+		<span id="menu-toggle" class="active">
+			<span class="glyphicon glyphicon-th-list"></span>
+			{{ app.request.get('section')|upper }}
+		</span>
+		{% else %}
+		<span id="menu-toggle" class="active">
+			<span class="glyphicon glyphicon-th-list"></span>
+			MENU
+		</span>
+		{% endif %}
+		{% endblock menu_toggle %}
+	</div>
+	<div class="collapse navbar-collapse">
+		{% block top_menu %}
+		<nav>
+			{{ knp_menu_render('admin_sections', {'currentClass': 'active'}) }}
+		</nav>
+		<nav>
+			<ul class="nav navbar-nav navbar-right">
+				<li>
+					<span class="navbar-text">Locale: {{ app.request.locale|upper }}</span>
+				</li>
+			</ul>
+		</nav>
+		{% include "@MaciAdmin/Default/_navbar_top.html.twig" %}
+		{% endblock top_menu %}
+	</div>
 </div>
 
 </div>
@@ -73,21 +76,27 @@
 <!-- Sidebar -->
 <div id="sidebar-wrapper">
 
-    <div id="mainMenu">
+	<div id="mainMenu">
 
-        {% block main_menu %}
+		{% block main_menu %}
 
-        {% if app.request.get('section') %}
+		{% if app.request.get('section') %}
 
-        <h3>{{ app.request.get('section')|upper }}</h3>
+		<h3>{{ app.request.get('section')|upper }}</h3>
 
-        <nav>{{ knp_menu_render('admin_entities', {'currentClass': 'active'}) }}</nav>
+		<nav>{{ knp_menu_render('admin_entities', {'currentClass': 'active'}) }}</nav>
 
-        {% endif %}
+		{% else %}
 
-        {% endblock %}
+		<h3>User</h3>
 
-    </div>
+		<nav>{{ knp_menu_render('user_left', {'currentClass': 'active'}) }}</nav>
+
+		{% endif %}
+
+		{% endblock %}
+
+	</div>
 
 </div>
 <!-- /#sidebar-wrapper -->
@@ -99,21 +108,21 @@
 
 <div id="main" class="container-fluid">
 
-    {% block container %}
+	{% block container %}
 
-    <div id="pathbar" class="content-navbar container-fluid">
+	<div id="pathbar" class="content-navbar container-fluid">
 
-        {% block pathBar %}{% endblock %}
+		{% block pathBar %}{% endblock %}
 
-    </div>
+	</div>
 
-    <div id="mainContainer">
+	<div id="mainContainer">
 
-        {% block content %}{% endblock %}
+		{% block content %}{% endblock %}
 
-    </div>
+	</div>
 
-    {% endblock container %}
+	{% endblock container %}
 
 </div>
 
