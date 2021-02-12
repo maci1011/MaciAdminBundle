@@ -14,6 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\LocaleType;
 use Symfony\Component\Form\FormFactory;
 use Symfony\Component\Form\FormRegistry;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -1034,22 +1035,28 @@ class AdminController
 			// }
 			// else { vvv }
 			
-			$method = ('get' . ucfirst($field) . 'Array');
-			if ( method_exists($object, $method) ) {
+			$arrMethod = ('get' . ucfirst($field) . 'Array');
+
+			if (method_exists($object, $arrMethod))
+			{
 				$form->add($field, ChoiceType::class, array(
 					'empty_data' => '',
-					'choices' => call_user_func_array(array($object, $method), array())
+					'choices' => call_user_func_array(array($object, $arrMethod), array())
 				));
-			} else if ( $isUploadable && $field === $upload_path_field ) {
+			}
+			else if ($isUploadable && $field === $upload_path_field)
+			{
 				$form->add('file', FileType::class, array('required' => false));
-			} else {
+			}
+			else if ($field === 'locale')
+			{
+				$form->add('locale', LocaleType::class);
+			}
+			else
+			{
 				$form->add($field);
 			}
 		}
-
-		$form->add('reset', ResetType::class, array(
-			'label'=>'Reset Form'
-		));
 
 		if ($isFilterForm) {
 			$form->add('set_filters', SubmitType::class, array(
@@ -1078,6 +1085,10 @@ class AdminController
 				'attr'=>array('class'=>'btn btn-primary')
 			));
 		}
+
+		$form->add('reset', ResetType::class, array(
+			'label'=>'Reset Form'
+		));
 
 		return $form->getForm();
 	}
