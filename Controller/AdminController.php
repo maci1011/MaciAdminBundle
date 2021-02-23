@@ -85,6 +85,9 @@ class AdminController
 		$this->router = $router;
 		$this->config = $config;
 
+		$controllerMap = false;
+		$controllerAction = false;
+
 		$this->initConfig();
 	}
 
@@ -269,6 +272,77 @@ class AdminController
 			return $this->_defaults['actions'][$action]['template'];
 		}
 		return 'MaciAdminBundle:Actions:template_not_found.html.twig';
+	}
+
+	// --- Check if User Auths for the current Route
+	public function checkRoute()
+	{
+		$sections = $this->getAuthSections();
+		if (!count($sections)) {
+			return $this->generateUrl('homepage');
+		}
+		$section = $this->getCurrentSection();
+		if (!$section) {
+			return $this->generateUrl('maci_admin_view', array('section'=>$sections[0]));
+		}
+		if (!in_array($section, $sections)) {
+			$this->request->getSession()->getFlashBag()->add('error', 'Section [' . $section . '] not Found.');
+			return $this->generateUrl('maci_admin_view', array('section'=>$sections[0]));
+		}
+		$entity = $this->request->get('entity');
+		if (!$entity || !$this->hasEntity($section, $entity)) {
+			if ($this->hasSectionDashboard($section)) {
+				return $this->render($this->getSectionDashboard($section));
+			}
+			$entities = array_keys($this->getEntities($section));
+			return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entities[0],'action'=>'list'));
+		}
+		$_entity = $this->getCurrentEntity();
+		$entity = $_entity['name'];
+		$action = $this->getCurrentAction();
+		if (!$action) {
+			return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list'));
+		}
+		if ($action === 'relations') {
+			if (!$this->getCurrentItem()) {
+				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list'));
+			}
+			$relation = $this->request->get('relation');
+			if (!$relation) {
+				$relations = $this->getAssociations($_entity);
+				$relAction = $this->getRelationDefaultAction($_entity, $relation[0]);
+				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relations[0],'relAction'=>$relAction));
+			}
+			$relAction = $this->request->get('relAction');
+			if (!$relAction || !in_array($relAction, $this->getRelationActions($section,$entity,$relation))) {
+				$_entity = $this->getEntity($section, $entity);
+				$relAction = $this->getRelationDefaultAction($_entity, $relation);
+				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relation,'relAction'=>$relAction));
+			}
+			$this->controllerAction = $relAction;
+		}
+		else {
+			$this->controllerAction = $action;
+		}
+		return true;
+	}
+
+	public function getControllerMap()
+	{
+		if ($this->getControllerAction() === 'relations') {
+			return $this->getCurrentRelation();
+		}
+		return $this->getCurrentEntity();
+	}
+
+	private $controllerAction;
+
+	public function getControllerAction()
+	{
+		if ($this->getControllerAction() === 'relations') {
+			return $this->getCurrentRelationAction();
+		}
+		return $this->getCurrentAction();
 	}
 
 /*
@@ -595,6 +669,22 @@ class AdminController
 		}
 		$this->current_action = false;
 		$this->session->getFlashBag()->add('error', 'Action [' . $action . '] for [' . $entity['label'] . '] not found.');
+		return false;
+	}
+
+	public function getCurrentRelationAction()
+	{
+		if (isset($this->current_relation_action)) return $this->current_relation_action;
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return false;
+		$action = $this->request->get('relAction');
+		if (!$action) return false;
+		if ($this->hasAction($relation, $action)) {
+			$this->current_relation_action = $action;
+			return $action;
+		}
+		$this->current_relation_action = false;
+		$this->session->getFlashBag()->add('error', 'Action [' . $action . '] for relation [' . $relation['label'] . '] not found.');
 		return false;
 	}
 
