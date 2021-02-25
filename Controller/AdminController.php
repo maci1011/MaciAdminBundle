@@ -277,17 +277,17 @@ class AdminController
 	// --- Check if User Auths for the current Route
 	public function checkRoute()
 	{
-		$sections = $this->getAuthSections();
-		if (!count($sections)) {
+		$this->_auth_sections = $this->getAuthSections();
+		if (!count($this->_auth_sections)) {
 			return $this->generateUrl('homepage');
 		}
 		$section = $this->getCurrentSection();
 		if (!$section) {
-			return $this->generateUrl('maci_admin_view', array('section'=>$sections[0]));
+			return $this->generateUrl('maci_admin_view', array('section'=>$this->_auth_sections[0]));
 		}
-		if (!in_array($section, $sections)) {
+		if (!in_array($section, $this->_auth_sections)) {
 			$this->request->getSession()->getFlashBag()->add('error', 'Section [' . $section . '] not Found.');
-			return $this->generateUrl('maci_admin_view', array('section'=>$sections[0]));
+			return $this->generateUrl('maci_admin_view', array('section'=>$this->_auth_sections[0]));
 		}
 		$entity = $this->request->get('entity');
 		if (!$entity || !$this->hasEntity($section, $entity)) {
@@ -319,30 +319,25 @@ class AdminController
 				$relAction = $this->getRelationDefaultAction($_entity, $relation);
 				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relation,'relAction'=>$relAction));
 			}
-			$this->controllerAction = $relAction;
-		}
-		else {
-			$this->controllerAction = $action;
 		}
 		return true;
 	}
 
 	public function getControllerMap()
 	{
-		if ($this->getControllerAction() === 'relations') {
+		if ($this->getCurrentAction() === 'relations') {
 			return $this->getCurrentRelation();
 		}
 		return $this->getCurrentEntity();
 	}
 
-	private $controllerAction;
-
 	public function getControllerAction()
 	{
-		if ($this->getControllerAction() === 'relations') {
+		$action = $this->getCurrentAction();
+		if ($action === 'relations') {
 			return $this->getCurrentRelationAction();
 		}
-		return $this->getCurrentAction();
+		return $action;
 	}
 
 /*
@@ -656,52 +651,17 @@ class AdminController
 	------------> Current Route Getters
 */
 
-	public function getCurrentAction()
+	public function getCurrentSection()
 	{
-		if (isset($this->current_action)) return $this->current_action;
-		$entity = $this->getCurrentEntity();
-		if (!$entity) return false;
-		$action = $this->request->get('action');
-		if (!$action) return false;
-		if ($this->hasAction($entity, $action)) {
-			$this->current_action = $action;
-			return $action;
+		if (isset($this->current_section)) return $this->current_section;
+		$section = $this->request->get('section');
+		if (!$section) return false;
+		if ($this->isAuthSection($section)) {
+			$this->current_section = $section;
+			return $section;
 		}
-		$this->current_action = false;
-		$this->session->getFlashBag()->add('error', 'Action [' . $action . '] for [' . $entity['label'] . '] not found.');
-		return false;
-	}
-
-	public function getCurrentRelationAction()
-	{
-		if (isset($this->current_relation_action)) return $this->current_relation_action;
-		$relation = $this->getCurrentRelation();
-		if (!$relation) return false;
-		$action = $this->request->get('relAction');
-		if (!$action) return false;
-		if ($this->hasAction($relation, $action)) {
-			$this->current_relation_action = $action;
-			return $action;
-		}
-		$this->current_relation_action = false;
-		$this->session->getFlashBag()->add('error', 'Action [' . $action . '] for relation [' . $relation['label'] . '] not found.');
-		return false;
-	}
-
-	public function getCurrentBridge()
-	{
-		if (isset($this->current_bridge)) return $this->current_bridge;
-		$relation = $this->getCurrentRelation();
-		if (!$relation) return false;
-		$_bridge = $this->request->get('bridge');
-		if (!$_bridge) return false;
-		$bridge = $this->getBridge($relation, $_bridge);
-		if ($bridge) {
-			$this->current_bridge = $bridge;
-			return $bridge;
-		}
-		$this->current_bridge = false;
-		$this->session->getFlashBag()->add('error', 'Bridge [' . $this->request->get('bridge') . '] in [' . $relation['label'] . '] not found.');
+		$this->current_section = false;
+		$this->session->getFlashBag()->add('error', 'Section [' . $section . '] not found.');
 		return false;
 	}
 
@@ -756,17 +716,52 @@ class AdminController
 		return false;
 	}
 
-	public function getCurrentSection()
+	public function getCurrentAction()
 	{
-		if (isset($this->current_section)) return $this->current_section;
-		$section = $this->request->get('section');
-		if (!$section) return false;
-		if ($this->isAuthSection($section)) {
-			$this->current_section = $section;
-			return $section;
+		if (isset($this->current_action)) return $this->current_action;
+		$entity = $this->getCurrentEntity();
+		if (!$entity) return false;
+		$action = $this->request->get('action');
+		if (!$action) return false;
+		if ($this->hasAction($entity, $action)) {
+			$this->current_action = $action;
+			return $action;
 		}
-		$this->current_section = false;
-		$this->session->getFlashBag()->add('error', 'Section [' . $section . '] not found.');
+		$this->current_action = false;
+		$this->session->getFlashBag()->add('error', 'Action [' . $action . '] for [' . $entity['label'] . '] not found.');
+		return false;
+	}
+
+	public function getCurrentRelationAction()
+	{
+		if (isset($this->current_relation_action)) return $this->current_relation_action;
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return false;
+		$action = $this->request->get('relAction');
+		if (!$action) return false;
+		if ($this->hasAction($relation, $action)) {
+			$this->current_relation_action = $action;
+			return $action;
+		}
+		$this->current_relation_action = false;
+		$this->session->getFlashBag()->add('error', 'Action [' . $action . '] for relation [' . $relation['label'] . '] not found.');
+		return false;
+	}
+
+	public function getCurrentBridge()
+	{
+		if (isset($this->current_bridge)) return $this->current_bridge;
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return false;
+		$_bridge = $this->request->get('bridge');
+		if (!$_bridge) return false;
+		$bridge = $this->getBridge($relation, $_bridge);
+		if ($bridge) {
+			$this->current_bridge = $bridge;
+			return $bridge;
+		}
+		$this->current_bridge = false;
+		$this->session->getFlashBag()->add('error', 'Bridge [' . $this->request->get('bridge') . '] in [' . $relation['label'] . '] not found.');
 		return false;
 	}
 
@@ -787,6 +782,8 @@ class AdminController
 		if ($this->isUploadable($entity)) {
 			$actions[] = 'uploader';
 		}
+
+		$actions[] = 'json';
 
 		return $actions;
 	}

@@ -48,7 +48,7 @@ class ViewController extends AbstractController
 
 		$params = call_user_func_array(array($controller, $callAction), array());
 
-		if ($params===false) {
+		if ($params === false) {
 			$request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');
 			return $this->redirect($this->generateUrl('maci_admin_not_found'));
 		}
@@ -67,9 +67,11 @@ class ViewController extends AbstractController
 		}
 
 		if ($request->isXmlHttpRequest()) {
-			$params['template'] = (array_key_exists('template',$params) ? $this->renderView($params['template'], array(
-				'params' => $params
-			)) : null);
+			if (array_key_exists('template',$params)) {
+				$params['template'] = $this->renderView($params['template'], array(
+					'params' => $params
+				));
+			}
 			return new JsonResponse($params, 200);
 		}
 
@@ -85,6 +87,7 @@ class ViewController extends AbstractController
 	{
 		$admin = $this->container->get(AdminController::class);
 		$sections = $admin->getAuthSections();
+
 		$id = false;
 		$section = false;
 		$actions = false;
