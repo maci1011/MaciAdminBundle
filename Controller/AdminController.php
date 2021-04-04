@@ -314,7 +314,8 @@ class AdminController
 				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relations[0],'relAction'=>$relAction));
 			}
 			$relAction = $this->request->get('relAction');
-			if (!$relAction || !in_array($relAction, $this->getRelationActions($section,$entity,$relation))) {
+			$_relation = $this->getCurrentRelation();
+			if (!$relAction || !in_array($relAction, $this->getRelationActions($_relation))) {
 				$_entity = $this->getEntity($section, $entity);
 				$relAction = $this->getRelationDefaultAction($_entity, $relation);
 				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relation,'relAction'=>$relAction));
@@ -699,23 +700,6 @@ class AdminController
 		return false;
 	}
 
-	public function getCurrentRelation()
-	{
-		if (isset($this->current_relation)) return $this->current_relation;
-		$entity = $this->getCurrentEntity();
-		if (!$entity) return false;
-		$_relation = $this->request->get('relation');
-		if (!$_relation) return false;
-		$relation = $this->getRelation($entity, $_relation);
-		if ($relation) {
-			$this->current_relation = $relation;
-			return $relation;
-		}
-		$this->current_relation = false;
-		$this->session->getFlashBag()->add('error', 'Relation [' . $_relation . '] for [' . $entity['label'] . '] not found.');
-		return false;
-	}
-
 	public function getCurrentAction()
 	{
 		if (isset($this->current_action)) return $this->current_action;
@@ -732,6 +716,23 @@ class AdminController
 		return false;
 	}
 
+	public function getCurrentRelation()
+	{
+		if (isset($this->current_relation)) return $this->current_relation;
+		$entity = $this->getCurrentEntity();
+		if (!$entity) return false;
+		$relation = $this->request->get('relation');
+		if (!$relation) return false;
+		$relation = $this->getRelation($entity, $relation);
+		if ($relation) {
+			$this->current_relation = $relation;
+			return $relation;
+		}
+		$this->current_relation = false;
+		$this->session->getFlashBag()->add('error', 'Relation [' . $relation['label'] . '] for [' . $entity['label'] . '] not found.');
+		return false;
+	}
+
 	public function getCurrentRelationAction()
 	{
 		if (isset($this->current_relation_action)) return $this->current_relation_action;
@@ -739,7 +740,7 @@ class AdminController
 		if (!$relation) return false;
 		$action = $this->request->get('relAction');
 		if (!$action) return false;
-		if ($this->hasAction($relation, $action)) {
+		if ($this->hasRelationAction($relation, $action)) {
 			$this->current_relation_action = $action;
 			return $action;
 		}
@@ -825,7 +826,15 @@ class AdminController
 
 	public function getRelationActions($entity)
 	{
-		return array('list', 'show', 'add', 'set', 'bridge', 'remove', 'uploader', 'reorder');
+		return array_merge(
+			$this->getActions($entity),
+			['bridge']
+		);
+	}
+
+	public function hasRelationAction($entity, $action)
+	{
+		return in_array($action, $this->getRelationActions($entity));
 	}
 
 /*
