@@ -45,6 +45,17 @@
 
 	{% if type == 'list' %}
 	<td class="list-item-actions">
+	{% if trash %}
+
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'trash', 'id': pager.identifier(listId)}) }}">
+			<span class="glyphicon glyphicon-list" aria-hidden="true"></span> Restore
+		</a>
+
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">
+			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
+		</a>
+
+	{% else %}
 
 		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'show', 'id': pager.identifier(listId)}) }}">
 			<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Show
@@ -54,10 +65,20 @@
 			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
 		</a>
 
+	{% if hasTrash %}
+
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'trash', 'id': pager.identifier(listId)}) }}">
+			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Trash
+		</a>
+
+	{% else %}
+
 		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
 		</a>
 
+	{% endif %}
+	{% endif %}
 	</td>
 	{% elseif type == 'relation' %}
 	{% if relation_entity_root_section != '___unset___' %}

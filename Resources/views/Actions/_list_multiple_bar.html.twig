@@ -33,14 +33,41 @@
 	</li>
 
 	{% if type == 'list' %}
+	{% if trash %}
 
 	<li>
-		<a class="action remove" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
+		<a class="action remove" confirm="Are you sure to restore %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'trash' }) }}">
+			<span class="glyphicon glyphicon-list"></span>
+			Restore
+		</a>
+	</li>
+
+	<li>
+		<a class="action trash" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
 			<span class="glyphicon glyphicon-remove"></span>
 			Remove
 		</a>
 	</li>
 
+	{% elseif hasTrash %}
+
+	<li>
+		<a class="action trash" confirm="Are you sure to trash %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'trash' }) }}">
+			<span class="glyphicon glyphicon-trash"></span>
+			Trash
+		</a>
+	</li>
+
+	{% else %}
+
+	<li>
+		<a class="action trash" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
+			<span class="glyphicon glyphicon-remove"></span>
+			Remove
+		</a>
+	</li>
+
+	{% endif %}
 	{% elseif type == 'add' %}
 
 	<li>

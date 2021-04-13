@@ -3,10 +3,14 @@
 
 <form class="admin-form form-remove container-fluid" action="{{ form.vars.action }}" method="post">
 
-	{% if action != 'relations' or (action == 'relations' and rm == 'item') %}
-	<h3>Are you sure to delete this item?</h3>
+	{% if trashing and trashed %}
+	<h3>Are you sure to restore this item?</h3>
+	{% elseif trashing %}
+	<h3>Are you sure to trash this item?</h3>
+	{% elseif action != 'relations' or (action == 'relations' and rm == 'item') %}
+	<h3>Are you sure to remove this item?</h3>
 	{% else %}
-	<h3>Are you sure to delete this association?</h3>
+	<h3>Are you sure to remove this association?</h3>
 	{% endif %}
 
 	<p>
@@ -21,7 +25,21 @@
 
 	</p>
 
-    {{ form_rest(form) }}
+    {{ form_widget(form._token) }}
+
+    <div class="form-group">
+
+    	<button type="submit" id="form_remove" name="form[remove]" class="btn-danger btn">
+		{% if trashing and trashed %}
+    		Restore
+		{% elseif trashing %}
+			Trash
+		{% else %}
+    		Remove
+		{% endif %}
+    	</button>
+
+    </div>
 
 </form>
 

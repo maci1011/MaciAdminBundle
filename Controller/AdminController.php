@@ -449,17 +449,17 @@ class AdminController
 		return false;
 	}
 
-	public function getLink($section)
+	public function getPages($section)
 	{
-		if ($this->hasLinks($section)) {
-			return $this->_sections[$section]['link'];
+		if ($this->hasPages($section)) {
+			return $this->_sections[$section]['pages'];
 		}
 		return [];
 	}
 
-	public function hasLinks($section)
+	public function hasPages($section)
 	{
-		return array_key_exists('link', $this->_sections[$section]);
+		return array_key_exists('pages', $this->_sections[$section]);
 	}
 
 /*
@@ -501,6 +501,7 @@ class AdminController
 			'action' =>  $action,
 			'action_label' => $this->generateLabel($action),
 			'fields' => $this->getFields($map),
+			'hasTrash' => $this->hasTrash($map),
 			'list_fields' => $this->getListFields($map),
 			'id' => $this->request->get('id'),
 			'item' => $this->getCurrentItem(),
@@ -1222,17 +1223,47 @@ class AdminController
 		return $this->getRepository($map)->findOneBy([$this->getIdentifier($map) => $id]);
 	}
 
+	public function trashItems($map, $list)
+	{
+		if (!$this->hasTrash($map) || !count($list)) return false;
+		foreach ($list as $item) {
+			$val = $this->isItemTrashed($map, $item);
+			$remover = $this->getRemoverMethod($item, $this->getTrashField($map));
+			if ($remover) {
+				call_user_func_array([$item, $remover], [!$val]);
+				$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] ' . ($val ? 'restored' : 'moved to trash.'));
+			} else {
+				$this->session->getFlashBag()->add('error', 'Remover setter method for Map [' . $map['label'] . '] not found.');
+				return false;
+			}
+		}
+		$this->om->flush();
+		return true;
+	}
+
+	public function trashItemsFromRequestIds($map, $list)
+	{
+		return $this->trashItems($map, $this->selectItemsFromRequestIds($map,$list));
+	}
+
+	public function isItemTrashed($map, $item)
+	{
+		if (!$this->hasTrash($map)) return false;
+		$remover = $this->getRemoverMethod($item, $this->getTrashField($map), 'get');
+		if ($remover) {
+			$val = call_user_func_array([$item, $remover], []);
+			return $val;
+		}
+		$this->session->getFlashBag()->add('error', 'Remover getter method for Map [' . $map['label'] . '] not found.');
+		return null;
+	}
+
 	public function removeItems($map, $list)
 	{
 		if (!count($list)) return false;
 		foreach ($list as $item) {
-			if (method_exists($item, 'setRemoved')) {
-				$item->setRemoved(true);
-				$this->session->getFlashBag()->add('success', 'Item [' . $item . '] for [' . $map['label'] . '] moved to trash.');
-			} else {
-				$this->om->remove($item);
-				$this->session->getFlashBag()->add('success', 'Item [' . $item . '] for [' . $map['label'] . '] removed.');
-			}
+			$this->om->remove($item);
+			$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] removed.');
 		}
 		$this->om->flush();
 		return true;
@@ -1497,18 +1528,17 @@ class AdminController
 
 	public function hasTrash($map)
 	{
-		if ($this->getConfigKey($map, 'trash') && in_array($this->getConfigKey($map, 'trash_field'), $this->getFields($map))) {
-			return true;
-		}
-		return false;
+		return ($this->getConfigKey($map, 'trash') && in_array($this->getConfigKey($map, 'trash_field'), $this->getFields($map)));
+	}
+
+	public function getTrashField($map)
+	{
+		return $this->hasTrash($map) ? $this->getConfigKey($map, 'trash_field') : false;
 	}
 
 	public function isUploadable($map)
 	{
-		if ($this->getConfigKey($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getConfigKey($map, 'upload_field'))) {
-			return true;
-		}
-		return false;
+		return ($this->getConfigKey($map, 'uploadable') && $this->getSetterMethod($this->getNewItem($map), $this->getConfigKey($map, 'upload_field')));
 	}
 
 /*
@@ -1715,6 +1745,9 @@ class AdminController
 
 	public function searchMethod($object,$field,$prefix = null)
 	{
+		if (method_exists($object, $field)) {
+			return $field;
+		}
 		$methodName = ( $prefix . ucfirst($field) );
 		if (method_exists($object, $methodName)) {
 			return $methodName;
@@ -1748,29 +1781,29 @@ class AdminController
 		return false;
 	}
 
-	public function getGetterMethod($object,$field)
+	public function getGetterMethod($object,$field,$prefix='get')
 	{
-		return $this->searchMethod($object,$field,'get');
+		return $this->searchMethod($object,$field,$prefix);
 	}
 
-	public function getIsMethod($object,$field)
+	public function getIsMethod($object,$field,$prefix='is')
 	{
-		return $this->searchMethod($object,$field,'is');
+		return $this->searchMethod($object,$field,$prefix);
 	}
 
-	public function getSetterMethod($object,$field)
+	public function getSetterMethod($object,$field,$prefix='set')
 	{
-		return $this->searchMethod($object,$field,'set');
+		return $this->searchMethod($object,$field,$prefix);
 	}
 
-	public function getAdderMethod($object,$field)
+	public function getAdderMethod($object,$field,$prefix='add')
 	{
-		return $this->searchMethod($object,$field,'add');
+		return $this->searchMethod($object,$field,$prefix);
 	}
 
-	public function getRemoverMethod($object,$field)
+	public function getRemoverMethod($object,$field,$prefix='set')
 	{
-		return $this->searchMethod($object,$field,'remove');
+		return $this->searchMethod($object,$field,$prefix);
 	}
 
 	public function getSetterOrAdderMethod($object,$field)
@@ -1807,7 +1840,9 @@ class AdminController
 	{
 		// $query = $this->addFiltersQuery($map, $query);
 		$query = $this->addSearchQuery($map, $query);
-		$query = $this->addTrashQuery($map, $query, $trashValue);
+		if ($trashValue === false || $trashValue === true) {
+			$query = $this->addTrashQuery($map, $query, $trashValue);
+		}
 		$query = $this->addOrderByQuery($map, $query);
 
 		return $query;
@@ -1840,10 +1875,9 @@ class AdminController
 
 	public function addTrashQuery($map, $query, $trashValue = false)
 	{
-		$hasTrash = $this->hasTrash($map);
-		if ($hasTrash) {
+		if ($this->hasTrash($map)) {
 			$fields = $this->getFields($map);
-			$trashAttr = $this->getConfigKey($map, 'trash_field');
+			$trashAttr = $this->getTrashField($map);
 			if ( in_array($trashAttr, $fields) ) {
 				$query->andWhere($query->getRootAlias() . '.' . $trashAttr . ' = :' . $trashAttr);
 				$query->setParameter(':' . $trashAttr, $trashValue);

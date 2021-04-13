@@ -17,6 +17,10 @@
 {% set multipleCheckbox = (type in multipleArrayViews) %}
 {% endif %}
 
+{% if trash is not defined %}
+{% set trash = false %}
+{% endif %}
+
 {% if listLen == 1 %}
 {% set multipleCheckbox = false %}
 {% endif %}

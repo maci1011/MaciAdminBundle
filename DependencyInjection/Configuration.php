@@ -119,7 +119,7 @@ class Configuration implements ConfigurationInterface
                                     ->end()
                                 ->end()
                             ->end()
-                            ->arrayNode('link')
+                            ->arrayNode('pages')
                                 ->prototype('array')
                                     ->beforeNormalization()
                                         ->ifString()

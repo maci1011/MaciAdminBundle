@@ -42,7 +42,9 @@ class DefaultController extends AbstractController
 
 	public function trashAction()
 	{
-		return $this->mcmList(true);
+		$item = $this->mcm->getCurrentItem();
+		if (!$item && count($this->request->get('ids')) === 0) return $this->mcmList(true);
+		return $this->mcmRemove(true);
 	}
 
 	public function showAction()
@@ -200,19 +202,27 @@ class DefaultController extends AbstractController
 		));
 	}
 
-	public function mcmRemove()
+	public function mcmRemove($trash = false)
 	{
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
 
-		$list = $this->mcm->getItems($entity);
+		$list = $this->mcm->getItems($entity, null);
 
 		$item = $this->mcm->getCurrentItem();
-		if (!$item) {
-			if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
-				$this->mcm->removeItemsFromRequestIds($entity, $list);
-				return array('success' => true);
+
+		if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
+			if ($item) {
+				if ($trash) $this->mcm->trashItems($entity, [$item]);
+				else $this->mcm->removeItems($entity, [$item]);
+			} else {
+				if ($trash) $this->mcm->trashItemsFromRequestIds($entity, $list);
+				else $this->mcm->removeItemsFromRequestIds($entity, $list);
 			}
+			return array('success' => true);
+		}
+
+		if (!$item) {
 			return false;
 		}
 
@@ -228,18 +238,19 @@ class DefaultController extends AbstractController
 
 		if ($form->isSubmitted() && $form->isValid()) {
 
-			$this->mcm->removeItems($entity, array($item));
+			if ($trash) $this->mcm->trashItems($entity, [$item]);
+			else $this->mcm->removeItems($entity, [$item]);
 
-			if ($this->request->isXmlHttpRequest())
-				return array('success' => true);
-			else
-				return $this->mcm->getDefaultEntityRedirectParams($entity);
+			return $this->mcm->getDefaultEntityRedirectParams($entity);
 
 		}
 
 		$params['identifier'] = $this->mcm->getIdentifierValue($entity, $item);
 		$params['item'] = $item;
 		$params['form'] = $form->createView();
+		$params['template'] = 'MaciAdminBundle:Actions:remove.html.twig';
+		$params['trashing'] = $trash;
+		$params['trashed'] = $this->mcm->isItemTrashed($entity, $item);
 
 		return $params;
 	}
