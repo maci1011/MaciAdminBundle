@@ -136,7 +136,7 @@ class AdminController
 			'sort_field'    => 'position',
 			'trash'         => true,
 			'trash_field'   => 'removed',
-			'uploadable'    => true,
+			'uploadable'    => false,
 			'upload_field'  => 'file',
 			'upload_path_field'  => 'path'
 		];
@@ -468,13 +468,13 @@ class AdminController
 
 	public function getDefaultMap()
 	{
-		$map = array();
+		$map = [];
 		// $map['class'] = null;
 		// $map['label'] = null;
 		// $map['name'] = null;
 		// $map['section'] = null;
-		$map['list'] = array();
-		$map['filters'] = array();
+		$map['list'] = [];
+		$map['filters'] = [];
 		$map['config'] = $this->_defaults;
 		return $map;
 	}
@@ -572,7 +572,7 @@ class AdminController
 		));
 	}
 
-	public function getDefaultRedirectParams($opt = array())
+	public function getDefaultRedirectParams($opt = [])
 	{
 		return array(
 			'redirect' => 'maci_admin_view',
@@ -580,7 +580,7 @@ class AdminController
 		);
 	}
 
-	public function getDefaultEntityRedirectParams($map, $action = 'list', $id = null, $opt = array())
+	public function getDefaultEntityRedirectParams($map, $action = 'list', $id = null, $opt = [])
 	{
 		if (in_array($action, $this->getSingleActions($map))) {
 			$id = $id === null ? $this->request->get('id', null) : $id;
@@ -597,7 +597,7 @@ class AdminController
 		return $params;
 	}
 
-	public function getDefaultRelationRedirectParams($map, $relation, $action = false, $id = null, $opt = array())
+	public function getDefaultRelationRedirectParams($map, $relation, $action = false, $id = null, $opt = [])
 	{
 		$id = $id === null ? $this->request->get('id', null) : $id;
 		if ($id === null) {
@@ -612,7 +612,7 @@ class AdminController
 		return $params;
 	}
 
-	public function getDefaultBridgeRedirectParams($map, $relation, $bridge, $action = false, $id = null, $opt = array())
+	public function getDefaultBridgeRedirectParams($map, $relation, $bridge, $action = false, $id = null, $opt = [])
 	{
 		$id = $id === null ? $this->request->get('id', null) : $id;
 		if ($id === null) {
@@ -625,25 +625,25 @@ class AdminController
 		return $params;
 	}
 
-	public function getDefaultUrl($opt = array())
+	public function getDefaultUrl($opt = [])
 	{
 		$action_params = $this->getDefaultRedirectParams($opt);
 		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
 	}
 
-	public function getEntityUrl($map, $action = 'list', $id = null, $opt = array())
+	public function getEntityUrl($map, $action = 'list', $id = null, $opt = [])
 	{
 		$action_params = $this->getDefaultEntityRedirectParams($map, $action, $id, $opt);
 		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
 	}
 
-	public function getRelationUrl($map, $relation, $action = false, $id = null, $opt = array())
+	public function getRelationUrl($map, $relation, $action = false, $id = null, $opt = [])
 	{
 		$action_params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id, $opt);
 		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
 	}
 
-	public function getBridgeUrl($map, $relation, $bridge, $action = false, $id = null, $opt = array())
+	public function getBridgeUrl($map, $relation, $bridge, $action = false, $id = null, $opt = [])
 	{
 		$action_params = $this->getDefaultBridgeRedirectParams($map, $relation, $bridge, $action, $id, $opt);
 		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
@@ -802,7 +802,7 @@ class AdminController
 
 	public function getSettingsActions($entity)
 	{
-		$actions = array();
+		$actions = [];
 		if(in_array('list', $this->getMainActions($entity))) {
 			// $actions[] = 'setListFilters';
 			$actions[] = 'setPagerOptions';
@@ -851,7 +851,7 @@ class AdminController
 	{
 		$metadata = $this->getMetadata($map);
 
-		$associations = array();
+		$associations = [];
 
 		foreach ($metadata->associationMappings as $fieldName => $association) {
 			// if ($association['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
@@ -886,7 +886,7 @@ class AdminController
 
 	public function getBridges($relation)
 	{
-		$list = array();
+		$list = [];
 		if (array_key_exists('bridges', $relation)) {
 			$i=0;
 			foreach ($relation['bridges'] as $bridge) {
@@ -903,9 +903,9 @@ class AdminController
 	public function getUpladableBridges($relation)
 	{
 		if (!array_key_exists('bridges', $relation)) {
-			return array();
+			return [];
 		}
-		$upb = array();
+		$upb = [];
 		foreach ($relation['bridges'] as $bridge) {
 			$bm = $this->getBridge($relation,$bridge);
 			if ($bm && $this->isUploadable($bm)) {
@@ -951,15 +951,25 @@ class AdminController
 		return false;
 	}
 
-	public function getFields($map, $ri = true)
+	public function getFields($map, $removeId = true)
 	{
 		$metadata = $this->getMetadata($map);
 		$fields = (array) $metadata->fieldNames;
 		// Remove the primary key field if it's not managed manually
-		if ($ri && !$metadata->isIdentifierNatural()) {
+		if ($removeId && !$metadata->isIdentifierNatural()) {
 			$fields = array_diff($fields, $metadata->identifier);
 		}
+		return array_keys($fields);
+	}
 
+	public function getFieldsWithType($map)
+	{
+		$metadata = $this->getMetadata($map);
+		$fieldMappings = (array) $metadata->fieldMappings;
+		$fields = [];
+		foreach ($fieldMappings as $field => $mapping) {
+			$fields[$field] = $mapping['type'];
+		}
 		return $fields;
 	}
 
@@ -973,7 +983,6 @@ class AdminController
 				$fields [] = $field;
 			}
 		}
-
 		return $fields;
 	}
 
@@ -995,7 +1004,7 @@ class AdminController
 			$this->session->getFlashBag()->add('error', 'Getter Method for ' . $field . ' in ' . get_class($object) . ' not found.');
 			return false;
 		}
-		return call_user_func_array(array($object,$getter),array());
+		return call_user_func_array(array($object,$getter),[]);
 	}
 
 	public function getListFields($map)
@@ -1011,7 +1020,7 @@ class AdminController
 		if (method_exists($object, 'getPreview')) {
 			$list[] = '_preview';
 		}
-		$fields = array_keys($this->getFields($map));
+		$fields = $this->getFields($map);
 		$trash_field = $this->getConfigKey($map, 'trash_field');
 		foreach ($fields as $field) {
 			if ($field == $trash_field) continue;
@@ -1138,7 +1147,7 @@ class AdminController
 			{
 				$form->add($field, ChoiceType::class, array(
 					'empty_data' => '',
-					'choices' => call_user_func_array(array($object, $arrMethod), array())
+					'choices' => call_user_func_array(array($object, $arrMethod), [])
 				));
 			}
 			else if ($isUploadable && $field === $upload_path_field)
@@ -1211,7 +1220,7 @@ class AdminController
 
 	public function getListIdentifiers($map, $list)
 	{
-		$ids = array();
+		$ids = [];
 		foreach ($list as $item) {
 			$ids[] = $this->getIdentifierValue($map, $item);
 		}
@@ -1233,7 +1242,6 @@ class AdminController
 				call_user_func_array([$item, $remover], [!$val]);
 				$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] ' . ($val ? 'restored' : 'moved to trash.'));
 			} else {
-				$this->session->getFlashBag()->add('error', 'Remover setter method for Map [' . $map['label'] . '] not found.');
 				return false;
 			}
 		}
@@ -1254,7 +1262,6 @@ class AdminController
 			$val = call_user_func_array([$item, $remover], []);
 			return $val;
 		}
-		$this->session->getFlashBag()->add('error', 'Remover getter method for Map [' . $map['label'] . '] not found.');
 		return null;
 	}
 
@@ -1269,16 +1276,76 @@ class AdminController
 		return true;
 	}
 
-	public function getItems($map, $trashValue = false)
+	public function getList($map, $trashValue = false)
 	{
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
 		$root = $query->getRootAlias();
-		// $fields = $this->getFields($map);
 		$query = $this->addDefaultQueries($map, $query, $trashValue);
 		$query = $query->getQuery();
 		$list = $query->getResult();
 		return $list;
+	}
+
+	public function getGetters($map, $removeId = false)
+	{
+		$fields = $this->getFields($map, $removeId);
+		$obj = $this->getNewItem($map);
+		$getters = [];
+
+		foreach ($fields as $field) {
+			$getter = $this->getGetterMethod($obj, $field);
+			if (!$getter) {
+				return false;
+			}
+			$getters[$field] = $getter;
+		}
+
+		return $getters;
+	}
+
+	public function getListData($map, $trashValue = false)
+	{
+		$list = $this->getList($map, $trashValue);
+		$getters = $this->getGetters($map);
+		$data = [];
+
+		foreach ($list as $item) {
+			$data[count($data)] = $this->getItemData($map, $item, $getters);
+		}
+
+		return $data;
+	}
+
+	public function getItemData($map, $item, $getters = false)
+	{
+		if (!$getters) $getters = $this->getGetters($map);
+		$types = $this->getFieldsWithType($map);
+		$data = [];
+		foreach ($getters as $field => $getter) {
+			if (in_array($types[$field], [
+				'string', 'text', 'integer', 'smallint', 'bigint', 'boolean', 'decimal', 'float', 'json', 'guid'
+			])) {
+				$data[$field] = call_user_func_array([$item, $getter], []);
+			} elseif ($types[$field] === 'date') {
+				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "d-m-Y");
+			} elseif ($types[$field] === 'time') {
+				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "H:i:s");
+			} elseif ($types[$field] === 'datetime') {
+				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "Y/m/d H:i:s");
+			} elseif ($types[$field] === 'datetimetz') {
+				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "c");
+			} elseif ($types[$field] === 'object') {
+				$data[$field] = get_class(call_user_func_array([$item, $getter], []));
+			} elseif ($types[$field] === 'simple_array') {
+				$data[$field] = implode(', ', call_user_func_array([$item, $getter], []));
+			} elseif ($types[$field] === 'json') {
+				$data[$field] = call_user_func_array([$item, $getter], []);
+			} else {
+				continue;
+			}
+		}
+		return $data;
 	}
 
 	public function getItemsForRelation($map, $relation, $item, $bridge = false)
@@ -1287,9 +1354,9 @@ class AdminController
 		$inverseField = $this->getRelationInverseField($map, $relation);
 		$mainMap = $relation;
 		if ($bridge) {
-			$bridge_items = array();
+			$bridge_items = [];
 			foreach ($relation_items as $obj) {
-				$brcall = call_user_func_array(array($obj, $this->getGetterMethod($obj, $bridge['bridge'])), array());
+				$brcall = call_user_func_array(array($obj, $this->getGetterMethod($obj, $bridge['bridge'])), []);
 				$brcall = is_array($brcall) ? $brcall : array($brcall);
 				$bridge_items = array_merge($bridge_items, $brcall);
 			}
@@ -1306,14 +1373,14 @@ class AdminController
 			if (is_object($obj)) {
 				$parameter = ':id_' . $index;
 				$query->andWhere($root . '.' . $inverseField . ' != ' . $parameter);
-				$query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), array()));
+				$query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), []));
 				$index++;
 			}
 		}
 		// todo: an option fot this
 		if ($this->getClass($map) === $this->getClass($relation) && !$bridge) {
 			$query->andWhere($root . '.' . $inverseField . ' != :pid');
-			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), array()));
+			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), []));
 		}
 		$query = $this->addDefaultQueries($mainMap, $query);
 		$query = $query->getQuery();
@@ -1326,7 +1393,7 @@ class AdminController
 		if (!count($ids)) {
 			return false;
 		}
-		$obj_list = array();
+		$obj_list = [];
 		$ids_list = $this->getListIdentifiers($map, $list);
 		$repo = $this->getRepository($map);
 		if(count($ids_list)) {
@@ -1485,10 +1552,10 @@ class AdminController
 				return array($getted);
 			}
 		}
-		return array();
+		return [];
 	}
 
-	public function getRemoveForm($map, $item, $opt = array())
+	public function getRemoveForm($map, $item, $opt = [])
 	{
 		return $this->createFormBuilder($item)
 			->setAction($this->getEntityUrl($map, 'remove', $this->getIdentifierValue($map, $item), $opt))
@@ -1499,7 +1566,7 @@ class AdminController
 		;
 	}
 
-	public function getRelationRemoveForm($map, $relation, $item, $opt = array())
+	public function getRelationRemoveForm($map, $relation, $item, $opt = [])
 	{
 		return $this->createFormBuilder($item)
 			->setAction($this->getRelationUrl($map, $relation, 'remove', null, $opt))
@@ -1545,7 +1612,7 @@ class AdminController
 	------------> Pager
 */
 
-	public function getPager($map, $list, $opt = array())
+	public function getPager($map, $list, $opt = [])
 	{
 		$pager = new MaciPager($list, $this->request->get('page', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
 		$pager->setForm($this->getPagerForm($map, $pager, $opt));
@@ -1553,7 +1620,7 @@ class AdminController
 		return $pager;
 	}
 
-	public function getPagerForm($map, $pager = false, $opt = array())
+	public function getPagerForm($map, $pager = false, $opt = [])
 	{
 		$options = array(
 			'page' => $this->request->get('page', 1),
@@ -1561,7 +1628,7 @@ class AdminController
 			'order_by_field' => $this->getPager_OrderByField($map),
 			'order_by_sort' => $this->getPager_OrderBySort($map)
 		);
-		$page_attr = $pager ? array('max' => $pager->getMaxPages()) : array();
+		$page_attr = $pager ? array('max' => $pager->getMaxPages()) : [];
 		return $this->createFormBuilder($options)
 			->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $opt))
 			->add('page', IntegerType::class, array(
@@ -1778,6 +1845,7 @@ class AdminController
 				return $methodName;
 			}
 		}
+		$this->session->getFlashBag()->add('error', 'Method ' . ($prefix === null ? $field : $prefix . ucfirst($field)) . ' for [' . get_class($object) . '] not found.');
 		return false;
 	}
 
@@ -1850,7 +1918,7 @@ class AdminController
 
 	public function addFiltersQuery($map, $query)
 	{
-		$optf = $this->request->get('optf', array());
+		$optf = $this->request->get('optf', []);
 		foreach ($optf as $key => $value) {
 			if ($value !== '' && in_array($key, $fields)) {
 				$query->andWhere($query->getRootAlias() . '.' . $key . ' LIKE :' . $key);
@@ -1898,7 +1966,7 @@ class AdminController
 
 	public function getArrayWithLabels($array)
 	{
-		$list = array();
+		$list = [];
 		foreach ($array as $item) {
 			$list[$this->generateLabel($item)] = $item;
 		}
@@ -1915,17 +1983,17 @@ class AdminController
 		return ucwords(str_replace('_', ' ', $str));
 	}
 
-	public function createForm($type, $data = null, array $options = array())
+	public function createForm($type, $data = null, array $options = [])
 	{
 		return $this->formFactory->create($type, $data, $options);
 	}
 
-	public function createFormBuilder($data = null, array $options = array())
+	public function createFormBuilder($data = null, array $options = [])
 	{
 		return $this->formFactory->createBuilder(FormType::class, $data, $options);
 	}
 
-	public function generateUrl($route, $parameters = array(), $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
+	public function generateUrl($route, $parameters = [], $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
 	{
 		return $this->router->generate($route, $parameters, $referenceType);
 	}
@@ -1936,7 +2004,7 @@ class AdminController
 
 	public function getEntityFilters($entity)
 	{
-		return $this->session->get('admin_filters_'.$entity['name'], array());
+		return $this->session->get('admin_filters_'.$entity['name'], []);
 	}
 
 	public function hasEntityFilters($entity)
@@ -1951,7 +2019,7 @@ class AdminController
 
 	public function removeEntityFilters($entity)
 	{
-		$this->session->set('admin_filters_'.$entity['name'], array());
+		$this->session->set('admin_filters_'.$entity['name'], []);
 	}
 
 	public function getEntityFilterFields($entity)
@@ -1959,7 +2027,7 @@ class AdminController
 		if (array_key_exists('filters', $entity) && count($entity['filters'])) {
 			return $entity['filters'];
 		}
-		return array();
+		return [];
 	}
 
 	public function hasEntityFilterFields($entity)

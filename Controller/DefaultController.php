@@ -106,7 +106,14 @@ class DefaultController extends AbstractController
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
 
-		$list = $this->mcm->getItems($entity, $trash);
+		$list = $this->mcm->getList($entity, $trash);
+
+		if ($this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
+			return [
+				'list' => $this->mcm->getListData($entity, $list),
+				'success' => true
+			];
+		}
 
 		$pager = $this->mcm->getPager($entity, $list);
 
@@ -115,13 +122,17 @@ class DefaultController extends AbstractController
 		}
 
 		if ($this->request->get('page') && $this->request->get('page') != $pager->getPage()) {
-			return $this->mcm->getDefaultEntityRedirectParams($entity, ($trash ? 'trash' : 'list'), null, (1<$pager->getPage() ? array('page'=>$pager->getPage()) : []));
+			return $this->mcm->getDefaultEntityRedirectParams($entity, (
+				$trash ? 'trash' : 'list'
+			), null, (
+				1 < $pager->getPage() ? ['page'=>$pager->getPage()] : []
+			));
 		}
 
-		return array_merge($this->mcm->getDefaultEntityParams($entity), array(
+		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'pager' => $pager,
 			'entity_search' => true
-		));
+		]);
 	}
 
 	public function mcmShow()
@@ -132,10 +143,11 @@ class DefaultController extends AbstractController
 		$item = $this->mcm->getCurrentItem();
 		if (!$item) return false;
 
-		return array_merge($this->mcm->getDefaultEntityParams($entity), array(
+		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'identifier' => $this->mcm->getIdentifierValue($entity, $item),
-			'item' => $item
-		));
+			'item' => $item,
+			'data' => $this->mcm->getItemData($entity, $item)
+		]);
 	}
 
 	public function mcmForm()
@@ -207,7 +219,7 @@ class DefaultController extends AbstractController
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
 
-		$list = $this->mcm->getItems($entity, null);
+		$list = $this->mcm->getList($entity, null);
 
 		$item = $this->mcm->getCurrentItem();
 
@@ -330,7 +342,7 @@ class DefaultController extends AbstractController
 			return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
 		}
 
-		$list = $this->mcm->getItems($entity);
+		$list = $this->mcm->getList($entity);
 
 		foreach ($list as $el) {
 			$id = call_user_func_array(array($el, $id_method), array());
@@ -388,7 +400,7 @@ class DefaultController extends AbstractController
 		// 	return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
 		// }
 
-		// $list = $this->mcm->getItems($entity);
+		// $list = $this->mcm->getList($entity);
 
 		// foreach ($list as $el) {
 		// 	$id = call_user_func_array(array($el, $id_method), array());
