@@ -1,32 +1,37 @@
 
-{% if field == 'id' %}
+{% if field == item_identifier %}
 
 
 {% set _identifier = identifier is defined ? identifier : pager is defined ? pager.identifier(listId) : listId %}
 {% set _id = _identifier matches '/^\\d+$/' ? _identifier : (listId + 1) %}
 
 <input name="id" type="hidden" value="{{ _identifier }}" />
-{#% if action == 'relations' and relation_entity_root_section != '___unset___' %}
+{% if action == 'relations' and relation_entity_root_section != '___unset___' %}
 <a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': relation_entity_root_section, 'entity': relation_entity_root, 'action': 'edit', 'id': _identifier }) }}" title="Edit Item">
 	{{ _id }}
 </a>
-{% elseif action != 'relations' and section != '___unset___' %}
+{% elseif action != 'show' and section != '___unset___' %}
 <a class="item-field-value id" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'edit', 'id': _identifier }) }}" title="Edit Item">
 	{{ _id }}
 </a>
 {% else %}
-{% endif %#}
 <span class="item-field-value id">
 	{{ _id }}
 </span>
+{% endif %}
 
 
 {% elseif field == '_string' %}
 <span class="item-field-value">{{ item }}</span>
 
 
-{% else %}
+{% elseif field == '_preview' and item.webPreview is defined %}
+<div class="row">
+	<img class="item-preview img-fluid" src="{{ asset(item.webPreview | imagine_filter('maci_admin_list_preview')) }}" alt="preview" />
+</div>
 
+
+{% else %}
 
 {% if val is not defined %}
 
@@ -89,6 +94,4 @@
 
 {% endif %}
 
-
 {% endif %}
-

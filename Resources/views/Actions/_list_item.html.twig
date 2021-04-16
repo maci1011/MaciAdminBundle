@@ -23,11 +23,11 @@
 	</td>
 	{% endif %}
 
-	{% if 'id' not in list_fields %}
+	{% if item_identifier not in list_fields %}
 
 	<td class="list-item-field field-listId">
 
-		{% include "MaciAdminBundle:Actions:_item_field.html.twig" with {'field': 'id'} %}
+		{% include "MaciAdminBundle:Actions:_item_field.html.twig" with {'field': item_identifier} %}
 
 	</td>
 

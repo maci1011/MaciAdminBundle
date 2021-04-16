@@ -2,12 +2,6 @@
 <div class="container-fluid">
 <div class="details-list">
 
-	{% if item.webPreview is defined %}
-	<div class="row">
-		<img class="item-preview img-fluid" src="{{ asset(item.webPreview | imagine_filter('maci_admin_list_preview')) }}" alt="preview" />
-	</div>
-	{% endif %}
-
 	{% for field, val in data %}
 
 	<div class="row details-item {% if loop.index is even %}even{% else %}odd{% endif %}">
@@ -27,6 +21,12 @@
 	</div>
 
 	{% endfor %}
+
+	{% if item.webPreview is defined %}
+	<div class="row">
+		<img class="item-preview img-fluid" src="{{ asset(item.webPreview) }}" alt="preview" />
+	</div>
+	{% endif %}
 
 </div>
 </div>
