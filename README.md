@@ -28,7 +28,7 @@ MaciAdminBundle lets you simply create administration backends for Symfony 4 app
 **Requirements**
 ----------------
 
-  * SUPPORTS SYMFONY 4
+  * SUPPORTS SYMFONY 4.4
   * Doctrine ORM entities (Doctrine ODM and Propel not supported).
 
 > **❮ NOTE ❯** you are reading the documentation of the bundle's **development** version.

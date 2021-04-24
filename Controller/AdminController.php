@@ -142,15 +142,15 @@ class AdminController
 			'upload_path_field'  => 'path'
 		];
 
-		$this->_defaults = $this->getDefaultConfig(['config' => (array_key_exists('config', $this->config) ? $this->config['config'] : [])], $this->_defaults);
+		// $this->_defaults = $this->getDefaultConfig(['config' => (array_key_exists('config', $this->config) ? $this->config['config'] : [])], $this->_defaults);
 
 		foreach ($this->config['sections'] as $name => $section)
 		{
 			if (!array_key_exists('entities', $section) || !count($section['entities'])) continue;
 			// Section Settings
-			$section_config = $this->getDefaultConfig($section, $this->_defaults);
+			$section['config'] = array_merge([], $this->_defaults, (array_key_exists('config', $section) ? $section['config'] : []));
 			$section['authorized'] = false;
-			foreach ($section_config['roles'] as $role)
+			foreach ($section['config']['roles'] as $role)
 			{
 				if ($this->authorizationChecker->isGranted($role))
 				{
@@ -162,9 +162,9 @@ class AdminController
 			$entities = [];
 			foreach ($section['entities'] as $entity_name => $entity)
 			{
-				$entity_config = $this->getDefaultConfig($entity, $section_config);
+				$entity['config'] = array_merge([], $section['config'], (array_key_exists('config', $entity) ? $entity['config'] : []));
 				$entity['authorized'] = false;
-				foreach ($entity_config['roles'] as $role) {
+				foreach ($entity['config']['roles'] as $role) {
 					if ($this->authorizationChecker->isGranted($role))
 					{
 						$section['authorized'] = true;
@@ -177,7 +177,6 @@ class AdminController
 				$entity['section'] = $name;
 				$entity['name'] = $entity_name;
 				$entity['class'] = $this->getClass($entity);
-				$entity['config'] = $entity_config;
 				if (!array_key_exists('label', $entity))
 				{
 					$entity['label'] = $this->generateLabel($entity_name);
@@ -189,7 +188,6 @@ class AdminController
 			//  section properties
 			$section['name'] = $name;
 			$section['entities'] = $entities;
-			$section['config'] = $section_config;
 			if (!array_key_exists('label', $section))
 			{
 				$section['label'] = $this->generateLabel($name);
@@ -203,12 +201,11 @@ class AdminController
 		$this->session->set('maci_admin._defaults', $this->_defaults);
 	}
 
-	public function getDefaultConfig($map, $defaults)
+	public function getDefaultConfig($map, $defaults = false)
 	{
+		if (!$defaults) $defaults = $this->_defaults;
 		if (array_key_exists('config', $map)) {
 			$config = array_merge([], $defaults, $map['config']);
-			if (!count($config['roles'])) $config['roles'] = $defaults['roles'];
-			if (!count($config['actions'])) $config['actions'] = $defaults['actions'];
 			return $config;
 		}
 		return $defaults;
@@ -216,17 +213,16 @@ class AdminController
 
 	public function getConfig($map)
 	{
-		if (!$map) {
-			return $this->_defaults;
-		}
-		$config = $this->_defaults;
+		if (!$map) { return []; }
+		$config = $this->getDefaultConfig($map);
 		if (array_key_exists('entity_root', $map)) {
-			$config = $this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section']));
-		} else if (array_key_exists('section', $map)) {
-			$config = $this->getSectionConfig($map['section']);
+			$config = array_merge($config, $this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section'])));
+		}
+		if (array_key_exists('section', $map)) {
+			$config = array_merge($config, $this->getSectionConfig($map['section']));
 		}
 		if (array_key_exists('config', $map)) {
-			return $this->getDefaultConfig($map, $config);
+			$config = array_merge([], $config, $map['config']);
 		}
 		return $config;
 	}
@@ -377,9 +373,9 @@ class AdminController
 	public function getSectionConfig($section)
 	{
 		if (array_key_exists($section, $this->_sections)) {
-			return $this->getDefaultConfig($this->_sections[$section], $this->_defaults);
+			return $this->_sections[$section]['config'];
 		}
-		return false;
+		return [];
 	}
 
 	public function getSectionLabel($section)
@@ -1497,22 +1493,26 @@ class AdminController
 		}
 		array_unique($relation, SORT_REGULAR);
 		if (!array_key_exists('section', $relation)) {
-			$relation['section'] = '___unset___';
+			$relation['section'] = $map['section'];
 		}
 		if (!array_key_exists('entity', $relation)) {
-			$relation['entity'] = '___unset___';
+			$relation['entity'] = $relation['name'];
 		}
 		if ($entity['section'] == null) {
-			$relation['entity_root_section'] = '___unset___';
+			$relation['entity_root_section'] = $map['section'];
 		} else {
 			$relation['entity_root_section'] = $entity['section'];
 		}
 		if ($entity['name'] == null) {
-			$relation['entity_root'] = '___unset___';
+			$relation['entity_root'] = $map['name'];
 		} else {
 			$relation['entity_root'] = $entity['name'];
 		}
 		$relation['association'] = $association;
+		if (array_key_exists($association, $map['relations']) &&
+			array_key_exists('config', $map['relations'][$association])) {
+			$relation['config'] = array_merge([], $this->_defaults, (array_key_exists('config', $entity) ? $entity['config'] : []), $map['relations'][$association]['config']);
+		}
 		return $relation;
 	}
 
