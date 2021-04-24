@@ -101,14 +101,14 @@ class AdminController
 		$this->_auth_sections = $this->session->get('maci_admin._auth_sections');
 		$this->_sections = $this->session->get('maci_admin._sections');
 		$this->_defaults = $this->session->get('maci_admin._defaults');
-		if (is_array($this->_auth_sections)) return;
+		// if (is_array($this->_auth_sections)) return;
 
 		// Authorized Sections
 		$this->_auth_sections = [];
 		// Sections
 		$this->_sections = [];
 
-		if (!array_key_exists('sections', $this->config)) return;
+		// if (!array_key_exists('sections', $this->config)) return;
 
 		$this->_defaults = [
 			'actions'       => [
@@ -120,6 +120,7 @@ class AdminController
 				'edit' => ['template' => 'MaciAdminBundle:Actions:edit.html.twig'],
 				'remove' => ['template' => 'MaciAdminBundle:Actions:remove.html.twig'],
 				'relations' => ['template' => 'MaciAdminBundle:Actions:relations.html.twig'],
+				'relations_new' => ['template' => 'MaciAdminBundle:Actions:relations_new.html.twig'],
 				'relations_add' => ['template' => 'MaciAdminBundle:Actions:relations_add.html.twig'],
 				'relations_list' => ['template' => 'MaciAdminBundle:Actions:relations_list.html.twig'],
 				'relations_remove' => ['template' => 'MaciAdminBundle:Actions:relations_remove.html.twig'],
@@ -176,6 +177,7 @@ class AdminController
 				$entity['section'] = $name;
 				$entity['name'] = $entity_name;
 				$entity['class'] = $this->getClass($entity);
+				$entity['config'] = $entity_config;
 				if (!array_key_exists('label', $entity))
 				{
 					$entity['label'] = $this->generateLabel($entity_name);
@@ -187,6 +189,7 @@ class AdminController
 			//  section properties
 			$section['name'] = $name;
 			$section['entities'] = $entities;
+			$section['config'] = $section_config;
 			if (!array_key_exists('label', $section))
 			{
 				$section['label'] = $this->generateLabel($name);
@@ -203,7 +206,7 @@ class AdminController
 	public function getDefaultConfig($map, $defaults)
 	{
 		if (array_key_exists('config', $map)) {
-			$config = array_merge($defaults, $map['config']);
+			$config = array_merge([], $defaults, $map['config']);
 			if (!count($config['roles'])) $config['roles'] = $defaults['roles'];
 			if (!count($config['actions'])) $config['actions'] = $defaults['actions'];
 			return $config;
@@ -213,10 +216,11 @@ class AdminController
 
 	public function getConfig($map)
 	{
-		$config = $this->_defaults;
 		if (!$map) {
-			return $config;
-		} else if (array_key_exists('entity_root', $map)) {
+			return $this->_defaults;
+		}
+		$config = $this->_defaults;
+		if (array_key_exists('entity_root', $map)) {
 			$config = $this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section']));
 		} else if (array_key_exists('section', $map)) {
 			$config = $this->getSectionConfig($map['section']);
@@ -251,9 +255,10 @@ class AdminController
 	public function getTemplate($map, $action)
 	{
 		if (array_key_exists('config', $map) &&
-			array_key_exists('actions', $map['config']['actions']) &&
+			array_key_exists('actions', $map['config']) &&
 			array_key_exists($action, $map['config']['actions']) &&
-			$this->templating->exists($map['config']['actions'][$action]['template']) ) {
+			$this->templating->exists($map['config']['actions'][$action]['template'])
+		) {
 			return $map['config']['actions'][$action]['template'];
 		}
 		$bundleName = $this->getBundleName($map);
@@ -268,7 +273,8 @@ class AdminController
 			}
 		}
 		if (array_key_exists($action, $this->_defaults['actions']) &&
-			$this->templating->exists($this->_defaults['actions'][$action]['template']) ) {
+			$this->templating->exists($this->_defaults['actions'][$action]['template'])
+		) {
 			return $this->_defaults['actions'][$action]['template'];
 		}
 		return 'MaciAdminBundle:Actions:template_not_found.html.twig';
@@ -494,7 +500,6 @@ class AdminController
 	public function getDefaultEntityParams($map)
 	{
 		$action = $this->request->get('action');
-		// var_dump($this->getListFields($map));die();
 		return array_merge($this->getDefaultParams(),array(
 			'entity' => $map['name'],
 			'entity_label' => $map['label'],
@@ -734,6 +739,23 @@ class AdminController
 		return false;
 	}
 
+	public function getCurrentRelatedItem()
+	{
+		if (isset($this->current_related_item)) return $this->current_related_item;
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return false;
+		$id = $this->request->get('relId');
+		if (!$id) return false;
+		$item = $this->getItem($relation, $id);
+		if ($item) {
+			$this->current_related_item = $item;
+			return $item;
+		}
+		$this->current_related_item = false;
+		$this->session->getFlashBag()->add('error', 'Item [' . $id . '] for [' . $relation['label'] . '] not found.');
+		return false;
+	}
+
 	public function getCurrentRelationAction()
 	{
 		if (isset($this->current_relation_action)) return $this->current_relation_action;
@@ -827,10 +849,7 @@ class AdminController
 
 	public function getRelationActions($entity)
 	{
-		return array_merge(
-			$this->getActions($entity),
-			['bridge']
-		);
+		return ['list', 'show', 'new', 'add', 'set', 'bridge', 'uploader', 'remove', 'reorder'];
 	}
 
 	public function hasRelationAction($entity, $action)
@@ -1074,7 +1093,8 @@ class AdminController
 
 		$fields = $this->getFields($map);
 		$form = $this->createFormBuilder($object);
-		$isNew = !$this->getIdentifierValue($map, $object);
+		$id = $this->getIdentifierValue($map, $object);
+		$isNew = !$id;
 
 		// if ($isFilterForm) {
 		//     $form->setAction($this->generateUrl('maci_admin_view', array(
@@ -1083,21 +1103,21 @@ class AdminController
 		// }
 		// else
 
-		if ($isNew) {
-			$form->setAction($this->generateUrl('maci_admin_view', array(
-				'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
-			)));
-		} else {
-			$form->setAction($this->generateUrl('maci_admin_view', array(
-				'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$this->getIdentifierValue($map, $object)
-			)));
-		}
+		// if ($isNew) {
+		// 	$form->setAction($this->generateUrl('maci_admin_view', array(
+		// 		'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
+		// 	)));
+		// } else {
+		// 	$form->setAction($this->generateUrl('maci_admin_view', array(
+		// 		'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$id
+		// 	)));
+		// }
+		$form->setAction('#');
 
 		$isUploadable = $this->isUploadable($map);
 		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
 
 		$fieldMappings = $this->getMetadata($map)->fieldMappings;
-		// var_dump($fields);die();
 
 		foreach ($fields as $field) {
 
@@ -1170,10 +1190,12 @@ class AdminController
 				'attr'=>array('class'=>'btn btn-primary')
 			));
 		} else if ($isNew) {
-			$form->add('save', SubmitType::class, array(
-				'label'=>'Save & Edit Item',
-				'attr'=>array('class'=>'btn btn-success')
-			));
+			if (!$this->getCurrentAction() === 'relations') {
+				$form->add('save', SubmitType::class, array(
+					'label'=>'Save & Edit Item',
+					'attr'=>array('class'=>'btn btn-success')
+				));
+			}
 			$form->add('save_and_list', SubmitType::class, array(
 				'label'=>'Save & Return to List',
 				'attr'=>array('class'=>'btn btn-primary')
@@ -1269,10 +1291,16 @@ class AdminController
 	{
 		if (!count($list)) return false;
 		foreach ($list as $item) {
-			$this->om->remove($item);
+			try {
+				$this->om->remove($item);
+				$this->om->flush();
+			} catch (\Doctrine\DBAL\DBALException $e) {
+				$exception_message = $e->getPrevious()->getCode();
+				$this->session->getFlashBag()->add('error', 'Error! Item [' . $map['label'] . ':' . $item . '] not removed. Exception: ' . get_class($e) . ' - ' . $exception_message . '.');
+				return false;
+			}
 			$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] removed.');
 		}
-		$this->om->flush();
 		return true;
 	}
 
@@ -1455,11 +1483,11 @@ class AdminController
 		}
 		$relation = $this->getNewMap($metadata);
 		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
-			$relation = array_merge($relation, $map['relations'][$association]);
+			$relation = array_merge([], $relation, $map['relations'][$association]);
 		}
 		$entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
 		if ($entity) {
-			$relation = array_merge($entity, $relation);
+			$relation = array_merge([], $relation, $entity);
 			foreach ($relation as $key => $value) {
 				if (is_array($relation[$key]) && !count($relation[$key])) $relation[$key] = $entity[$key];
 			}

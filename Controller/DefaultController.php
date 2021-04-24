@@ -108,7 +108,7 @@ class DefaultController extends AbstractController
 
 		$list = $this->mcm->getList($entity, $trash);
 
-		if ($this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
+		if ($this->request->isXmlHttpRequest()) {
 			return [
 				'list' => $this->mcm->getListData($entity, $list),
 				'success' => true
@@ -142,6 +142,13 @@ class DefaultController extends AbstractController
 
 		$item = $this->mcm->getCurrentItem();
 		if (!$item) return false;
+
+		if ($this->request->isXmlHttpRequest()) {
+			return [
+				'item' => $this->mcm->getItemData($entity, $item),
+				'success' => true
+			];
+		}
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'identifier' => $this->mcm->getIdentifierValue($entity, $item),
@@ -452,8 +459,13 @@ class DefaultController extends AbstractController
 	{
 		$relAction = $this->request->get('relAction');
 
+		// var_dump($relAction);die();
+
 		if ($relAction === 'list' || $relAction === 'show') {
 			return $this->mcmRelationsList();
+
+		} else if ($relAction === 'new') {
+			return $this->mcmRelationsNew();
 
 		} else if ($relAction === 'add' || $relAction === 'set') {
 			return $this->mcmRelationsAdd();
@@ -511,6 +523,67 @@ class DefaultController extends AbstractController
 		return $params;
 	}
 
+	public function mcmRelationsNew()
+	{
+		$entity = $this->mcm->getCurrentEntity();
+		if (!$entity) return false;
+
+		$item = $this->mcm->getCurrentItem();
+		if (!$item) return false;
+
+		$relation = $this->mcm->getCurrentRelation();
+		if (!$relation) return false;
+
+		$rel = null;
+
+		if ($this->request->get('relId', 0)) {
+			$rel = $this->mcm->getCurrentRelatedItem();
+			if (!$rel) return false;
+		} else {
+			$rel = $this->mcm->getNewItem($relation);
+		}
+
+		$form = $this->mcm->getForm($relation, $rel);
+		$form->handleRequest($this->request);
+
+		if ($form->isSubmitted() && $form->isValid()) {
+
+			$isNew = ($this->mcm->getIdentifierValue($relation, $rel) === null);
+
+			if ($isNew) {
+				$this->om->persist($rel);
+			}
+
+			$this->mcm->addRelationItems($entity, $relation, $item, [$rel]);
+
+			$this->om->flush();
+
+			if ($isNew) {
+				$this->session->getFlashBag()->add('success', 'Item Added.');
+			} else {
+				$this->session->getFlashBag()->add('success', 'Item Edited.');
+			}
+
+			if ($this->request->isXmlHttpRequest())
+				return array('success' => true);
+			else {
+				if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
+					return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'new');
+				else
+					return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
+			}
+
+		}
+
+		return array_merge($this->mcm->getDefaultRelationParams($entity, $relation, $item), array(
+			'identifier' => $this->mcm->getIdentifierValue($relation, $rel),
+			'item' => $rel,
+			'form' => $form->createView()
+		));
+
+		return $params;
+	}
+
 	public function mcmRelationsAdd()
 	{
 		$entity = $this->mcm->getCurrentEntity();
@@ -524,7 +597,7 @@ class DefaultController extends AbstractController
 
 		$list = $this->mcm->getItemsForRelation($entity, $relation, $item);
 
-		if ( $this->request->getMethod() === 'POST') {
+		if ($this->request->getMethod() === 'POST') {
 
 			$this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
 

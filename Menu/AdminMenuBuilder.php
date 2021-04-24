@@ -9,18 +9,18 @@ class AdminMenuBuilder
 {
 	private $factory;
 
-    private $request;
+	private $request;
 
-    private $mcm;
+	private $mcm;
 
 	public function __construct(FactoryInterface $factory, RequestStack $requestStack, $mcm)
 	{
-	    $this->factory = $factory;
-	    $this->request = $requestStack->getCurrentRequest();
-        $this->mcm = $mcm;
+		$this->factory = $factory;
+		$this->request = $requestStack->getCurrentRequest();
+		$this->mcm = $mcm;
 	}
 
-    public function createSectionsMenu(array $options)
+	public function createSectionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
@@ -30,8 +30,8 @@ class AdminMenuBuilder
 			$section = $this->mcm->getSection($name);
 			if ($name != $this->request->get('section')) {
 				$menu->addChild($section['label'], array(
-				    'route' => 'maci_admin_view',
-				    'routeParameters' => array('section' => $name)
+					'route' => 'maci_admin_view',
+					'routeParameters' => array('section' => $name)
 				));
 			}
 		}
@@ -41,7 +41,7 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createEntitiesMenu(array $options)
+	public function createEntitiesMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
@@ -62,15 +62,15 @@ class AdminMenuBuilder
 
 			foreach ($this->mcm->getEntities($section) as $name => $entity) {
 				$menu->addChild($entity['label'], array(
-				    'route' => 'maci_admin_view',
-				    'routeParameters' => array('section' => $section, 'entity' => $name, 'action' => 'list')
+					'route' => 'maci_admin_view',
+					'routeParameters' => array('section' => $section, 'entity' => $name, 'action' => 'list')
 				));
 			}
 
 			foreach ($this->mcm->getPages($section) as $name => $page) {
 				$menu->addChild($this->mcm->generateLabel($name), array(
-				    'route' => $page['route'],
-				    // 'routeParameters' => []
+					'route' => $page['route'],
+					// 'routeParameters' => []
 				));
 			}
 
@@ -79,23 +79,23 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createActionsMenu(array $options)
+	public function createActionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-        $section = $this->mcm->getCurrentSection();
+		$section = $this->mcm->getCurrentSection();
 
-        $entity = $this->mcm->getCurrentEntity();
+		$entity = $this->mcm->getCurrentEntity();
 
 		if ( $entity ) {
 
 			foreach ($this->mcm->getMainActions($entity) as $action) {
 				$label = $this->mcm->generateLabel($action);
 				$menu->addChild($label, array(
-				    'route' => 'maci_admin_view',
-				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action)
+					'route' => 'maci_admin_view',
+					'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action)
 				));
 			}
 
@@ -104,15 +104,15 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createItemActionsMenu(array $options)
+	public function createItemActionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-        $section = $this->mcm->getCurrentSection();
+		$section = $this->mcm->getCurrentSection();
 
-        $entity = $this->mcm->getCurrentEntity();
+		$entity = $this->mcm->getCurrentEntity();
 
 		$associations = $this->mcm->getAssociations($entity);
 
@@ -128,15 +128,15 @@ class AdminMenuBuilder
 					foreach ($associations as $relation) {
 						$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
 						$menu->addChild($this->mcm->generateLabel($relation), array(
-						    'route' => 'maci_admin_view',
-						    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
+							'route' => 'maci_admin_view',
+							'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
 						));
 					}
 				}
 			} else {
 				$menu->addChild($this->mcm->generateLabel($action), array(
-				    'route' => 'maci_admin_view',
-				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id)
+					'route' => 'maci_admin_view',
+					'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id)
 				));
 			}
 		}
@@ -144,55 +144,60 @@ class AdminMenuBuilder
 		return $menu;
 	}
 
-    public function createItemRelationActionsMenu(array $options)
+	public function createItemRelationActionsMenu(array $options)
 	{
 		$menu = $this->factory->createItem('root');
 
 		$menu->setChildrenAttribute('class', 'nav navbar-nav');
 
-        $section = $this->mcm->getCurrentSection();
-        if (!$section) return false;
+		$section = $this->mcm->getCurrentSection();
+		if (!$section) return false;
 
-        $entity = $this->mcm->getCurrentEntity();
-        if (!$entity) return false;
+		$entity = $this->mcm->getCurrentEntity();
+		if (!$entity) return false;
 
-        $relation = $this->mcm->getCurrentRelation();
-        if (!$relation) return false;
+		$relation = $this->mcm->getCurrentRelation();
+		if (!$relation) return false;
 
 		$id = $this->request->get('id');
 
 		$relation_default_action = $this->mcm->getRelationDefaultAction($entity, $relation['association']);
 
 		$menu->addChild($this->mcm->generateLabel($relation_default_action), array(
-		    'route' => 'maci_admin_view',
-		    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_action)
+			'route' => 'maci_admin_view',
+			'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_action)
+		));
+
+		$menu->addChild($this->mcm->generateLabel('New ' . $relation['label']), array(
+			'route' => 'maci_admin_view',
+			'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'new')
 		));
 
 		$relation_default_method = $this->mcm->getRelationSetterAction($entity, $relation['association']);
 
 		$menu->addChild($this->mcm->generateLabel($relation_default_method . ' ' . $relation['association']), array(
-		    'route' => 'maci_admin_view',
-		    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_method)
+			'route' => 'maci_admin_view',
+			'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_method)
 		));
 
 		if ($this->mcm->isUploadable($relation)) {
 			$menu->addChild('Upload', array(
-			    'route' => 'maci_admin_view',
-			    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader')
+				'route' => 'maci_admin_view',
+				'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader')
 			));
 		}
 
 		foreach ($this->mcm->getBridges($relation) as $bridge) {
 
 			$menu->addChild($this->mcm->generateLabel($relation_default_method . ' ' . $bridge), array(
-			    'route' => 'maci_admin_view',
-			    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'bridge', 'bridge' => $bridge)
+				'route' => 'maci_admin_view',
+				'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'bridge', 'bridge' => $bridge)
 			));
 
 			if (in_array($bridge, $this->mcm->getUpladableBridges($relation))) {
 				$menu->addChild($this->mcm->generateLabel('Upload ' . $bridge), array(
-				    'route' => 'maci_admin_view',
-				    'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader', 'bridge' => $bridge)
+					'route' => 'maci_admin_view',
+					'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader', 'bridge' => $bridge)
 				));
 			}
 

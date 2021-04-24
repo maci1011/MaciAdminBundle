@@ -49,11 +49,23 @@ class ViewController extends AbstractController
 		$params = call_user_func_array(array($controller, $callAction), array());
 
 		if ($params === false) {
+			if ($request->isXmlHttpRequest()) {
+				return ['success' => false, 'error' => 'Bad Request.'];
+			}
 			$request->getSession()->getFlashBag()->add('error', 'Something wrong. :(');
 			return $this->redirect($this->generateUrl('maci_admin_not_found'));
 		}
 
 		// --- Return the Response for each case
+
+		if ($request->isXmlHttpRequest()) {
+			if (array_key_exists('template',$params)) {
+				$params['template'] = $this->renderView($params['template'], array(
+					'params' => $params
+				));
+			}
+			return new JsonResponse($params, 200);
+		}
 
 		if (array_key_exists('redirect', $params)) {
 			if (array_key_exists('redirect_params', $params)) {
@@ -64,15 +76,6 @@ class ViewController extends AbstractController
 
 		if (array_key_exists('redirect_url', $params)) {
 			return $this->redirect($params['redirect_url']);
-		}
-
-		if ($request->isXmlHttpRequest()) {
-			if (array_key_exists('template',$params)) {
-				$params['template'] = $this->renderView($params['template'], array(
-					'params' => $params
-				));
-			}
-			return new JsonResponse($params, 200);
 		}
 
 		// --- Return the View Template that include the action template
