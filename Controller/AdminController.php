@@ -281,7 +281,15 @@ class AdminController
 		return $config;
 	}
 
-	public function getConfig(&$map)
+	public function loadConfig(&$map)
+	{
+		if (!is_array($map)) return [];
+		if (array_key_exists('config', $map) && array_key_exists('_loaded', $map['config'])) return;
+		$map['config'] = $this->getConfig($map);
+		$map['config']['_loaded'] = true;
+	}
+
+	public function getConfig($map)
 	{
 		if (!is_array($map)) return [];
 		if (array_key_exists('config', $map) && array_key_exists('_loaded', $map['config'])) return $map['config'];
@@ -289,12 +297,10 @@ class AdminController
 		if (array_key_exists('section', $map)) $config = $this->mergeConfig($this->getSectionConfig($map['section']), $config);
 		if (array_key_exists('entity_root', $map)) $config = $this->mergeConfig($this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section'])), $config);
 		if (array_key_exists('config', $map)) $config = $this->mergeConfig($map['config'], $config);
-		$config['_loaded'] = true;
-		$map['config'] = $config;
 		return $config;
 	}
 
-	public function getConfigKey(&$map, $key)
+	public function getConfigKey($map, $key)
 	{
 		return $this->getConfig($map)[$key];
 	}
@@ -734,7 +740,7 @@ class AdminController
 		if (!$_entity) return false;
 		$entity = $this->getEntity($section, $_entity);
 		if ($entity) {
-			$this->getConfig($entity);
+			$this->loadConfig($entity);
 			$this->current_entity = $entity;
 			return $entity;
 		}
@@ -785,7 +791,7 @@ class AdminController
 		if (!$relation) return false;
 		$relation = $this->getRelation($entity, $relation);
 		if ($relation) {
-			$this->getConfig($relation);
+			$this->loadConfig($relation);
 			$this->current_relation = $relation;
 			return $relation;
 		}
@@ -1540,7 +1546,7 @@ class AdminController
 		}
 		$entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
 		if ($entity) {
-			$relation = array_merge_recursive([], $relation, $entity);
+			$relation = array_merge([], $relation, $entity);
 			foreach ($relation as $key => $value) {
 				if (is_array($relation[$key]) && !count($relation[$key])) $relation[$key] = $entity[$key];
 			}
