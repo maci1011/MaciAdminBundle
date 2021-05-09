@@ -6,7 +6,7 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\JsonResponse;
+// use Symfony\Component\HttpFoundation\JsonResponse;
 
 class DefaultController extends AbstractController
 {
@@ -75,11 +75,6 @@ class DefaultController extends AbstractController
 	public function reorderAction()
 	{
 		return $this->mcmReorder();
-	}
-
-	public function jsonAction()
-	{
-		return $this->mcmJson();
 	}
 
 	public function setPagerOptionsAction()
@@ -357,64 +352,6 @@ class DefaultController extends AbstractController
 				call_user_func_array(array($el, $sort_method), array(array_search($id, $ids)));
 			}
 		}
-
-		$this->om->flush();
-
-		return array('success' => true);
-	}
-
-	public function mcmJson()
-	{
-		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
-			return false;
-		}
-
-		$entity = $this->mcm->getCurrentEntity();
-		if (!$entity) return false;
-
-		$items = $this->request->get('items', array());
-
-		if (count($items)<1) {
-			return array('success' => false, 'error' => 'Json: No items.');
-		}
-
-		foreach ($items as $el) {
-			foreach ($el as $field => $val) {
-				$item = $this->mcm->getNewItem($entity);
-			}
-		}
-
-		// $ids = $this->request->get('ids', array());
-
-		// if (count($ids)<2) {
-		// 	return array('success' => false, 'error' => 'Reorder: No ids.');
-		// }
-
-		// $item = $this->mcm->getCurrentItem();
-		// if (!$item) return false;
-
-		// if ( !$this->mcm->isSortable($entity) ) {
-		// 	return array('success' => false, 'error' => 'Reorder: Entity [' . $entity['label'] . '] is not Sortable.');
-		// }
-
-		// $id_method = $this->mcm->getGetterMethod($this->mcm->getNewItem($entity), $this->mcm->getIdentifier($entity));
-		// if ( !$id_method ) {
-		// 	return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
-		// }
-
-		// $sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($entity), $this->mcm->getConfigKey($entity, 'sort_field'));
-		// if ( !$sort_method ) {
-		// 	return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
-		// }
-
-		// $list = $this->mcm->getList($entity);
-
-		// foreach ($list as $el) {
-		// 	$id = call_user_func_array(array($el, $id_method), array());
-		// 	if (in_array($id, $ids)) {
-		// 		call_user_func_array(array($el, $sort_method), array(array_search($id, $ids)));
-		// 	}
-		// }
 
 		$this->om->flush();
 
