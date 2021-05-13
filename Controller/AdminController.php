@@ -38,8 +38,6 @@ class AdminController
 
 	private $_class_list;
 
-	private $_section_list;
-
 	private $_defaults;
 
 	private $config;
@@ -141,7 +139,7 @@ class AdminController
 		$this->_sections = $this->session->get('maci_admin._sections');
 
 		// Inited from Session. End.
-		if (is_array($this->_auth_sections)) return;
+		// if (is_array($this->_auth_sections)) return;
 
 		// Init Authorized Sections
 		$this->_auth_sections = [];
@@ -202,10 +200,8 @@ class AdminController
 					$entity['section'] = $name;
 					$entity['name'] = $entity_name;
 					$entity['class'] = $this->getClass($entity);
-					if (!array_key_exists('label', $entity))
-					{
-						$entity['label'] = $this->generateLabel($entity_name);
-					}
+					if (!array_key_exists('label', $entity)) $entity['label'] = $this->generateLabel($entity_name);
+					if (!array_key_exists('config', $entity)) $entity['config'] = false;
 					// Add Entity
 					$entities[$entity_name] = $entity;
 				}
@@ -247,14 +243,12 @@ class AdminController
 
 	public function mergeConfig($config, $defaults = false)
 	{
-		if (!$defaults) $defaults = $this->_defaults;
+		if (!is_array($defaults)) $defaults = $this->_defaults;
 		if (!is_array($config) || count($config) == 0) return $defaults;
 		if (array_key_exists('config', $config)) $config = $config['config'];
 		if (array_key_exists('config', $defaults)) $defaults = $defaults['config'];
-
-		$roles = array_key_exists('roles', $config) ? $config['roles'] : $defaults['roles'];
-
-		$actions = $defaults['actions'];
+		$roles = array_key_exists('roles', $config) ? $config['roles'] : array_key_exists('roles', $defaults) ? $defaults['roles'] : [];
+		$actions = array_key_exists('actions', $config) ? $config['actions'] : array_key_exists('actions', $defaults) ? $defaults['actions'] : [];
 		if (array_key_exists('actions', $config)) {
 			foreach ($config['actions'] as $action => $cnf) {
 				if (!array_key_exists($action, $actions)) {
@@ -272,18 +266,40 @@ class AdminController
 				}
 			}
 		}
-
 		$config = array_merge($defaults, $config);
 		$config['roles'] = $roles;
 		$config['actions'] = $actions;
-
 		return $config;
+	}
+
+	public function mergeViews($map, $defaults = false)
+	{
+		$view = is_array($defaults) ? $defaults : $this->getDefaultMap();
+
+		if (!is_array($map)) return $view;
+
+		if (array_key_exists('name', $map)) $view['name'] = $map['name'];
+		if (array_key_exists('section', $map)) $view['section'] = $map['section'];
+		if (array_key_exists('entity', $map)) $view['entity'] = $map['entity'];
+		if (array_key_exists('class', $map)) $view['class'] = $map['class'];
+		if (array_key_exists('form', $map)) $view['form'] = $map['form'];
+		if (array_key_exists('label', $map)) $view['label'] = $map['label'];
+		if (array_key_exists('list', $map)) $view['list'] = $map['list'];
+		if (array_key_exists('bridges', $map)) $view['bridges'] = $map['bridges'];
+		if (array_key_exists('config', $map)) $view['config'] = $this->mergeConfig($map['config'], array_key_exists('config', $view) ? $view['config'] : []);
+
+		return $view;
+	}
+
+	public function isConfigLoaded(&$map)
+	{
+		return (array_key_exists('config', $map) && is_array($map['config']) && array_key_exists('_loaded', $map['config']));
 	}
 
 	public function loadConfig(&$map)
 	{
 		if (!is_array($map)) return [];
-		if (array_key_exists('config', $map) && array_key_exists('_loaded', $map['config'])) return;
+		if ($this->isConfigLoaded($map)) return;
 		$map['config'] = $this->getConfig($map);
 		$map['config']['_loaded'] = true;
 	}
@@ -291,11 +307,11 @@ class AdminController
 	public function getConfig($map)
 	{
 		if (!is_array($map)) return [];
-		if (array_key_exists('config', $map) && array_key_exists('_loaded', $map['config'])) return $map['config'];
+		if ($this->isConfigLoaded($map)) return $map['config'];
 		$config = $this->_defaults;
-		if (array_key_exists('section', $map)) $config = $this->mergeConfig($this->getSectionConfig($map['section']), $config);
-		if (array_key_exists('entity_root', $map)) $config = $this->mergeConfig($this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section'])), $config);
-		if (array_key_exists('config', $map)) $config = $this->mergeConfig($map['config'], $config);
+		if (array_key_exists('section', $map) && is_string($map['section'])) $config = $this->mergeConfig($this->getSectionConfig($map['section']), $config);
+		if (array_key_exists('entity_root', $map) && is_string($map['entity_root'])) $config = $this->mergeConfig($this->getConfig($this->getEntity($map['entity_root'], $map['entity_root_section'])), $config);
+		if (array_key_exists('config', $map) && is_array($map['config'])) $config = $this->mergeConfig($map['config'], $config);
 		return $config;
 	}
 
@@ -361,7 +377,6 @@ class AdminController
 			if ($this->hasSectionDashboard($section)) {
 				return $this->render($this->getSectionDashboard($section));
 			}
-			var_dump($this->_sections);die();
 			$entities = array_keys($this->getEntities($section));
 			return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entities[0],'action'=>'list'));
 		}
@@ -498,7 +513,7 @@ class AdminController
 	{
 		$sections = $this->getAuthSections();
 		if ($pref_section && in_array($pref_section, $sections)) {
-			$sections = array_merge(array($pref_section), $sections);
+			$sections = array_merge([$pref_section], $sections);
 		}
 		foreach ($sections as $section) {
 			$entities = $this->getEntities($section);
@@ -528,17 +543,20 @@ class AdminController
 	------------> Defaults Map, Params and Urls
 */
 
-	public function getDefaultMap()
+	static public function getDefaultMap()
 	{
-		$map = [];
-		// $map['class'] = null;
-		// $map['label'] = null;
-		// $map['name'] = null;
-		// $map['section'] = null;
-		$map['list'] = [];
-		$map['filters'] = [];
-		$map['config'] = false;
-		return $map;
+		return [
+			'name' => false,
+			'section' => false,
+			'entity' => false,
+			'class' => false,
+			'form' => false,
+			'label' => false,
+			'list' => false,
+			'bridges' => false,
+			// 'filters' => false,
+			'config' => false
+		];
 	}
 
 	public function getDefaultParams($section = false)
@@ -962,7 +980,7 @@ class AdminController
 	public function getBridges($relation)
 	{
 		$list = [];
-		if (array_key_exists('bridges', $relation)) {
+		if (array_key_exists('bridges', $relation) && is_array($relation['bridges'])) {
 			$i=0;
 			foreach ($relation['bridges'] as $bridge) {
 				$metadata = $this->getAssociationMetadata($relation, $bridge);
@@ -977,7 +995,7 @@ class AdminController
 
 	public function getUpladableBridges($relation)
 	{
-		if (!array_key_exists('bridges', $relation)) {
+		if (!array_key_exists('bridges', $relation) || !is_array($relation['bridges'])) {
 			return [];
 		}
 		$upb = [];
@@ -1086,7 +1104,7 @@ class AdminController
 	{
 		$object = $this->getNewItem($map);
 		$list = [$this->getIdentifier($map)];
-		if (array_key_exists('list', $map) && count($map['list'])) {
+		if (array_key_exists('list', $map) && is_array($map['list']) && count($map['list'])) {
 			$list = array_merge($list, $map['list']);
 			$field = $this->getConfigKey($map, 'sort_field');
 			if ($this->isSortable($map) && !in_array($field, $list)) $list[] = $field;
@@ -1524,7 +1542,7 @@ class AdminController
 		$map = $this->getDefaultMap();
 		$map['class'] = $metadata['targetEntity'];
 		$map['name'] = $metadata['fieldName'];
-		$map['label'] = $this->generateLabel( $metadata['fieldName'] );
+		$map['label'] = $this->generateLabel($metadata['fieldName']);
 		return $map;
 	}
 
@@ -1537,41 +1555,34 @@ class AdminController
 		if (!$metadata) {
 			return false;
 		}
-		$relation = $this->getNewMap($metadata);
-		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
-			$relation = array_merge([], $relation, $map['relations'][$association]);
+		$relation = $this->getEntityByClass($metadata['targetEntity'], $map['section']);
+		if (!$relation) {
+			$relation = $this->getNewMap($metadata);
 		}
-		$entity = $this->getEntityByClass($this->getClass($relation), $map['section']);
-		if ($entity) {
-			$relation = array_merge([], $relation, $entity);
-			foreach ($relation as $key => $value) {
-				if (is_array($relation[$key]) && !count($relation[$key])) $relation[$key] = $entity[$key];
-			}
-			if (!$this->isAuthorized($relation)) {
-				return false;
-			}
-		}
-		array_unique($relation, SORT_REGULAR);
-		if (!array_key_exists('section', $relation)) {
+		if (!$relation['section']) {
 			$relation['section'] = $map['section'];
 		}
-		if (!array_key_exists('entity', $relation)) {
-			$relation['entity'] = $relation['name'];
+		if (!array_key_exists('entity', $relation) || !$relation['entity']) {
+			$relation['entity'] = $association;
 		}
-		if ($entity['section'] == null) {
+		if ($relation['section'] == null) {
 			$relation['entity_root_section'] = $map['section'];
 		} else {
-			$relation['entity_root_section'] = $entity['section'];
+			$relation['entity_root_section'] = $relation['section'];
 		}
-		if ($entity['name'] == null) {
+		if ($relation['name'] == null) {
 			$relation['entity_root'] = $map['name'];
 		} else {
-			$relation['entity_root'] = $entity['name'];
+			$relation['entity_root'] = $relation['name'];
 		}
+		$relation['parent_entity'] = $map['name'];
 		$relation['association'] = $association;
-		if (array_key_exists($association, $map['relations']) &&
-			array_key_exists('config', $map['relations'][$association])) {
-			$relation['config'] = array_merge_recursive([], $this->_defaults, (array_key_exists('config', $entity) ? $entity['config'] : []), $map['relations'][$association]['config']);
+		$this->loadConfig($relation);
+		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
+			$relation = $this->mergeViews($map['relations'][$association], $relation);
+		}
+		if (!$this->isAuthorized($relation)) {
+			return false;
 		}
 		return $relation;
 	}
