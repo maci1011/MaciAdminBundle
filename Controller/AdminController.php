@@ -140,17 +140,16 @@ class AdminController
 		$this->_auth_sections = $this->session->get('maci_admin._auth_sections');
 		$this->_sections = $this->session->get('maci_admin._sections');
 
-		// if (is_array($this->_auth_sections)) return;
+		// Inited from Session. End.
+		if (is_array($this->_auth_sections)) return;
 
 		// Init Authorized Sections
 		$this->_auth_sections = [];
 		$this->_sections = [];
 
-		// It Needs Sections Config
-		// if (!array_key_exists('sections', $this->config)) return;
-
 		if (array_key_exists('config', $this->config)) $this->_defaults = $this->mergeConfig($this->config);
 
+		// It Needs Sections Config
 		if (!array_key_exists('sections', $this->config)) return;
 
 		foreach ($this->config['sections'] as $name => $section)
