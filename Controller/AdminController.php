@@ -183,7 +183,7 @@ class AdminController
 				$section['config'] = false;
 			}
 			// Section Entities
-			if (array_key_exists('entities', $section)) {
+			if (array_key_exists('entities', $section) && count($section['entities'])) {
 				$entities = [];
 				foreach ($section['entities'] as $entity_name => $entity)
 				{
@@ -214,7 +214,7 @@ class AdminController
 				$section['entities'] = false;
 			}
 			// Add Section
-			$this->_auth_sections[] = $section['name'];
+			$this->_auth_sections[] = $name;
 			$this->_sections[$name] = $section;
 		}
 
@@ -361,6 +361,7 @@ class AdminController
 			if ($this->hasSectionDashboard($section)) {
 				return $this->render($this->getSectionDashboard($section));
 			}
+			var_dump($this->_sections);die();
 			$entities = array_keys($this->getEntities($section));
 			return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entities[0],'action'=>'list'));
 		}
@@ -474,10 +475,7 @@ class AdminController
 
 	public function hasEntities($section)
 	{
-		if (array_key_exists($section, $this->_sections)) {
-			return (bool) count($this->_sections[$section]['entities']);
-		}
-		return false;
+		return (array_key_exists($section, $this->_sections) && count($this->_sections[$section]['entities']));
 	}
 
 	public function getEntity($section, $entity)
