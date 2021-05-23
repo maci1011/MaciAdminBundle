@@ -247,8 +247,8 @@ class AdminController
 		if (!is_array($config) || count($config) == 0) return $defaults;
 		if (array_key_exists('config', $config)) $config = $config['config'];
 		if (array_key_exists('config', $defaults)) $defaults = $defaults['config'];
-		$roles = array_key_exists('roles', $config) ? $config['roles'] : array_key_exists('roles', $defaults) ? $defaults['roles'] : [];
-		$actions = array_key_exists('actions', $config) ? $config['actions'] : array_key_exists('actions', $defaults) ? $defaults['actions'] : [];
+		$roles = array_key_exists('roles', $config) && count($config['roles']) ? $config['roles'] : array_key_exists('roles', $defaults) ? $defaults['roles'] : ['ROLE_ADMIN'];
+		$actions = array_key_exists('actions', $config) && count($config['actions']) ? $config['actions'] : array_key_exists('actions', $defaults) ? $defaults['actions'] : $this->defaults['actions'];
 		if (array_key_exists('actions', $config)) {
 			foreach ($config['actions'] as $action => $cnf) {
 				if (!array_key_exists($action, $actions)) {
@@ -284,8 +284,8 @@ class AdminController
 		if (array_key_exists('class', $map)) $view['class'] = $map['class'];
 		if (array_key_exists('form', $map)) $view['form'] = $map['form'];
 		if (array_key_exists('label', $map)) $view['label'] = $map['label'];
-		if (array_key_exists('list', $map)) $view['list'] = $map['list'];
-		if (array_key_exists('bridges', $map)) $view['bridges'] = $map['bridges'];
+		if (array_key_exists('list', $map) && count($map['list'])) $view['list'] = $map['list'];
+		if (array_key_exists('bridges', $map) && count($map['bridges'])) $view['bridges'] = $map['bridges'];
 		if (array_key_exists('config', $map)) $view['config'] = $this->mergeConfig($map['config'], array_key_exists('config', $view) ? $view['config'] : []);
 
 		return $view;
