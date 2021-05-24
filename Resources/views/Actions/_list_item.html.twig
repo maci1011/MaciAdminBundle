@@ -84,6 +84,10 @@
 	{% if relation_entity_root_section != '___unset___' %}
 	<td>
 
+		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': relation_section, 'entity': relation_entity, 'action': 'edit', 'id': pager.identifier(listId)}) }}">
+			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
+		</a>
+
 		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': pager.identifier(listId), 'rm': 'item'}) }}" method="post">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove Item
 		</a>
