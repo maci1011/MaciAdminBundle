@@ -546,6 +546,7 @@ class AdminController
 	static public function getDefaultMap()
 	{
 		return [
+			'authorized' => false,
 			'name' => false,
 			'section' => false,
 			'entity' => false,
