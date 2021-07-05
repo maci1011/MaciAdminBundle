@@ -7,6 +7,10 @@ maci_admin_dashboard:
     path:  /view/{section}
     defaults: { _controller: MaciAdminBundle:View:view }
 
+maci_admin_ajax:
+    path:  /ajax
+    defaults: { _controller: MaciAdminBundle:View:ajax }
+
 maci_admin_not_found:
     path:  /not-found
     defaults: { _controller: MaciAdminBundle:View:notFound }

@@ -105,7 +105,7 @@ class DefaultController extends AbstractController
 
 		if ($this->request->isXmlHttpRequest()) {
 			return [
-				'list' => $this->mcm->getListData($entity, $list),
+				'list' => $this->mcm->getDataFromList($entity, $list),
 				'success' => true
 			];
 		}

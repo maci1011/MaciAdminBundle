@@ -24,7 +24,7 @@ class ViewController extends AbstractController
 	{
 		$admin = $this->container->get(AdminController::class);
 
-		// --- Check the Auths and the Route
+		// --- Check Auth
 
 		$auth = $admin->checkRoute();
 		if ($auth !== true) {
@@ -84,6 +84,53 @@ class ViewController extends AbstractController
 			'template' => $params['template'],
 			'params' => $params
 		));
+	}
+
+	public function ajaxAction(Request $request)
+	{
+		// --- Check Request
+
+		if (!$request->isXmlHttpRequest()) {
+			return $this->redirect($this->generateUrl('homepage'));
+		}
+
+		if (!$request->getMethod() === 'POST') {
+			return new JsonResponse(['success' => false, 'error' => 'Bad Request.'], 200);
+		}
+
+		$admin = $this->container->get(AdminController::class);
+
+		// --- Check Auth
+
+		if (!$admin->checkAuth()) {
+			return new JsonResponse(['success' => false, 'error' => 'Not Authorized.'], 200);
+		}
+
+		// --- Check Data
+
+		$data = $request->get('data');
+
+		if (!is_array($data)) {
+			return new JsonResponse(['success' => false, 'error' => 'No Data.'], 200);
+		}
+
+		// --- List
+
+		if (array_key_exists('list', $data) &&
+			array_key_exists('section', $data['list']) &&
+			array_key_exists('entity', $data['list'])
+		) {
+			$entity = $admin->getEntityBySection($data['list']['section'], $data['list']['entity']);
+			if ($entity) {
+				$data['list'] = $admin->getListData(
+					$entity,
+					array_key_exists('trash', $data['list']) ? $data['list']['trash'] : false,
+					array_key_exists('fields', $data['list']) ? $data['list']['fields'] : false
+				);
+			} else return new JsonResponse(['success' => false, 'error' => 'Entity "' . $entity . '" not Found'], 200);
+		}
+
+		return new JsonResponse(['success' => true, 'data' => $data], 200);
 	}
 
 	public function adminBarAction($entity, $item = false)

@@ -135,6 +135,12 @@ class AdminController
 	// Init _sections and _auth_sections
 	private function initConfig()
 	{
+		if ($this->authorizationChecker->isGranted('ROLE_ANONYMOUS')) {
+			$this->_auth_sections = [];
+			$this->_sections = [];
+			return;
+		}
+
 		$this->_auth_sections = $this->session->get('maci_admin._auth_sections');
 		$this->_sections = $this->session->get('maci_admin._sections');
 
@@ -357,11 +363,19 @@ class AdminController
 		return 'MaciAdminBundle:Actions:template_not_found.html.twig';
 	}
 
-	// --- Check if User Auths for the current Route
+	// --- Check User Auths
+	public function checkAuth()
+	{
+		if (!count($this->_auth_sections) || !count($this->_sections)) {
+			return false;
+		}
+		return true;
+	}
+
+	// --- Check User Auths for the current Route
 	public function checkRoute()
 	{
-		$this->_auth_sections = $this->getAuthSections();
-		if (!count($this->_auth_sections)) {
+		if (!$this->checkAuth()) {
 			return $this->generateUrl('homepage');
 		}
 		$section = $this->getCurrentSection();
@@ -435,18 +449,18 @@ class AdminController
 
 	public function isAuthSection($section)
 	{
-		return in_array($section, $this->getAuthSections());
+		return $this->sectionExists($section) && in_array($section, $this->getAuthSections());
 	}
 
 	public function getSection($section)
 	{
-		if ($this->hasSection($section)) {
+		if ($this->isAuthSection($section)) {
 			return $this->_sections[$section];
 		}
 		return false;
 	}
 
-	public function hasSection($section)
+	public function sectionExists($section)
 	{
 		return array_key_exists($section, $this->_sections);
 	}
@@ -499,6 +513,17 @@ class AdminController
 			return $this->_sections[$section]['entities'][$entity];
 		}
 		return false;
+	}
+
+	public function getEntityBySection($section, $entity)
+	{
+		if (!$this->isAuthSection($section)) {
+			return false;
+		}
+		if (!$this->hasEntity($section, $entity)) {
+			return false;
+		}
+		return $this->_sections[$section]['entities'][$entity];
 	}
 
 	public function hasEntity($section, $entity)
@@ -1379,7 +1404,7 @@ class AdminController
 		return true;
 	}
 
-	public function getList($map, $trashValue = false)
+	public function getList($map, $trashValue = null)
 	{
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
@@ -1407,16 +1432,21 @@ class AdminController
 		return $getters;
 	}
 
-	public function getListData($map, $trashValue = false)
+	public function getListData($map, $trashValue = false, $fields = false)
 	{
 		$list = $this->getList($map, $trashValue);
-		$getters = $this->getGetters($map);
-		$data = [];
+		return $this->getDataFromList($map, $list, $fields);
+	}
 
-		foreach ($list as $item) {
-			$data[count($data)] = $this->getItemData($map, $item, $getters);
+	public function getDataFromList($map, $list, $fields = false)
+	{
+		if ($fields === false) {
+			$fields = $this->getGetters($map);
 		}
-
+		$data = [];
+		foreach ($list as $item) {
+			$data[count($data)] = $this->getItemData($map, $item, $fields);
+		}
 		return $data;
 	}
 
@@ -1485,7 +1515,7 @@ class AdminController
 			$query->andWhere($root . '.' . $inverseField . ' != :pid');
 			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), []));
 		}
-		$query = $this->addDefaultQueries($mainMap, $query);
+		$query = $this->addDefaultQueries($mainMap, $query, false);
 		$query = $query->getQuery();
 		return $query->getResult();
 	}
@@ -2004,13 +2034,11 @@ class AdminController
 	------------> Queries
 */
 
-	public function addDefaultQueries($map, $query, $trashValue = false)
+	public function addDefaultQueries($map, $query, $trashValue = null)
 	{
 		// $query = $this->addFiltersQuery($map, $query);
 		$query = $this->addSearchQuery($map, $query);
-		if ($trashValue === false || $trashValue === true) {
-			$query = $this->addTrashQuery($map, $query, $trashValue);
-		}
+		$query = $this->addTrashQuery($map, $query, $trashValue);
 		$query = $this->addOrderByQuery($map, $query);
 
 		return $query;
@@ -2041,8 +2069,11 @@ class AdminController
 		return $query;
 	}
 
-	public function addTrashQuery($map, $query, $trashValue = false)
+	public function addTrashQuery($map, $query, $trashValue = null)
 	{
+		if ($trashValue !== false && $trashValue !== true) {
+			return $query;
+		}
 		if ($this->hasTrash($map)) {
 			$fields = $this->getFields($map);
 			$trashAttr = $this->getTrashField($map);
