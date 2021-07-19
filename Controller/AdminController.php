@@ -478,15 +478,7 @@ class AdminController
 		return false;
 	}
 
-	public function getSectionDashboard($section)
-	{
-		if ($this->hasSectionDashboard($section)) {
-			return $this->_sections[$section]['dashboard'];
-		}
-		return false;
-	}
-
-	public function hasSectionDashboard($section)
+	public function hasDashboard($section)
 	{
 		if (array_key_exists($section, $this->_sections) && array_key_exists('dashboard', $this->_sections[$section])) {
 			return $this->templating->exists($this->_sections[$section]['dashboard']);
@@ -494,12 +486,23 @@ class AdminController
 		return false;
 	}
 
-	public function getEntities($section)
+	public function getDashboard($section)
 	{
-		if ($this->hasEntities($section)) {
-			return $this->_sections[$section]['entities'];
+		if ($this->hasDashboard($section)) {
+			return $this->_sections[$section]['dashboard'];
 		}
 		return false;
+	}
+
+	public function getEntities($section)
+	{
+		if (!$this->isAuthSection($section)) {
+			return false;
+		}
+		if (!$this->hasEntities($section)) {
+			return false;
+		}
+		return $this->_sections[$section]['entities'];
 	}
 
 	public function hasEntities($section)
@@ -509,17 +512,6 @@ class AdminController
 
 	public function getEntity($section, $entity)
 	{
-		if ($this->hasEntity($section, $entity)) {
-			return $this->_sections[$section]['entities'][$entity];
-		}
-		return false;
-	}
-
-	public function getEntityBySection($section, $entity)
-	{
-		if (!$this->isAuthSection($section)) {
-			return false;
-		}
 		if (!$this->hasEntity($section, $entity)) {
 			return false;
 		}
@@ -593,7 +585,7 @@ class AdminController
 		return array(
 			'section' => $section,
 			'section_label' => $this->getSectionLabel($section),
-			'section_has_dashboard' => $this->hasSectionDashboard($section)
+			'section_has_dashboard' => $this->hasDashboard($section)
 		);
 	}
 
@@ -1340,114 +1332,25 @@ class AdminController
 		return false;
 	}
 
-	public function getListIdentifiers($map, $list)
-	{
-		$ids = [];
-		foreach ($list as $item) {
-			$ids[] = $this->getIdentifierValue($map, $item);
-		}
-		return $ids;
-	}
-
 	public function getItem($map, $id)
 	{
 		return $this->getRepository($map)->findOneBy([$this->getIdentifier($map) => $id]);
 	}
 
-	public function trashItems($map, $list)
+	public function getItemDataByParams($data)
 	{
-		if (!$this->hasTrash($map) || !count($list)) return false;
-		foreach ($list as $item) {
-			$val = $this->isItemTrashed($map, $item);
-			$remover = $this->getRemoverMethod($item, $this->getTrashField($map));
-			if ($remover) {
-				call_user_func_array([$item, $remover], [!$val]);
-				$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] ' . ($val ? 'restored' : 'moved to trash.'));
-			} else {
-				return false;
-			}
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
 		}
-		$this->om->flush();
-		return true;
-	}
-
-	public function trashItemsFromRequestIds($map, $list)
-	{
-		return $this->trashItems($map, $this->selectItemsFromRequestIds($map,$list));
-	}
-
-	public function isItemTrashed($map, $item)
-	{
-		if (!$this->hasTrash($map)) return false;
-		$remover = $this->getRemoverMethod($item, $this->getTrashField($map), 'get');
-		if ($remover) {
-			$val = call_user_func_array([$item, $remover], []);
-			return $val;
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
 		}
-		return null;
-	}
-
-	public function removeItems($map, $list)
-	{
-		if (!count($list)) return false;
-		foreach ($list as $item) {
-			try {
-				$this->om->remove($item);
-				$this->om->flush();
-			} catch (\Doctrine\DBAL\DBALException $e) {
-				$exception_message = $e->getPrevious()->getCode();
-				$this->session->getFlashBag()->add('error', 'Error! Item [' . $map['label'] . ':' . $item . '] not removed. Exception: ' . get_class($e) . ' - ' . $exception_message . '.');
-				return false;
-			}
-			$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] removed.');
+		$item = $this->getItem($entity, $data['id']);
+		if ($item) {
+			return $this->getItemData($entity, $item);
 		}
-		return true;
-	}
-
-	public function getList($map, $trashValue = null)
-	{
-		$repo = $this->getRepository($map);
-		$query = $repo->createQueryBuilder('e');
-		$root = $query->getRootAlias();
-		$query = $this->addDefaultQueries($map, $query, $trashValue);
-		$query = $query->getQuery();
-		$list = $query->getResult();
-		return $list;
-	}
-
-	public function getGetters($map, $removeId = false)
-	{
-		$fields = $this->getFields($map, $removeId);
-		$obj = $this->getNewItem($map);
-		$getters = [];
-
-		foreach ($fields as $field) {
-			$getter = $this->getGetterMethod($obj, $field);
-			if (!$getter) {
-				return false;
-			}
-			$getters[$field] = $getter;
-		}
-
-		return $getters;
-	}
-
-	public function getListData($map, $trashValue = false, $fields = false)
-	{
-		$list = $this->getList($map, $trashValue);
-		return $this->getDataFromList($map, $list, $fields);
-	}
-
-	public function getDataFromList($map, $list, $fields = false)
-	{
-		if ($fields === false) {
-			$fields = $this->getGetters($map);
-		}
-		$data = [];
-		foreach ($list as $item) {
-			$data[count($data)] = $this->getItemData($map, $item, $fields);
-		}
-		return $data;
+		return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
 	}
 
 	public function getItemData($map, $item, $getters = false)
@@ -1481,7 +1384,145 @@ class AdminController
 		return $data;
 	}
 
-	public function getItemsForRelation($map, $relation, $item, $bridge = false)
+	public function editItemByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) ||
+			!array_key_exists('id', $data) || !array_key_exists('data', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getItem($entity, $data['id']);
+		if ($item) {
+			return $this->setItem($entity, $item, $data['data']);
+		}
+		return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+	}
+
+	public function newItemByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('data', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getNewItem($entity);
+		if ($item) {
+			$response = $this->setItemData($entity, $item, $data['data']);
+			$this->om->persist($item);
+			return array_merge(['id' => $this->getIdentifierValue($entity, $item)], $response);
+		}
+		return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+	}
+
+	public function setItem($map, $item, $data, $setters = false)
+	{
+		if (!$setters) $setters = $this->getSetters($map);
+		foreach ($data as $field => $value) {
+			$setter = $this->getSetterMethod($item, $field);
+			if (!$setter) {
+				continue;
+			}
+			call_user_func_array([$item, $setter], is_array($value) ? $value : []);
+		}
+		$this->om->flush();
+		return ['success' => true, 'info' => 'Item "' . $item . '" for entity "' . $map['label'] . '" edited.'];
+	}
+
+	public function removeItems($map, $list)
+	{
+		if (!count($list)) return false;
+		foreach ($list as $item) {
+			try {
+				$this->om->remove($item);
+				$this->om->flush();
+			} catch (\Doctrine\DBAL\DBALException $e) {
+				$exception_message = $e->getPrevious()->getCode();
+				$this->session->getFlashBag()->add('error', 'Error! Item [' . $map['label'] . ':' . $item . '] not removed. Exception: ' . get_class($e) . ' - ' . $exception_message . '.');
+				return false;
+			}
+			$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] removed.');
+		}
+		return true;
+	}
+
+	public function trashItems($map, $list)
+	{
+		if (!$this->hasTrash($map) || !count($list)) return false;
+		foreach ($list as $item) {
+			$val = $this->isItemTrashed($map, $item);
+			$remover = $this->getRemoverMethod($item, $this->getTrashField($map));
+			if ($remover) {
+				call_user_func_array([$item, $remover], [!$val]);
+				$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] ' . ($val ? 'restored' : 'moved to trash.'));
+			} else {
+				return false;
+			}
+		}
+		$this->om->flush();
+		return true;
+	}
+
+	public function trashItemsFromRequestIds($map, $list)
+	{
+		return $this->trashItems($map, $this->selectItemsFromRequestIds($map,$list));
+	}
+
+	public function selectItemsFromRequestIds($map, $list)
+	{
+		$ids = explode(',', $this->request->get('ids', ''));
+		if (!count($ids)) {
+			return false;
+		}
+		$obj_list = [];
+		$ids_list = $this->getListIdentifiers($map, $list);
+		$repo = $this->getRepository($map);
+		if(count($ids_list)) {
+			foreach ($ids as $_id) {
+				if(is_int($ids_list[0])) {
+					$_id = (int) $_id;
+				} else if(is_float($ids_list[0])) {
+					$_id = (float) $_id;
+				}
+				if (!$_id) {
+					$this->session->getFlashBag()->add('error', 'Id of Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
+					continue;
+				}
+				if (!in_array($_id, $ids_list)) {
+					$this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
+					continue;
+				}
+				$obj_list[] = $list[array_search($_id, $ids_list)];
+			}
+		}
+		return $obj_list;
+	}
+
+	public function getListIdentifiers($map, $list)
+	{
+		$ids = [];
+		foreach ($list as $item) {
+			$ids[] = $this->getIdentifierValue($map, $item);
+		}
+		return $ids;
+	}
+
+	public function getList($map, $trashValue = null)
+	{
+		$repo = $this->getRepository($map);
+		$query = $repo->createQueryBuilder('e');
+		$root = $query->getRootAlias();
+		$query = $this->addDefaultQueries($map, $query, $trashValue);
+		$query = $query->getQuery();
+		$list = $query->getResult();
+		return $list;
+	}
+
+	public function getListForRelation($map, $relation, $item, $bridge = false)
 	{
 		$relation_items = $this->getRelationItems($relation, $item);
 		$inverseField = $this->getRelationInverseField($map, $relation);
@@ -1520,34 +1561,38 @@ class AdminController
 		return $query->getResult();
 	}
 
-	public function selectItemsFromRequestIds($map, $list)
+	public function getListDataByParams($data)
 	{
-		$ids = explode(',', $this->request->get('ids', ''));
-		if (!count($ids)) {
-			return false;
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
 		}
-		$obj_list = [];
-		$ids_list = $this->getListIdentifiers($map, $list);
-		$repo = $this->getRepository($map);
-		if(count($ids_list)) {
-			foreach ($ids as $_id) {
-				if(is_int($ids_list[0])) {
-					$_id = (int) $_id;
-				} else if(is_float($ids_list[0])) {
-					$_id = (float) $_id;
-				}
-				if (!$_id) {
-					$this->session->getFlashBag()->add('error', 'Id of Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
-					continue;
-				}
-				if (!in_array($_id, $ids_list)) {
-					$this->session->getFlashBag()->add('error', 'Item [' . $_id . '] for ' . $this->getClass($map) . ' not found.');
-					continue;
-				}
-				$obj_list[] = $list[array_search($_id, $ids_list)];
-			}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if ($entity) {
+			return $this->getListData(
+				$entity,
+				array_key_exists('trash', $data) ? $data['trash'] : false,
+				array_key_exists('fields', $data) ? $data['fields'] : false
+			);
 		}
-		return $obj_list;
+		return ['success' => false, 'error' => 'Entity "' . $entity . '" not Found.'];
+	}
+
+	public function getListData($map, $trashValue = false, $fields = false)
+	{
+		$list = $this->getList($map, $trashValue);
+		return $this->getDataFromList($map, $list, $fields);
+	}
+
+	public function getDataFromList($map, $list, $fields = false)
+	{
+		if ($fields === false) {
+			$fields = $this->getGetters($map);
+		}
+		$data = [];
+		foreach ($list as $item) {
+			$data[count($data)] = $this->getItemData($map, $item, $fields);
+		}
+		return $data;
 	}
 
 	public function getMetadata(&$map)
@@ -2028,6 +2073,40 @@ class AdminController
 			return $methodName;
 		}
 		return false;
+	}
+
+	public function getGetters($map, $removeId = false)
+	{
+		$fields = $this->getFields($map, $removeId);
+		$obj = $this->getNewItem($map);
+		$getters = [];
+
+		foreach ($fields as $field) {
+			$getter = $this->getGetterMethod($obj, $field);
+			if (!$getter) {
+				return false;
+			}
+			$getters[$field] = $getter;
+		}
+
+		return $getters;
+	}
+
+	public function getSetters($map, $removeId = false)
+	{
+		$fields = $this->getFields($map, $removeId);
+		$obj = $this->getNewItem($map);
+		$setters = [];
+
+		foreach ($fields as $field) {
+			$setter = $this->getSetterMethod($obj, $field);
+			if (!$setter) {
+				return false;
+			}
+			$setters[$field] = $setter;
+		}
+
+		return $setters;
 	}
 
 /*

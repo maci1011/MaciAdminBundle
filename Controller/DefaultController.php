@@ -233,7 +233,7 @@ class DefaultController extends AbstractController
 				if ($trash) $this->mcm->trashItemsFromRequestIds($entity, $list);
 				else $this->mcm->removeItemsFromRequestIds($entity, $list);
 			}
-			return array('success' => true);
+			return ['success' => true];
 		}
 
 		if (!$item) {
@@ -532,7 +532,7 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
-		$list = $this->mcm->getItemsForRelation($entity, $relation, $item);
+		$list = $this->mcm->getListForRelation($entity, $relation, $item);
 
 		if ($this->request->getMethod() === 'POST') {
 
@@ -573,7 +573,7 @@ class DefaultController extends AbstractController
 		$bridge = $this->mcm->getCurrentBridge();
 		if (!$bridge) return false;
 
-		$list = $this->mcm->getItemsForRelation($entity, $relation, $item, $bridge);
+		$list = $this->mcm->getListForRelation($entity, $relation, $item, $bridge);
 
 		if ($this->request->getMethod() === 'POST') {
 

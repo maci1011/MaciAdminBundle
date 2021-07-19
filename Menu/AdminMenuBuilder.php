@@ -53,7 +53,7 @@ class AdminMenuBuilder
 
 		if ( $section && in_array($section, $sections) ) {
 
-			if ($this->mcm->hasSectionDashboard($section)) {
+			if ($this->mcm->hasDashboard($section)) {
 				$menu->addChild('Dashboard', array(
 					'route' => 'maci_admin_dashboard',
 					'routeParameters' => array('section' => $section)

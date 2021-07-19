@@ -94,7 +94,7 @@ class ViewController extends AbstractController
 			return $this->redirect($this->generateUrl('homepage'));
 		}
 
-		if (!$request->getMethod() === 'POST') {
+		if ($request->getMethod() !== 'POST') {
 			return new JsonResponse(['success' => false, 'error' => 'Bad Request.'], 200);
 		}
 
@@ -116,18 +116,26 @@ class ViewController extends AbstractController
 
 		// --- List
 
-		if (array_key_exists('list', $data) &&
-			array_key_exists('section', $data['list']) &&
-			array_key_exists('entity', $data['list'])
-		) {
-			$entity = $admin->getEntityBySection($data['list']['section'], $data['list']['entity']);
-			if ($entity) {
-				$data['list'] = $admin->getListData(
-					$entity,
-					array_key_exists('trash', $data['list']) ? $data['list']['trash'] : false,
-					array_key_exists('fields', $data['list']) ? $data['list']['fields'] : false
-				);
-			} else return new JsonResponse(['success' => false, 'error' => 'Entity "' . $entity . '" not Found'], 200);
+		if (array_key_exists('list', $data)) {
+			$data['list'] = $admin->getListDataByParams($data['list']);
+		}
+
+		// --- Item
+
+		if (array_key_exists('item', $data)) {
+			$data['item'] = $admin->getItemDataByParams($data['item']);
+		}
+
+		// --- New
+
+		if (array_key_exists('new', $data)) {
+			$data['new'] = $admin->newItemByParams($data['new']);
+		}
+
+		// --- Edit
+
+		if (array_key_exists('edit', $data)) {
+			$data['edit'] = $admin->editItemByParams($data['edit']);
 		}
 
 		return new JsonResponse(['success' => true, 'data' => $data], 200);
