@@ -388,7 +388,7 @@ class AdminController
 		}
 		$entity = $this->request->get('entity');
 		if (!$entity || !$this->hasEntity($section, $entity)) {
-			if ($this->hasSectionDashboard($section)) {
+			if ($this->hasDashboard($section)) {
 				return $this->render($this->getSectionDashboard($section));
 			}
 			$entities = array_keys($this->getEntities($section));
