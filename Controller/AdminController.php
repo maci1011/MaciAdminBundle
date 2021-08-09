@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\Intl\Locales;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -1268,7 +1269,10 @@ class AdminController
 			}
 			else if ($field === 'locale')
 			{
-				$form->add('locale', LocaleType::class);
+				$form->add('locale', ChoiceType::class, array(
+					'empty_data' => '',
+					'choices' => $this->getLocales()
+				));
 			}
 			else
 			{
@@ -1311,6 +1315,18 @@ class AdminController
 		));
 
 		return $form->getForm();
+	}
+
+	static public function getLocales()
+	{
+		$list = array_flip(Locales::getNames());
+		$new = [];
+		foreach ($list as $key => $value) {
+			if (strlen($value) == 2) {
+				$new[ucfirst($key)] = $value;
+			}
+		}
+		return $new;
 	}
 
 	public function getIdentifier($map)
@@ -1359,24 +1375,27 @@ class AdminController
 		$types = $this->getFieldsWithType($map);
 		$data = [];
 		foreach ($getters as $field => $getter) {
-			if (in_array($types[$field], [
+			$value = call_user_func_array([$item, $getter], []);
+			if ($value === null) {
+				$data[$field] = null;
+			} elseif (in_array($types[$field], [
 				'string', 'text', 'integer', 'smallint', 'bigint', 'boolean', 'decimal', 'float', 'json', 'guid'
 			])) {
-				$data[$field] = call_user_func_array([$item, $getter], []);
+				$data[$field] = $value;
 			} elseif ($types[$field] === 'date') {
-				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "d-m-Y");
+				$data[$field] = date_format($value, "d-m-Y");
 			} elseif ($types[$field] === 'time') {
-				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "H:i:s");
+				$data[$field] = date_format($value, "H:i:s");
 			} elseif ($types[$field] === 'datetime') {
-				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "Y/m/d H:i:s");
+				$data[$field] = date_format($value, "Y/m/d H:i:s");
 			} elseif ($types[$field] === 'datetimetz') {
-				$data[$field] = date_format(call_user_func_array([$item, $getter], []), "c");
+				$data[$field] = date_format($value, "c");
 			} elseif ($types[$field] === 'object') {
-				$data[$field] = get_class(call_user_func_array([$item, $getter], []));
+				$data[$field] = get_class($value);
 			} elseif ($types[$field] === 'simple_array') {
-				$data[$field] = implode(', ', call_user_func_array([$item, $getter], []));
+				$data[$field] = implode(', ', $value);
 			} elseif ($types[$field] === 'json') {
-				$data[$field] = call_user_func_array([$item, $getter], []);
+				$data[$field] = $value;
 			} else {
 				continue;
 			}
