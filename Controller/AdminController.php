@@ -679,7 +679,7 @@ class AdminController
 
 	public function getDefaultEntityRedirectParams($map, $action = 'list', $id = null, $opt = [])
 	{
-		if (in_array($action, $this->getSingleActions($map))) {
+		if (in_array($action, $this->getSingleActions($map)) || ($this->hasTrash($map) && $action == 'trash')) {
 			$id = $id === null ? $this->request->get('id', null) : $id;
 		} else {
 			$id = null;
@@ -906,12 +906,12 @@ class AdminController
 
 	public function getSingleActions($entity)
 	{
-		return array('show', 'edit', 'relations', 'remove');
+		return ['show', 'edit', 'relations', 'remove'];
 	}
 
 	public function getMultipleActions($entity)
 	{
-		return array('reorder');
+		return ['reorder'];
 	}
 
 	public function getSettingsActions($entity)
@@ -1450,18 +1450,33 @@ class AdminController
 		return true;
 	}
 
+	public function isItemTrashed($map, $item)
+	{
+		$getter = $this->getGetterMethod($item, $this->getTrashField($map));
+		if ($getter) {
+			return call_user_func_array([$item, $getter], []);
+		}
+		$this->session->getFlashBag()->add('error', 'Getter Method for entity [' . $map['label'] . '] not found.');
+		return false;
+	}
+
 	public function trashItems($map, $list)
 	{
 		if (!$this->hasTrash($map) || !count($list)) return false;
+		$remover = $this->getRemoverMethod($list[0], $this->getTrashField($map));
+		if (!$remover) {
+			$this->session->getFlashBag()->add('error', 'Remover Method for entity [' . $map['label'] . '] not found.');
+			return false;
+		}
+		$getter = $this->getGetterMethod($list[0], $this->getTrashField($map));
+		if (!$getter) {
+			$this->session->getFlashBag()->add('error', 'Getter Method for entity [' . $map['label'] . '] not found.');
+			return false;
+		}
 		foreach ($list as $item) {
 			$val = $this->isItemTrashed($map, $item);
-			$remover = $this->getRemoverMethod($item, $this->getTrashField($map));
-			if ($remover) {
-				call_user_func_array([$item, $remover], [!$val]);
-				$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] ' . ($val ? 'restored' : 'moved to trash.'));
-			} else {
-				return false;
-			}
+			call_user_func_array([$item, $remover], [!$val]);
+			$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] ' . ($val ? 'restored' : 'moved to trash.'));
 		}
 		$this->om->flush();
 		return true;
@@ -1730,10 +1745,10 @@ class AdminController
 		return [];
 	}
 
-	public function getRemoveForm($map, $item, $opt = [])
+	public function getRemoveForm($map, $item, $trash = false, $opt = [])
 	{
 		return $this->createFormBuilder($item)
-			->setAction($this->getEntityUrl($map, 'remove', $this->getIdentifierValue($map, $item), $opt))
+			->setAction($this->getEntityUrl($map, ($trash ? 'trash' : 'remove'), $this->getIdentifierValue($map, $item), $opt))
 			->add('remove', SubmitType::class, array(
 				'attr' => array('class' => 'btn-danger')
 			))

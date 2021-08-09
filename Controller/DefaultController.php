@@ -244,7 +244,7 @@ class DefaultController extends AbstractController
 			return false;
 		}
 
-		$form = $this->mcm->getRemoveForm($entity, $item);
+		$form = $this->mcm->getRemoveForm($entity, $item, $trash);
 
 		$form->handleRequest($this->request);
 
