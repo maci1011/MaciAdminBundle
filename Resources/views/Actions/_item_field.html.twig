@@ -64,6 +64,11 @@
 {% endif %}
 
 
+{% if not cuttext is defined %}
+{% set cuttext = false %}
+{% endif %}
+
+
 {% if val is null %}
 
 <span class="item-field-value"><i>NULL</i></span>
@@ -86,12 +91,16 @@
 
 {% elseif val|length  %}
 
-<span class="item-field-value">{{ val[:180] ~ (val|length < 180 ? '' : '...') }}</span>
+{% if cuttext  %}
+<span class="item-field-value">{{ val[:72] ~ (val|length < 72 ? '' : '...') }}</span>
+{% else  %}
+<span class="item-field-value">{{ val }}</span>
+{% endif %}
 
 {% else  %}
 
 <span class="item-field-value">{{ val }}</span>
 
-{% endif %}
+{% endif %} {# End (val is null) #}
 
-{% endif %}
+{% endif %} {# End field #}

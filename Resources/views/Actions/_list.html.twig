@@ -92,7 +92,7 @@
 
 {% for item in pager.pageList %}
 
-{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'listId': loop.index0} %}
+{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'listId': loop.index0, 'cuttext': true } %}
 
 {% endfor %}
 
