@@ -1286,7 +1286,7 @@ class AdminController
 				'attr'=>array('class'=>'btn btn-primary')
 			));
 		} else if ($isNew) {
-			if (!$this->getCurrentAction() === 'relations') {
+			if ($this->getCurrentAction() != 'relations') {
 				$form->add('save', SubmitType::class, array(
 					'label'=>'Save & Edit Item',
 					'attr'=>array('class'=>'btn btn-success')
@@ -1517,7 +1517,9 @@ class AdminController
 		$repo = $this->getRepository($map);
 		if(count($ids_list)) {
 			foreach ($ids as $_id) {
-				if(is_int($ids_list[0])) {
+				if (trim($_id) === "") {
+					continue;
+				} else if(is_int($ids_list[0])) {
 					$_id = (int) $_id;
 				} else if(is_float($ids_list[0])) {
 					$_id = (float) $_id;
@@ -1923,12 +1925,12 @@ class AdminController
 		}
 	}
 
-	public function manageRelation($managerMethod, $entity, $field, $item, $obj)
+	public function manageRelation($managerName, $entity, $field, $item, $obj)
 	{
-		$managerMethod = 'get' . $managerMethod . 'Method';
+		$managerMethod = 'get' . $managerName . 'Method';
 		$manager = call_user_func_array(array($this, $managerMethod), array($item, $field));
 		if (!$manager) {
-			$this->session->getFlashBag()->add('error', $managerMethod . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
+			$this->session->getFlashBag()->add('error', $managerName . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
 			return false;
 		}
 		call_user_func_array(array($item, $manager), array((strpos($managerMethod, 'Remover') !== false && !$this->getRemoverMethod($item, $field)) ? null : $obj));
@@ -2033,19 +2035,9 @@ class AdminController
 			return $methodName;
 		}
 		if ($field === 'children') {
-			$methodName = $prefix . 'Child';
+			$methodName = $prefix ? $prefix . 'Child' : 'child';
 			if (method_exists($object, $methodName)) {
 				return $methodName;
-			}
-		}
-		if (2<strlen($field)) {
-			$_len = strlen($field) - 1;
-			if ($field[$_len] === 's') {
-				$_mpp = substr($field, 0, $_len);
-				$methodName = ( $prefix . ucfirst($_mpp) );
-				if (method_exists($object, $methodName)) {
-					return $methodName;
-				}
 			}
 		}
 		if (strpos($field, '_')) {
@@ -2054,7 +2046,15 @@ class AdminController
 				return $methodName;
 			}
 		}
-		$this->session->getFlashBag()->add('error', 'Method ' . ($prefix === null ? $field : $prefix . ucfirst($field)) . ' for [' . get_class($object) . '] not found.');
+		if (2<strlen($field)) {
+			$_len = strlen($field) - 1;
+			if ($field[$_len] === 's') {
+				$_sr = $this->searchMethod($object, substr($field, 0, $_len), $prefix);
+				if ($_sr) {
+					return $_sr;
+				}
+			}
+		}
 		return false;
 	}
 
@@ -2078,7 +2078,7 @@ class AdminController
 		return $this->searchMethod($object,$field,$prefix);
 	}
 
-	public function getRemoverMethod($object,$field,$prefix='set')
+	public function getRemoverMethod($object,$field,$prefix='remove')
 	{
 		return $this->searchMethod($object,$field,$prefix);
 	}

@@ -742,6 +742,8 @@ class DefaultController extends AbstractController
 		$params['form'] = $form->createView();
 		$params['rid'] = $this->mcm->getIdentifierValue($relation, $relItem);
 		$params['rm'] = $this->request->get('rm', 'association');
+		$params['trashing'] = false;
+		$params['trashed'] = $this->mcm->isItemTrashed($entity, $item);
 
 		return $params;
 	}
