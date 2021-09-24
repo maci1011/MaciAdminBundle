@@ -186,7 +186,7 @@ class AdminMenuBuilder
 				'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'uploader')
 			));
 		}
-
+		
 		foreach ($this->mcm->getBridges($relation) as $bridge) {
 
 			$menu->addChild($this->mcm->generateLabel($relation_default_method . ' ' . $bridge), array(

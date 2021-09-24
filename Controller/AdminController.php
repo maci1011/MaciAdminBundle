@@ -1049,18 +1049,10 @@ class AdminController
 
 	public function getBridges($relation)
 	{
-		$list = [];
 		if (array_key_exists('bridges', $relation) && is_array($relation['bridges'])) {
-			$i=0;
-			foreach ($relation['bridges'] as $bridge) {
-				$metadata = $this->getAssociationMetadata($relation, $bridge);
-				$isnull = $metadata['inversedBy'] === NULL;
-				if ($isnull || (!$isnull && $metadata['inversedBy'] == $relation['association'])) {
-					$list[] = $bridge;
-				}
-			}
+			return $relation['bridges'];
 		}
-		return $list;
+		return false;
 	}
 
 	public function getUpladableBridges($relation)
