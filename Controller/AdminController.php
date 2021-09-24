@@ -94,21 +94,72 @@ class AdminController
 		// Init Default Config
 		$this->_defaults = [
 			'actions' => [
-				'list' => ['template' => 'MaciAdminBundle:Actions:list.html.twig'],
-				'new' => ['template' => 'MaciAdminBundle:Actions:new.html.twig'],
-				'trash' => ['template' => 'MaciAdminBundle:Actions:trash.html.twig'],
-				'uploader' => ['template' => 'MaciAdminBundle:Actions:uploader.html.twig'],
-				'show' => ['template' => 'MaciAdminBundle:Actions:show.html.twig'],
-				'edit' => ['template' => 'MaciAdminBundle:Actions:edit.html.twig'],
-				'remove' => ['template' => 'MaciAdminBundle:Actions:remove.html.twig'],
-				'relations' => ['template' => 'MaciAdminBundle:Actions:relations.html.twig'],
-				'relations_new' => ['template' => 'MaciAdminBundle:Actions:relations_new.html.twig'],
-				'relations_add' => ['template' => 'MaciAdminBundle:Actions:relations_add.html.twig'],
-				'relations_list' => ['template' => 'MaciAdminBundle:Actions:relations_list.html.twig'],
-				'relations_remove' => ['template' => 'MaciAdminBundle:Actions:relations_remove.html.twig'],
-				'relations_set' => ['template' => 'MaciAdminBundle:Actions:relations_set.html.twig'],
-				'relations_show' => ['template' => 'MaciAdminBundle:Actions:relations_show.html.twig'],
-				'relations_uploader' => ['template' => 'MaciAdminBundle:Actions:relations_uploader.html.twig']
+				'list' => [
+					'template' => 'MaciAdminBundle:Actions:list.html.twig',
+					'types' => ['main']
+				],
+				'new' => [
+					'template' => 'MaciAdminBundle:Actions:new.html.twig',
+					'types' => ['main']
+				],
+				'trash' => [
+					'template' => 'MaciAdminBundle:Actions:trash.html.twig',
+					'types' => ['main']
+				],
+				'uploader' => [
+					'template' => 'MaciAdminBundle:Actions:uploader.html.twig',
+					'types' => ['main']
+				],
+				'show' => [
+					'template' => 'MaciAdminBundle:Actions:show.html.twig',
+					'types' => ['single']
+				],
+				'edit' => [
+					'template' => 'MaciAdminBundle:Actions:edit.html.twig',
+					'types' => ['single']
+				],
+				'remove' => [
+					'template' => 'MaciAdminBundle:Actions:remove.html.twig',
+					'types' => ['single']
+				],
+				'relations' => [
+					'template' => 'MaciAdminBundle:Actions:relations.html.twig',
+					'types' => ['single']
+				],
+
+		// return ['list', 'show', 'new', 'add', 'set', 'bridge', 'uploader', 'remove', 'reorder'];
+
+
+				'relations_list' => [
+					'template' => 'MaciAdminBundle:Actions:relations_list.html.twig',
+					'types' => ['relations']
+				],
+				'relations_show' => [
+					'template' => 'MaciAdminBundle:Actions:relations_show.html.twig',
+					'types' => ['relations']
+				],
+				'relations_new' => [
+					'template' => 'MaciAdminBundle:Actions:relations_new.html.twig',
+					'types' => ['relations']
+				],
+				'relations_add' => [
+					'template' => 'MaciAdminBundle:Actions:relations_add.html.twig',
+					'types' => ['relations']
+				],
+				'relations_set' => [
+					'template' => 'MaciAdminBundle:Actions:relations_set.html.twig',
+					'types' => ['relations']
+				],
+				'relations_remove' => [
+					'template' => 'MaciAdminBundle:Actions:relations_remove.html.twig',
+					'types' => ['relations']
+				],
+				'relations_uploader' => [
+					'template' => 'MaciAdminBundle:Actions:relations_uploader.html.twig',
+					'types' => ['relations']
+				]
+
+
 			],
 			'roles' => [
 				'ROLE_ADMIN'
