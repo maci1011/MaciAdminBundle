@@ -1458,7 +1458,9 @@ class AdminController
 		}
 		$item = $this->getItem($entity, $data['id']);
 		if ($item) {
-			return $this->setItem($entity, $item, $data['data']);
+			$response = $this->setItem($entity, $item, $data['data']);
+			$this->om->flush();
+			return $response;
 		}
 		return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
 	}
@@ -1474,8 +1476,9 @@ class AdminController
 		}
 		$item = $this->getNewItem($entity);
 		if ($item) {
-			$response = $this->setItemData($entity, $item, $data['data']);
+			$response = $this->setItem($entity, $item, $data['data']);
 			$this->om->persist($item);
+			$this->om->flush();
 			return array_merge(['id' => $this->getIdentifierValue($entity, $item)], $response);
 		}
 		return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
@@ -1489,9 +1492,8 @@ class AdminController
 			if (!$setter) {
 				continue;
 			}
-			call_user_func_array([$item, $setter], is_array($value) ? $value : []);
+			call_user_func_array([$item, $setter], [$value]);
 		}
-		$this->om->flush();
 		return ['success' => true, 'info' => 'Item "' . $item . '" for entity "' . $map['label'] . '" edited.'];
 	}
 
