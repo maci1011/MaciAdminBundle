@@ -10,14 +10,19 @@ use MAdminController;
 
 class ViewController extends AbstractController
 {
-	public function indexAction(Request $request)
+	public function indexAction()
 	{
 		return $this->redirect($this->generateUrl('maci_admin_view'));
 	}
 
-	public function notFoundAction(Request $request)
+	public function notFoundAction()
 	{
 		return $this->render('MaciAdminBundle:Default:not_found.html.twig');
+	}
+
+	public function accessDeniedAction()
+	{
+		return $this->render('MaciAdminBundle:Default:access_denied.html.twig');
 	}
 
 	public function viewAction(Request $request)
@@ -34,7 +39,11 @@ class ViewController extends AbstractController
 
 		// --- The Controller with the Actions is getted here
 
-		$controller = $this->container->get($admin->getController($admin->getControllerMap(), $admin->getControllerAction()));
+		$map = $admin->getControllerMap();
+		if ($map == null) {
+			return $this->redirect($this->generateUrl('maci_admin_access_denied'));
+		}
+		$controller = $this->container->get($admin->getController($map, $admin->getControllerAction()));
 
 		// --- Check if the Action Exists
 

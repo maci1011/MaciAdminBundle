@@ -71,6 +71,10 @@
 			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Trash
 		</a>
 
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">
+			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
+		</a>
+
 	{% else %}
 
 		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">

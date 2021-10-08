@@ -11,6 +11,10 @@ maci_admin_ajax:
     path:  /ajax
     defaults: { _controller: MaciAdminBundle:View:ajax }
 
+maci_admin_access_denied:
+    path:  /access-denied
+    defaults: { _controller: MaciAdminBundle:View:accessDenied }
+
 maci_admin_not_found:
     path:  /not-found
     defaults: { _controller: MaciAdminBundle:View:notFound }

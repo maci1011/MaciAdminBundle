@@ -380,7 +380,8 @@ class AdminController
 
 	public function getController($map, $action)
 	{
-		if (array_key_exists($action, $map['config']['actions']) &&
+		if ($map != null &&
+			array_key_exists($action, $map['config']['actions']) &&
 			array_key_exists('controller', $map['config']['actions'][$action]) &&
 			class_exists($map['config']['actions'][$action]['controller']) ) {
 			return $map['config']['actions'][$action]['controller'];
@@ -1529,13 +1530,11 @@ class AdminController
 		if (!$this->hasTrash($map) || !count($list)) return false;
 		$remover = $this->getRemoverMethod($list[0], $this->getTrashField($map));
 		if (!$remover) {
-			$this->session->getFlashBag()->add('error', 'Remover Method for entity [' . $map['label'] . '] not found.');
-			return false;
-		}
-		$getter = $this->getGetterMethod($list[0], $this->getTrashField($map));
-		if (!$getter) {
-			$this->session->getFlashBag()->add('error', 'Getter Method for entity [' . $map['label'] . '] not found.');
-			return false;
+			$remover = $this->getSetterMethod($list[0], $this->getTrashField($map));
+			if (!$remover) {
+				$this->session->getFlashBag()->add('error', 'Remover or Trash-Setter Method for entity [' . $map['label'] . '] not found.');
+				return false;
+			}
 		}
 		foreach ($list as $item) {
 			$val = $this->isItemTrashed($map, $item);

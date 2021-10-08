@@ -58,6 +58,13 @@
 		</a>
 	</li>
 
+	<li>
+		<a class="action trash" confirm="Are you sure to remove %items% items?" href="{{ path('maci_admin_view', { 'section': section, 'entity': entity, 'action': 'remove' }) }}">
+			<span class="glyphicon glyphicon-remove"></span>
+			Remove
+		</a>
+	</li>
+
 	{% else %}
 
 	<li>
