@@ -1501,17 +1501,18 @@ class AdminController
 	public function removeItems($map, $list)
 	{
 		if (!count($list)) return false;
+		$removed = 0;
 		foreach ($list as $item) {
 			try {
 				$this->om->remove($item);
 				$this->om->flush();
+				$removed++;
 			} catch (\Doctrine\DBAL\DBALException $e) {
 				$exception_message = $e->getPrevious()->getCode();
 				$this->session->getFlashBag()->add('error', 'Error! Item [' . $map['label'] . ':' . $item . '] not removed. Exception: ' . get_class($e) . ' - ' . $exception_message . '.');
-				return false;
 			}
-			$this->session->getFlashBag()->add('success', 'Item [' . $map['label'] . ':' . $item . '] removed.');
 		}
+		$this->session->getFlashBag()->add((0 < $removed ? 'success' : 'error'), (0 < $removed ? 'Success: ' : 'Error: ') .  $removed . ' item' . ($removed == 1 ? '' : 's') . (count($list) == 1 ? '' : ' of ' . count($list)) . ' removed.');
 		return true;
 	}
 
