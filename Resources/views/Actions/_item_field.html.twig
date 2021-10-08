@@ -73,6 +73,10 @@
 
 <span class="item-field-value"><i>NULL</i></span>
 
+{% elseif field == '_preview' %}
+
+<img class="item-preview img-fluid" src="{{ asset(item.webPreview|imagine_filter('maci_admin_list_preview')) }}" alt="preview" />
+
 {% elseif val.timestamp is defined %}
 
 <span class="item-field-value">{{ val|date('d/m/Y H:i:s') }}</span>
