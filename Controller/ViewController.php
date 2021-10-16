@@ -107,10 +107,9 @@ class ViewController extends AbstractController
 			return new JsonResponse(['success' => false, 'error' => 'Bad Request.'], 200);
 		}
 
-		$admin = $this->container->get(AdminController::class);
-
 		// --- Check Auth
 
+		$admin = $this->container->get(AdminController::class);
 		if (!$admin->checkAuth()) {
 			return new JsonResponse(['success' => false, 'error' => 'Not Authorized.'], 200);
 		}
@@ -118,7 +117,6 @@ class ViewController extends AbstractController
 		// --- Check Data
 
 		$data = $request->get('data');
-
 		if (!is_array($data)) {
 			return new JsonResponse(['success' => false, 'error' => 'No Data.'], 200);
 		}
@@ -147,7 +145,13 @@ class ViewController extends AbstractController
 			$data['edit'] = $admin->editItemByParams($data['edit']);
 		}
 
-		return new JsonResponse(['success' => true, 'data' => $data], 200);
+		// --- Add Relation
+
+		if (array_key_exists('add', $data)) {
+			$data['add'] = $admin->addRelationItemsByParams($data['add']);
+		}
+
+		return new JsonResponse($data, 200);
 	}
 
 	public function adminBarAction($entity, $item = false)

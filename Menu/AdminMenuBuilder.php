@@ -65,6 +65,9 @@ class AdminMenuBuilder
 					'route' => 'maci_admin_view',
 					'routeParameters' => array('section' => $section, 'entity' => $name, 'action' => 'list')
 				));
+				if ($this->request->get('entity') == $name) {
+					$menu[$entity['label']]->setCurrent(true);
+				}
 			}
 
 			foreach ($this->mcm->getPages($section) as $name => $page) {
