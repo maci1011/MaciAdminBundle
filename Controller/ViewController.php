@@ -145,11 +145,19 @@ class ViewController extends AbstractController
 			$data['edit'] = $admin->editItemByParams($data['edit']);
 		}
 
+		// --- Remove
+
+		if (array_key_exists('remove', $data)) {
+			$data['remove'] = $admin->removeItemByParams($data['remove']);
+		}
+
 		// --- Add Relation
 
 		if (array_key_exists('add', $data)) {
 			$data['add'] = $admin->addRelationItemsByParams($data['add']);
 		}
+
+		// $this->getDoctrine()->getManager()->flush();
 
 		return new JsonResponse($data, 200);
 	}
