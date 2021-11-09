@@ -1554,7 +1554,7 @@ class AdminController
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
 		$root = $query->getRootAlias();
-		$query = $this->addDefaultQueries($map, $query, $trashValue);
+		$this->addDefaultQueries($map, $query, $trashValue);
 		$query = $query->getQuery();
 		$list = $query->getResult();
 		return $list;
@@ -1594,7 +1594,7 @@ class AdminController
 			$query->andWhere($root . '.' . $inverseField . ' != :pid');
 			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), []));
 		}
-		$query = $this->addDefaultQueries($mainMap, $query, false);
+		$this->addDefaultQueries($mainMap, $query, false);
 		$query = $query->getQuery();
 		return $query->getResult();
 	}
@@ -1607,7 +1607,7 @@ class AdminController
 
 	public function getDataFromList($map, $list, $fields = false)
 	{
-		if ($fields === false) {
+		if ($fields == false) {
 			$fields = $this->getGetters($map);
 		}
 		$data = [];
@@ -1973,121 +1973,6 @@ class AdminController
 	}
 
 	/*
-		------------> Api Manager
-	*/
-
-	public function getListDataByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $entity . '" not Found.'];
-		}
-		return $this->getListData(
-			$entity,
-			array_key_exists('trash', $data) ? $data['trash'] : false,
-			array_key_exists('fields', $data) ? $data['fields'] : false
-		);
-	}
-
-	public function getItemDataByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
-		$item = $this->getItem($entity, $data['id']);
-		if (!$item) {
-			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
-		}
-		return $this->getItemData($entity, $item);
-	}
-
-	public function newItemByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('data', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
-		$item = $this->getNewItem($entity);
-		if (!$item) {
-			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
-		}
-		$this->setItem($entity, $item, $data['data']);
-		$this->om->persist($item);
-		$this->om->flush();
-		return ['success' => true, 'id' => $this->getIdentifierValue($entity, $item)];
-	}
-
-	public function editItemByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) ||
-			!array_key_exists('id', $data) || !array_key_exists('data', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
-		$item = $this->getItem($entity, $data['id']);
-		if (!$item) {
-			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
-		}
-		$this->setItem($entity, $item, $data['data']);
-		$this->om->flush();
-		return ['success' => true];
-	}
-
-	public function removeItemByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
-		$item = $this->getItem($entity, $data['id']);
-		if (!$item) {
-			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
-		}
-		$trash = array_key_exists('trash', $data) ? ($data['trash'] == "true") : false;
-		if ($trash) $this->trashItems($entity, [$item]);
-		else $this->removeItems($entity, [$item]);
-		return ['success' => true];
-	}
-
-	public function addRelationItemsByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data) || !array_key_exists('relation', $data) || !array_key_exists('ids', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
-		$item = $this->getItem($entity, $data['id']);
-		if (!$item) {
-			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $data['entity'] . '" not Found.'];
-		}
-		$relation = $this->getRelation($entity, $data['relation']);
-		if (!$relation) {
-			return ['success' => false, 'error' => 'Relation "' . $data['relation'] . '" for entity "' . $data['entity'] . '" not Found.'];
-		}
-		$this->addRelationItems($entity, $relation, $item, $this->selectItems($relation,$this->getListForRelation($entity, $relation, $item),$data['ids']));
-		$this->om->flush();
-		return ['success' => true];
-	}
-
-	/*
 		------------> Bridges Manager
 	*/
 
@@ -2245,10 +2130,125 @@ class AdminController
 	}
 
 	/*
+		------------> Api Manager
+	*/
+
+	public function getListDataByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $entity . '" not Found.'];
+		}
+		return $this->getListData(
+			$entity,
+			array_key_exists('trash', $data) ? $data['trash'] : false,
+			array_key_exists('fields', $data) ? $data['fields'] : false
+		);
+	}
+
+	public function getItemDataByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getItem($entity, $data['id']);
+		if (!$item) {
+			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+		}
+		return $this->getItemData($entity, $item);
+	}
+
+	public function newItemByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('data', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getNewItem($entity);
+		if (!$item) {
+			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+		}
+		$this->setItem($entity, $item, $data['data']);
+		$this->om->persist($item);
+		$this->om->flush();
+		return ['success' => true, 'id' => $this->getIdentifierValue($entity, $item)];
+	}
+
+	public function editItemByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) ||
+			!array_key_exists('id', $data) || !array_key_exists('data', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getItem($entity, $data['id']);
+		if (!$item) {
+			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+		}
+		$this->setItem($entity, $item, $data['data']);
+		$this->om->flush();
+		return ['success' => true];
+	}
+
+	public function removeItemByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getItem($entity, $data['id']);
+		if (!$item) {
+			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+		}
+		$trash = array_key_exists('trash', $data) ? ($data['trash'] == "true") : false;
+		if ($trash) $this->trashItems($entity, [$item]);
+		else $this->removeItems($entity, [$item]);
+		return ['success' => true];
+	}
+
+	public function addRelationItemsByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('id', $data) || !array_key_exists('relation', $data) || !array_key_exists('ids', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		$item = $this->getItem($entity, $data['id']);
+		if (!$item) {
+			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $data['entity'] . '" not Found.'];
+		}
+		$relation = $this->getRelation($entity, $data['relation']);
+		if (!$relation) {
+			return ['success' => false, 'error' => 'Relation "' . $data['relation'] . '" for entity "' . $data['entity'] . '" not Found.'];
+		}
+		$this->addRelationItems($entity, $relation, $item, $this->selectItems($relation,$this->getListForRelation($entity, $relation, $item),$data['ids']));
+		$this->om->flush();
+		return ['success' => true];
+	}
+
+	/*
 		------------> Queries
 	*/
 
-	public function addDefaultQueries($map, $query, $trashValue = null)
+	public function addDefaultQueries($map, &$query, $trashValue = null)
 	{
 		// $query = $this->addFiltersQuery($map, $query);
 		$query = $this->addSearchQuery($map, $query);
@@ -2258,7 +2258,7 @@ class AdminController
 		return $query;
 	}
 
-	public function addFiltersQuery($map, $query)
+	public function addFiltersQuery($map, &$query)
 	{
 		$optf = $this->request->get('optf', []);
 		foreach ($optf as $key => $value) {
@@ -2270,7 +2270,7 @@ class AdminController
 		return $query;
 	}
 
-	public function addSearchQuery($map, $query)
+	public function addSearchQuery($map, &$query)
 	{
 		$search = $this->request->get('s', false);
 		if ($search) {
