@@ -1549,12 +1549,12 @@ class AdminController
 		return $ids;
 	}
 
-	public function getList($map, $trashValue = null)
+	public function getList($map, $trashValue = null, $filters = false)
 	{
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
 		$root = $query->getRootAlias();
-		$this->addDefaultQueries($map, $query, $trashValue);
+		$this->addDefaultQueries($map, $query, $trashValue, $filters);
 		$query = $query->getQuery();
 		$list = $query->getResult();
 		return $list;
@@ -1599,9 +1599,9 @@ class AdminController
 		return $query->getResult();
 	}
 
-	public function getListData($map, $trashValue = false, $fields = false)
+	public function getListData($map, $trashValue = false, $fields = false, $filters = false)
 	{
-		$list = $this->getList($map, $trashValue);
+		$list = $this->getList($map, $trashValue, $filters);
 		return $this->getDataFromList($map, $list, $fields);
 	}
 
@@ -2145,7 +2145,8 @@ class AdminController
 		return $this->getListData(
 			$entity,
 			array_key_exists('trash', $data) ? $data['trash'] : false,
-			array_key_exists('fields', $data) ? $data['fields'] : false
+			array_key_exists('fields', $data) ? $data['fields'] : false,
+			array_key_exists('filters', $data) ? $data['filters'] : false
 		);
 	}
 
@@ -2248,9 +2249,9 @@ class AdminController
 		------------> Queries
 	*/
 
-	public function addDefaultQueries($map, &$query, $trashValue = null)
+	public function addDefaultQueries($map, &$query, $trashValue = null, $filters = false)
 	{
-		// $query = $this->addFiltersQuery($map, $query);
+		if ($filters) $query = $this->addFiltersQuery($map, $query, $filters);
 		$query = $this->addSearchQuery($map, $query);
 		$query = $this->addTrashQuery($map, $query, $trashValue);
 		$query = $this->addOrderByQuery($map, $query);
@@ -2258,14 +2259,23 @@ class AdminController
 		return $query;
 	}
 
-	public function addFiltersQuery($map, &$query)
+	public function addFiltersQuery($map, &$query, $filters)
 	{
-		$optf = $this->request->get('optf', []);
-		foreach ($optf as $key => $value) {
-			if ($value !== '' && in_array($key, $fields)) {
-				$query->andWhere($query->getRootAlias() . '.' . $key . ' LIKE :' . $key);
-				$query->setParameter(':' . $key, "%$value%");
+		$fields = $this->getFields($map);
+		foreach ($filters as $key => $data) {
+			if (!in_array($key, $fields)) {
+				continue;
 			}
+			if (!is_array($data)) {
+				$value = $data;
+				$op = '=';
+			} else {
+				if(!array_key_exists('val', $data)) continue;
+				if($data['val'] == "") $value = null;
+				if(!array_key_exists('op', $data)) $op = 'LIKE';
+			}
+			$query->andWhere($query->getRootAlias() . '.' . $key . ' ' . $op . ' :' . $key);
+			$query->setParameter(':' . $key, $value);
 		}
 		return $query;
 	}
