@@ -1203,7 +1203,7 @@ class AdminController
 	{
 		$form = $map['name'];
 		if (array_key_exists('form', $map)) {
-			$form = $map['form'];
+			return $this->createForm($map['form'], $object);
 		}
 		if (class_exists($form)) {
 			return $this->createForm($form, $object);
@@ -1263,6 +1263,12 @@ class AdminController
 			}
 			if (in_array($field, array('updated', 'created'))) {
 				continue;
+			}
+			if (!array_key_exists($field, $fieldMappings)) {
+				$field = str_replace('_', '', $field);
+				if (!array_key_exists($field, $fieldMappings)) {
+					continue;
+				}
 			}
 			if (array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id']) {
 				continue;
