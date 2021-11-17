@@ -157,8 +157,6 @@ class ViewController extends AbstractController
 			$data['add'] = $admin->addRelationItemsByParams($data['add']);
 		}
 
-		// $this->getDoctrine()->getManager()->flush();
-
 		return new JsonResponse($data, 200);
 	}
 
