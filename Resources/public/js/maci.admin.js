@@ -113,6 +113,11 @@ $(document).ready(function(e) {
 		});
 	});
 
+	$('.filters-container').each(function(i,el) {
+		var listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el);
+
+	});
+
 });
 
 })(jQuery);

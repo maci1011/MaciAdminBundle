@@ -1,310 +1,318 @@
 
 h1, h2, h3, h4, h5 {
-    margin: 0;
-    padding: 0 0 15px 0;
-    text-transform: uppercase;
-    font-size: 12pt;
+	margin: 0;
+	padding: 0 0 15px 0;
+	text-transform: uppercase;
+	font-size: 12pt;
 }
 
 h1 {
-    font-size: 18pt;
+	font-size: 18pt;
 }
 
 h2 {
-    font-size: 14pt;
+	font-size: 14pt;
 }
 
 h3 {
-    font-size: 13pt;
+	font-size: 13pt;
 }
 
 h4 {
-    font-size: 11pt;
+	font-size: 11pt;
 }
 
 /*   -----> Layout <-----   */
 
 .navbar-text {
-    margin: 0;
-    padding: 15px;
+	margin: 0;
+	padding: 15px;
 }
 
 .navbar-nav.navbar-right:last-child {
-    margin-right: 0;
+	margin-right: 0;
 }
 
 #sidebar-wrapper {
-    background-color: #eee;
+	background-color: #eee;
 }
 
 #page-content-wrapper {
-    padding: 65px 0;
-    left: 0;
+	padding: 65px 0;
+	left: 0;
 }
 
 .nav > li > a.btn-primary:hover {
-    background-color: #333;
+	background-color: #333;
 }
 
 /*   -----> Top Navbar <-----   */
 
 .navbar-inverse .navbar-nav > li > a {
-    color: #999;
+	color: #999;
 }
 #menu-toggle {
-    padding: 15px;
-    line-height: 20px;
-    cursor: pointer;
-    color: #ccc;
-    display: block;
+	padding: 15px;
+	line-height: 20px;
+	cursor: pointer;
+	color: #ccc;
+	display: block;
 }
 #menu-toggle:hover {
-    color: #fff;
+	color: #fff;
 }
 #menu-toggle > span {
-    padding-right: 4px;
+	padding-right: 4px;
 }
 #menu-toggle.active {
-    background-color: #444;
+	background-color: #444;
 }
 
 /*   -----> Main Menu <-----   */
 
 #mainMenu {
-    width: 250px;
+	width: 250px;
 }
 
 #mainMenu h3 {
-    margin: 0;
-    padding: 60px 0 10px 25px;
+	margin: 0;
+	padding: 60px 0 10px 25px;
 }
 
 #mainMenu h3,
 #mainMenu .nav > li > a {
-    color: #333;
-    text-transform: uppercase;
-    font-size: 9pt;
-    letter-spacing: 0.9px;
+	color: #333;
+	text-transform: uppercase;
+	font-size: 9pt;
+	letter-spacing: 0.9px;
 }
 
 #mainMenu .nav > li > a:hover,
 #mainMenu .nav > li > a:focus,
 #mainMenu .nav > li.active > a {
-    background-color: #ccc;
-    color: #000;
+	background-color: #ccc;
+	color: #000;
 }
 
 #mainMenu h3 {
-    margin: 0;
-    padding: 65px 0 10px 15px;
-    font-size: 10pt;
-    color: #000;
+	margin: 0;
+	padding: 65px 0 10px 15px;
+	font-size: 10pt;
+	color: #000;
 }
 
 /*   -----> Content Navbar <-----   */
 
 .content-navbar .nav {
-    margin: 0 0 15px 0;
-    background-color: #eee;
+	margin: 0 0 15px 0;
+	background-color: #eee;
 }
 
 .actionsbar.content-navbar .nav > li > a,
 .actionsbar.content-navbar .nav > li > span {
-    color: #666;
+	color: #666;
 }
 
 .actionsbar.content-navbar .nav > li > a:hover,
 .actionsbar.content-navbar .nav > li > a:focus,
 .actionsbar.content-navbar .nav > li.active > a {
-    background-color: #dadada;
-    color: #000;
+	background-color: #dadada;
+	color: #000;
 }
 
 /*   -----> Tablesorter <-----   */
 
 .list-default table.tablesorter thead tr .header {
-    background-image: url("./tablesorter/bg.gif");
-    background-repeat: no-repeat;
-    background-position: center right;
-    cursor: pointer;
-    padding-right: 21px;
+	background-image: url("./tablesorter/bg.gif");
+	background-repeat: no-repeat;
+	background-position: center right;
+	cursor: pointer;
+	padding-right: 21px;
 }
 
 .list-default table.tablesorter thead tr .header.headerSortUp {
-    background-image: url("./tablesorter/asc.gif");
-    background-color: #F8CFCF;
+	background-image: url("./tablesorter/asc.gif");
+	background-color: #F8CFCF;
 }
 
 .list-default table.tablesorter thead tr .header.headerSortDown {
-    background-image: url("./tablesorter/desc.gif");
-    background-color: #CFE2F8;
+	background-image: url("./tablesorter/desc.gif");
+	background-color: #CFE2F8;
 }
 
 
 /*   -----> List <-----   */
 
 .list-default {
-    overflow-x: auto;
-    overflow-y: hidden;
-    width: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+	width: 100%;
 }
 
 .list-default > .table {
-    margin: 0;
+	margin: 0;
 }
 
 .list-default .list-header .list-title {
-    padding: 0 0 0 5px;
-    text-transform: uppercase;
-    font-size: 10pt;
-    display: block;
+	padding: 0 0 0 5px;
+	text-transform: uppercase;
+	font-size: 10pt;
+	display: block;
 }
 
 .list-default .list-header.header-id > .list-title,
 .list-default .list-header.header-listId > .list-title {
-    padding: 0;
-    text-align: center;
-    width: 50px;
+	padding: 0;
+	text-align: center;
+	width: 50px;
 }
 
 .list-default .list-header.header-actions > .list-title {
-    min-width: 188px;
+	min-width: 188px;
 }
 
 .list-default .list-header > .list-header-add > span,
 .list-default .list-header > .list-header-remove > span {
-    width: 100px;
+	width: 100px;
 }
 
 .list-default tr.multipleActionsBar {
-    background-color: #F2F8FF;
+	background-color: #F2F8FF;
 }
 
 .list-default tr.multipleActionsBar > td {
-    padding: 0;
+	padding: 0;
 }
 
 .list-default tr.list-item.add-item td {
-    background-color: #FEEBA9;
+	background-color: #FEEBA9;
 }
 
 .list-default tr.list-item .list-item-add {
-    display: block;
+	display: block;
 }
 
 .list-default tr.list-item .list-item-remove {
-    display: none;
+	display: none;
 }
 
 .list-default tr.list-item.add-item .list-item-add {
-    display: none;
+	display: none;
 }
 
 .list-default tr.list-item.add-item .list-item-remove {
-    display: block;
+	display: block;
 }
 
 .list-default .list-item > .list-item-checkbox {
-    width: 40px;
-    padding-left: 15px;
+	width: 40px;
+	padding-left: 15px;
 }
 
 .list-default .list-item-field > .item-field-value.id {
-    display: block;
-    text-align: center;
-    width: 50px;
+	display: block;
+	text-align: center;
+	width: 50px;
 }
 
 .list-default tr.list-item > td > a,
 .list-default tr.list-item > td > p,
 .list-default tr.list-item > td > span,
 .list-default tr.list-item > td > .item-field-value {
-    padding: 5px;
-    font-size: 10pt;
-    line-height: 20px;
-    margin: 0;
-    border: 0;
-    display: inline-block;
+	padding: 5px;
+	font-size: 10pt;
+	line-height: 20px;
+	margin: 0;
+	border: 0;
+	display: inline-block;
 }
 
 .list-default tr.list-item > td.list-item-field.field-id > a,
 .list-default tr.list-item > td.list-item-field.field-id > span,
 .list-default tr.list-item > td.list-item-field.field-id > p {
-    width: 50px;
-    text-align: center;
-    display: block;
+	width: 50px;
+	text-align: center;
+	display: block;
 }
 
 .list-default .list-item-field > .item-field-value.id:hover {
-    background-color: #ccc;
+	background-color: #ccc;
 }
 
 .item-field-value-iterable > .row {
-    margin: 0;
-    padding: 5px 15px 5px 15px;
-    border-bottom: 1px solid #aaa;
+	margin: 0;
+	padding: 5px 15px 5px 15px;
+	border-bottom: 1px solid #aaa;
 }
 
 /*   -----> Pagination <-----   */
 
 .pagination-container {
-    padding-top: 10px;
-    padding-bottom: 20px;
+	padding-top: 10px;
+	padding-bottom: 20px;
 }
 
 ul.pagination {
-    margin: 0;
-    padding: 8px;
+	margin: 0;
+	padding: 8px;
+}
+
+form.pagination-form.navbar-form {
+	padding: 0 12px;
 }
 
 form.pagination-form.navbar-form .form-control {
-    width: 80px;
+	width: 100px;
+}
+
+form.pagination-form.navbar-form label {
+	margin: 6px;
 }
 
 /*   -----> Filters <-----   */
 
 .admin-form.form-filters {
-    padding-bottom: 15px;
+	padding-bottom: 15px;
 }
 
 .admin-form.form-filters label {
-    text-transform: uppercase;
-    font-size: 9pt;
-    padding: 5px;
+	text-transform: uppercase;
+	font-size: 9pt;
+	padding: 5px;
 }
 
 .admin-form.form-filters .btn {
-    margin: 26px 0 0 10px;
+	margin: 26px 0 0 10px;
 }
 
 /*   -----> Show <-----   */
 
 .details-item {
-    padding: 10px 0;
+	padding: 10px 0;
 }
 
 .details-item.even {
-    background-color: #eee;
+	background-color: #eee;
 }
 
 /*   -----> Messages <-----   */
 
 .messages {
-    font-size: 13pt;
-    letter-spacing: 0.4px;
-    border-radius: 9px;
-    margin: 10px 0;
-    padding: 15px;
+	font-size: 13pt;
+	letter-spacing: 0.4px;
+	border-radius: 9px;
+	margin: 10px 0;
+	padding: 15px;
 }
 
 /*   -----> Form <-----   */
 
 .admin-form > .form-group > label:after {
-    content: '*';
+	content: '*';
 }
 
 .admin-form > .form-group > label.required:after {
-    content: '';
+	content: '';
 }
 
 .maciUploader div {
@@ -312,25 +320,25 @@ form.pagination-form.navbar-form .form-control {
 }
 
 .uploader_list {
-    padding-bottom: 15px;
+	padding-bottom: 15px;
 }
 
 .modal-body .maci-form {
-    padding: 8px;
+	padding: 8px;
 }
 
 .a2lix_translations.tabbable {
-    padding: 8px;
-    background-color: #eee;
-    border: 1px solid #666;
-    border-radius: 4px;
+	padding: 8px;
+	background-color: #eee;
+	border: 1px solid #666;
+	border-radius: 4px;
 }
 
 .ad-editor {
 	margin: 20px 0 10px 0;
 	padding: 10px;
 	border: 1px solid #ccc;
-    border-radius: 4px;
+	border-radius: 4px;
 }
 
 .ad-tooeditor {
@@ -338,34 +346,34 @@ form.pagination-form.navbar-form .form-control {
 }
 
 .ad-tooeditor .btn-group {
-    margin-top: 4px;
+	margin-top: 4px;
 }
 
 .ad-tooeditor .btn {
-    -moz-border-bottom-colors: none;
-    -moz-border-left-colors: none;
-    -moz-border-right-colors: none;
-    -moz-border-top-colors: none;
-    background-color: #fafafa;
-    background-image: linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);
-    background-repeat: no-repeat;
-    border-color: #ccc #ccc #bbb;
-    border-image: none;
-    border-radius: 4px;
-    border-style: solid;
-    border-width: 1px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 1px 2px rgba(0, 0, 0, 0.05);
-    color: #333333;
-    cursor: pointer;
-    display: inline-block;
-    font-size: 13px;
-    line-height: 18px;
-    padding: 4px 10px;
-    text-align: center;
-    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
-    height: 26px;
+	-moz-border-bottom-colors: none;
+	-moz-border-left-colors: none;
+	-moz-border-right-colors: none;
+	-moz-border-top-colors: none;
+	background-color: #fafafa;
+	background-image: linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);
+	background-repeat: no-repeat;
+	border-color: #ccc #ccc #bbb;
+	border-image: none;
+	border-radius: 4px;
+	border-style: solid;
+	border-width: 1px;
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2) inset, 0 1px 2px rgba(0, 0, 0, 0.05);
+	color: #333333;
+	cursor: pointer;
+	display: inline-block;
+	font-size: 13px;
+	line-height: 18px;
+	padding: 4px 10px;
+	text-align: center;
+	text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+	height: 26px;
 }
 
 .cke_source {
-    color: #000;
+	color: #000;
 }

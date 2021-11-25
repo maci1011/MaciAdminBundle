@@ -1,0 +1,33 @@
+
+{% if pager is defined and pager.form %}
+
+<div class="pagination-form-container container-fluid">
+<nav>
+
+{% if pager.form %}
+{% set form = pager.form.createView %}
+{{ form_start(form, {'attr': {'class': 'admin-form pagination-form navbar-form navbar-left container-fluid'}}) }}
+	{% if pager.requiresPagination() %}
+	<div class="form-group">
+		{{ form_label(form.page) }}
+		{{ form_errors(form.page) }}
+		{{ form_widget(form.page) }}
+		<label class="control-label required post-label">of [ {{ pager.maxPages }} ].</label>
+	</div>
+	{% else %}
+	{% do form.page.setRendered %}
+	{% endif %}
+	<div class="form-group">
+		{{ form_label(form.page_limit) }}
+		{{ form_errors(form.page_limit) }}
+		{{ form_widget(form.page_limit) }}
+		<label class="control-label required post-label">of [ {{ pager.length }} ].</label>
+	</div>
+	{{ form_rest(form) }}
+{{ form_end(form, {'render_rest': false}) }}
+{% endif %}
+
+</nav>
+</div>
+
+{% endif %}

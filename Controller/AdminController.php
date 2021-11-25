@@ -1222,7 +1222,7 @@ class AdminController
 		return $this->generateForm($map, $object);
 	}
 
-	public function generateForm($map, $object = false, $isFilterForm = false)
+	public function generateForm($map, $object = false)
 	{
 		if (!$object) {
 			$object = $this->getNewItem($map);
@@ -1233,13 +1233,6 @@ class AdminController
 		$id = $this->getIdentifierValue($map, $object);
 		$isNew = !$id;
 
-		// if ($isFilterForm) {
-		//     $form->setAction($this->generateUrl('maci_admin_view', array(
-		//         'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
-		//     )));
-		// }
-		// else
-
 		// if ($isNew) {
 		// 	$form->setAction($this->generateUrl('maci_admin_view', array(
 		// 		'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'new'
@@ -1249,6 +1242,7 @@ class AdminController
 		// 		'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'edit', 'id'=>$id
 		// 	)));
 		// }
+
 		$form->setAction('#');
 
 		$isUploadable = $this->isUploadable($map);
@@ -1283,27 +1277,6 @@ class AdminController
 				continue;
 			}
 
-			// if ($isFilterForm) {
-			//     $form->add($field . '_checkbox', CheckboxType::class, array(
-			//         'label' => 'Set Filter',
-			//         'attr' => ['class' => 'setFilterCheckbox'],
-			//         'required' => false,
-			//         'mapped' => false
-			//     ));
-			// }
-
-			// if ($isFilterForm && in_array(
-			//     $this->getFieldType($map, $field),
-			//     ['text', 'string', 'decimal', 'integer', 'boolean', 'datetime']
-			// )) {
-			//     $form->add($field . '_method', ChoiceType::class, array(
-			//         'label' => 'Method',
-			//         'choices' => array('Is' => 'IS', 'Like' => 'LIKE'),
-			//         'mapped' => false
-			//     ));
-			// }
-			// else { vvv }
-			
 			$arrMethod = ('get' . ucfirst($field) . 'Array');
 
 			if (method_exists($object, $arrMethod))
@@ -1330,12 +1303,7 @@ class AdminController
 			}
 		}
 
-		if ($isFilterForm) {
-			$form->add('set_filters', SubmitType::class, array(
-				'label'=>'Set Filters',
-				'attr'=>array('class'=>'btn btn-primary')
-			));
-		} else if ($isNew) {
+		if ($isNew) {
 			if ($this->getCurrentAction() != 'relations') {
 				$form->add('save', SubmitType::class, array(
 					'label'=>'Save & Edit Item',
@@ -1362,6 +1330,88 @@ class AdminController
 
 		$form->add('reset', ResetType::class, array(
 			'label'=>'Reset Form'
+		));
+
+		return $form->getForm();
+	}
+
+	public function generateFiltersForm($map)
+	{
+		$fields = $this->getFields($map);
+		$object = $this->getNewItem($map);
+		$form = $this->createFormBuilder($object);
+		$id = $this->getIdentifierValue($map, $object);
+		$isNew = !$id;
+
+		$form->setAction($this->generateUrl('maci_admin_view', array(
+			'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
+		)));
+
+		$form->setAction('#');
+
+		$isUploadable = $this->isUploadable($map);
+		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
+
+		$fieldMappings = $this->getMetadata($map)->fieldMappings;
+
+		foreach ($fields as $field) {
+
+			if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) {
+				continue;
+			}
+			if (!array_key_exists($field, $fieldMappings)) {
+				$field = str_replace('_', '', $field);
+				if (!array_key_exists($field, $fieldMappings)) {
+					continue;
+				}
+			}
+			if (array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id']) {
+				continue;
+			}
+			if (!array_key_exists('type', $fieldMappings[$field])) {
+				continue;
+			}
+			if (!in_array(
+				$fieldMappings[$field]['type'],
+				['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime']
+			)) {
+				continue;
+			}
+
+			if (in_array($this->getFieldType($map, $field), ['text', 'string']) &&
+				(!$isUploadable || $field != $upload_path_field) &&
+				!in_array($field, ['locale']))
+			{
+				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
+				if ($typesGetter)
+				{
+					$form->add($field, ChoiceType::class, [
+						'choices' => array_merge(['Select Filter' => '_._null_._'], call_user_func_array([$object, $typesGetter], []))
+					]);
+				}
+				else
+				{
+					$form->add('_set_filter_for_' . $field, CheckboxType::class, array(
+						'label' => 'Set Filter',
+						'attr' => ['class' => 'setFilterCheckbox'],
+						'required' => false,
+						'mapped' => false
+					));
+					$form->add($field . '_method', ChoiceType::class, [
+						'label' => 'Method',
+						'choices' => array('Like' => 'LIKE', 'Is' => 'IS'),
+						'mapped' => false
+					]);
+					$form->add($field, TextType::class, [
+						'data' => ''
+					]);
+				}
+			}
+		}
+
+		$form->add('set_filters', SubmitType::class, array(
+			'label'=>'Set Filters',
+			'attr'=>array('class'=>'btn btn-primary')
 		));
 
 		return $form->getForm();

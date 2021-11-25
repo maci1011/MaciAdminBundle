@@ -125,6 +125,7 @@ class DefaultController extends AbstractController
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'pager' => $pager,
+			'form_filters' => $this->mcm->generateFiltersForm($entity)->createView(),
 			'entity_search' => true
 		]);
 	}
@@ -213,6 +214,23 @@ class DefaultController extends AbstractController
 			'item' => $item,
 			'form' => $form->createView()
 		));
+	}
+
+	public function mcmFiltersForm()
+	{
+		$entity = $this->mcm->getCurrentEntity();
+		if (!$entity) return false;
+
+		$form = $this->mcm->generateFiltersForm($entity);
+		$form->handleRequest($this->request);
+
+		if ($form->isSubmitted() && $form->isValid()) {
+
+			$entity = $this->mcm->getCurrentEntity();
+
+		}
+
+		return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
 	}
 
 	public function mcmRemove($trash = false)

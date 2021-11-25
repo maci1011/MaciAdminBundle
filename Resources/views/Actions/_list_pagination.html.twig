@@ -1,5 +1,5 @@
 
-{% if pager is defined and (pager.requiresPagination() or pager.form) %}
+{% if pager is defined and pager.requiresPagination() %}
 
 <div class="pagination-container container-fluid">
 <nav aria-label="Page navigation">
@@ -45,38 +45,6 @@
 	</li>
 </ul>
 {% endif %}
-
-{% if pager.form %}
-{% set form = pager.form.createView %}
-{{ form_start(form, {'attr': {'class': 'admin-form pagination-form navbar-form navbar-left container-fluid'}}) }}
-	{% if pager.requiresPagination() %}
-	<div class="form-group">
-		{{ form_label(form.page) }}
-		{{ form_errors(form.page) }}
-		{{ form_widget(form.page) }}
-		<label class="control-label required post-label">of [ {{ pager.maxPages }} ].</label>
-	</div>
-	{% else %}
-	{% do form.page.setRendered %}
-	{% endif %}
-	<div class="form-group">
-		{{ form_label(form.page_limit) }}
-		{{ form_errors(form.page_limit) }}
-		{{ form_widget(form.page_limit) }}
-		<label class="control-label required post-label">of [ {{ pager.length }} ].</label>
-	</div>
-	{{ form_rest(form) }}
-{{ form_end(form, {'render_rest': false}) }}
-{% endif %}
-
-{#}
-<ul class="nav navbar-nav navbar-right">
-	<li>
-		<span class="navbar-text">Total Items: [ {{ pager.length }} ]</span>
-	</li>
-</ul>
-{#}
-
 
 </nav>
 </div>
