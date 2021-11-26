@@ -114,7 +114,47 @@ $(document).ready(function(e) {
 	});
 
 	$('.filters-container').each(function(i,el) {
-		var listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el);
+		var fieldList = $(el).attr('data').split(','),
+			listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el),
+			select = $('<select/>').addClass('form-control add-filter').appendTo(el),
+			submit = $('<button/>').addClass('btn btn-success').text('Set').appendTo(el);
+
+		listWrapper.prev().hide();
+		$('<option/>').attr('value', 'add-filter').text('Add Filter').appendTo(select);
+		$('<div/>').addClass('row filter-row').appendTo(listWrapper).append($('<label/>').text('Add Filters'));
+
+		for (var i = 0; i < fieldList.length; i++) {
+			fieldList[i] = fieldList[i].split(':');
+			fieldList[i] = {
+				'added': false,
+				'label': fieldList[i][0].replace('_', ' '),
+				'field': fieldList[i][0].toLowerCase(),
+				'type': fieldList[i][1],
+			};
+			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
+		}
+
+		select.change(function(e) {
+			var index = select.val() == 'add-filter' ? false : parseInt(select.val());
+			if (!index || fieldList[index].added) return;
+			var row = $('<div/>').addClass('row filter-row');
+			if (fieldList[index].type == 'select')
+			{
+				$('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
+					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
+				$('#form_' + fieldList[index].field).clone()
+					.attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
+				fieldList[index].added = true;
+			}
+			else return;
+			row.appendTo(listWrapper);
+			var remove = $('<button/>').addClass('btn btn-danger').click(function(e) {
+				e.preventDefault();
+				remove.parent().remove();
+				fieldList[index].added = false;
+			}).appendTo(row).append($("<i class='fas fa-times'></i>"));
+		});
+
 
 	});
 

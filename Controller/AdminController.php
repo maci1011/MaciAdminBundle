@@ -1340,19 +1340,14 @@ class AdminController
 		$fields = $this->getFields($map);
 		$object = $this->getNewItem($map);
 		$form = $this->createFormBuilder($object);
-		$id = $this->getIdentifierValue($map, $object);
-		$isNew = !$id;
+		$isUploadable = $this->isUploadable($map);
+		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
+		$fieldMappings = $this->getMetadata($map)->fieldMappings;
+		$filters = [];
 
 		$form->setAction($this->generateUrl('maci_admin_view', array(
 			'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
 		)));
-
-		$form->setAction('#');
-
-		$isUploadable = $this->isUploadable($map);
-		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
-
-		$fieldMappings = $this->getMetadata($map)->fieldMappings;
 
 		foreach ($fields as $field) {
 
@@ -1386,28 +1381,45 @@ class AdminController
 				if ($typesGetter)
 				{
 					$form->add($field, ChoiceType::class, [
-						'choices' => array_merge(['Select Filter' => '_._null_._'], call_user_func_array([$object, $typesGetter], []))
+						'label_attr' => array(
+							'class' => 'sr-only'
+						),
+						'choices' => call_user_func_array([$object, $typesGetter], [])
 					]);
+					$filters[count($filters)] = ucfirst($field) . ':select';
 				}
 				else
 				{
-					$form->add('_set_filter_for_' . $field, CheckboxType::class, array(
+					$form->add('set_filter_for_' . $field, CheckboxType::class, array(
 						'label' => 'Set Filter',
+						'label_attr' => array(
+							'class' => 'sr-only'
+						),
 						'attr' => ['class' => 'setFilterCheckbox'],
 						'required' => false,
 						'mapped' => false
 					));
 					$form->add($field . '_method', ChoiceType::class, [
 						'label' => 'Method',
+						'label_attr' => array(
+							'class' => 'sr-only'
+						),
 						'choices' => array('Like' => 'LIKE', 'Is' => 'IS'),
 						'mapped' => false
 					]);
 					$form->add($field, TextType::class, [
+						'attr' => ['placeholder' => ucfirst($field)],
+						'label_attr' => array(
+							'class' => 'sr-only'
+						),
 						'data' => ''
 					]);
+					$filters[count($filters)] = ucfirst($field) . ':text';
 				}
 			}
 		}
+
+		$this->generatedFilters = $filters;
 
 		$form->add('set_filters', SubmitType::class, array(
 			'label'=>'Set Filters',
@@ -1415,6 +1427,43 @@ class AdminController
 		));
 
 		return $form->getForm();
+	}
+
+	public function getGeneratedFilters()
+	{
+		return isset($this->generatedFilters) ? $this->generatedFilters : [];
+	}
+
+	public function handleFiltersForm($map, $form)
+	{
+		if (!($form->isSubmitted() && $form->isValid())) return false;
+
+		$fields = $this->getGeneratedFilters();
+		$object = $this->getNewItem($map);
+		$form = $this->createFormBuilder($object);
+		$isUploadable = $this->isUploadable($map);
+		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
+		$filters = [];
+
+		foreach ($fields as $field) {
+
+			if (in_array($this->getFieldType($map, $field), ['text', 'string']) &&
+				(!$isUploadable || $field != $upload_path_field) &&
+				!in_array($field, ['locale']))
+			{
+				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
+				if ($typesGetter)
+				{
+					$filters[count($filters)] = ucfirst($field) . ':select';
+				}
+				else
+				{
+					$filters[count($filters)] = ucfirst($field) . ':text';
+				}
+			}
+		}
+
+		return true;
 	}
 
 	static public function getLocales()

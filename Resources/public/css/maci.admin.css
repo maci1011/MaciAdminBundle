@@ -254,19 +254,54 @@ h4 {
 
 ul.pagination {
 	margin: 0;
-	padding: 8px;
+	padding: 8px 0;
 }
 
 form.pagination-form.navbar-form {
-	padding: 0 12px;
+	padding: 0;
 }
 
 form.pagination-form.navbar-form .form-control {
 	width: 100px;
 }
 
-form.pagination-form.navbar-form label {
-	margin: 6px;
+form.pagination-form.navbar-form label,
+form.pagination-form.navbar-form .form-control {
+	margin: 0 8px 0 0;
+}
+
+/*   -----> Filters <-----   */
+
+.capitalize {
+	text-transform: capitalize;
+}
+
+.filters-container {
+	padding: 12px 15px 24px;
+}
+
+.filter-row {
+	padding: 8px 16px;
+}
+
+.filter-row label {
+	margin-right: 16px;
+}
+
+.filter-row label:after {
+	content: ':';
+}
+
+.filter-row .form-control {
+	display: inline-block;
+	width: auto;
+	margin-right: 16px;
+}
+
+select.add-filter {
+	display: inline-block;
+	width: auto;
+	margin: 8px 8px 0 0;
 }
 
 /*   -----> Filters <-----   */

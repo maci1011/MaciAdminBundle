@@ -126,6 +126,7 @@ class DefaultController extends AbstractController
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'pager' => $pager,
 			'form_filters' => $this->mcm->generateFiltersForm($entity)->createView(),
+			'filters_list' => $this->mcm->getGeneratedFilters(),
 			'entity_search' => true
 		]);
 	}
@@ -223,12 +224,7 @@ class DefaultController extends AbstractController
 
 		$form = $this->mcm->generateFiltersForm($entity);
 		$form->handleRequest($this->request);
-
-		if ($form->isSubmitted() && $form->isValid()) {
-
-			$entity = $this->mcm->getCurrentEntity();
-
-		}
+		$this->mcm->handleFiltersForm($entity, $form);
 
 		return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
 	}
