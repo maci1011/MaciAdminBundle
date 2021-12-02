@@ -126,6 +126,7 @@ class DefaultController extends AbstractController
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'pager' => $pager,
 			'form_filters' => $this->mcm->generateFiltersForm($entity)->createView(),
+			'has_filters' => $this->mcm->hasFilters($entity),
 			'filters_list' => $this->mcm->getGeneratedFilters($entity),
 			'entity_search' => true
 		]);

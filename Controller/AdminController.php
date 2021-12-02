@@ -2409,14 +2409,14 @@ class AdminController
 		$this->session->set('admin_filtersData_'.$entity['name'], $filters);
 	}
 
-	public function unsetAllFilters($entity)
-	{
-		$this->setFilters($entity, []);
-	}
-
 	public function hasFilters($entity)
 	{
 		return !!count($this->getFilters($entity));
+	}
+
+	public function unsetAllFilters($entity)
+	{
+		$this->setFilters($entity, []);
 	}
 
 	public function addFilter($entity, $filter)
