@@ -1,10 +1,12 @@
 
-{#% if form_filters is defined %}
+{% if form_filters is defined %}
 
-<div class="filters-container container-fluid" data="{{ filters_list|length ? filters_list|join(',') : '' }}">
+<div class="filters-container container-fluid" data="{{ filters_list|length ? filters_list|join(',') : '' }}" rel="{{ section ~ ':' ~ entity }}">
 
+<div style="display: none;">
 {{ form(form_filters) }}
+</div>
 
 </div>
 
-{% endif %#}
+{% endif %}

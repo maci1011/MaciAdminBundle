@@ -157,6 +157,12 @@ class ViewController extends AbstractController
 			$data['add'] = $admin->addRelationItemsByParams($data['add']);
 		}
 
+		// --- Set Filters
+
+		if (array_key_exists('set_filters', $data)) {
+			$data['set_filters'] = $admin->addFiltersByParams($data['set_filters']);
+		}
+
 		return new JsonResponse($data, 200);
 	}
 

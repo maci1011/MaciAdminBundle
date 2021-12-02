@@ -1,6 +1,8 @@
 
 {% set listLen = pager is defined ? pager.pageList|length : list|length %}
 
+{% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}
+
 {% if listLen %}
 
 {#% include "MaciAdminBundle:Actions:_filters.html.twig" %#}
@@ -26,8 +28,6 @@
 {% endif %}
 
 {% include "MaciAdminBundle:Actions:_list_pagination_form.html.twig" %}
-
-{% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}
 
 {% include "MaciAdminBundle:Actions:_list_pagination.html.twig" %}
 

@@ -1189,7 +1189,7 @@ class AdminController
 	{
 		$form = $entity['name'];
 		$object = $this->getNewItem($entity);
-		$filters = $this->getEntityFilters($entity);
+		$filters = $this->getFilters($entity);
 		foreach ($filters as $field => $filter) {
 			$method = $this->getSetterMethod($object, $field);
 			if ( $method ) {
@@ -1335,8 +1335,12 @@ class AdminController
 		return $form->getForm();
 	}
 
-	public function generateFiltersForm($map)
+	public function generateFiltersForm($map, $object = false)
 	{
+		if (!$object) {
+			$object = $this->getNewItem($map);
+		}
+
 		$fields = $this->getFields($map);
 		$object = $this->getNewItem($map);
 		$form = $this->createFormBuilder($object);
@@ -1344,6 +1348,9 @@ class AdminController
 		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
 		$fieldMappings = $this->getMetadata($map)->fieldMappings;
 		$filters = [];
+		$savedFilters = $this->getFilters($map);
+
+		// var_dump($savedFilters);die();
 
 		$form->setAction($this->generateUrl('maci_admin_view', array(
 			'section'=>$map['section'], 'entity'=>$map['name'], 'action'=>'set_filters'
@@ -1377,49 +1384,54 @@ class AdminController
 				(!$isUploadable || $field != $upload_path_field) &&
 				!in_array($field, ['locale']))
 			{
+				$val = array_key_exists($field, $savedFilters) ? $savedFilters[$field]['value'] : '';
 				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
+				$form->add('set_filter_for_' . $field, CheckboxType::class, array(
+					'label' => 'Set Filter',
+					'label_attr' => array(
+						'class' => 'sr-only'
+					),
+					'attr' => ['class' => 'setFilterCheckbox'],
+					'required' => false,
+					'mapped' => false,
+					'data' => array_key_exists($field, $savedFilters)
+				));
 				if ($typesGetter)
 				{
+					$list = call_user_func_array([$object, $typesGetter], []);
 					$form->add($field, ChoiceType::class, [
 						'label_attr' => array(
 							'class' => 'sr-only'
 						),
-						'choices' => call_user_func_array([$object, $typesGetter], [])
+						'choices' => $list,
+						'data' => $val == '' ? $list[array_keys($list)[0]] : $val
 					]);
 					$filters[count($filters)] = ucfirst($field) . ':select';
 				}
 				else
 				{
-					$form->add('set_filter_for_' . $field, CheckboxType::class, array(
-						'label' => 'Set Filter',
-						'label_attr' => array(
-							'class' => 'sr-only'
-						),
-						'attr' => ['class' => 'setFilterCheckbox'],
-						'required' => false,
-						'mapped' => false
-					));
 					$form->add($field . '_method', ChoiceType::class, [
 						'label' => 'Method',
 						'label_attr' => array(
 							'class' => 'sr-only'
 						),
-						'choices' => array('Like' => 'LIKE', 'Is' => 'IS'),
-						'mapped' => false
+						'choices' => array('Contains' => 'LIKE', 'Is' => '='),
+						'mapped' => false,
+						'data' => array_key_exists($field, $savedFilters) ? $savedFilters[$field]['method'] : 'LIKE'
 					]);
 					$form->add($field, TextType::class, [
 						'attr' => ['placeholder' => ucfirst($field)],
 						'label_attr' => array(
 							'class' => 'sr-only'
 						),
-						'data' => ''
+						'data' => $val
 					]);
 					$filters[count($filters)] = ucfirst($field) . ':text';
 				}
 			}
 		}
 
-		$this->generatedFilters = $filters;
+		$this->setGeneratedFilters($map, $filters);
 
 		$form->add('set_filters', SubmitType::class, array(
 			'label'=>'Set Filters',
@@ -1429,18 +1441,12 @@ class AdminController
 		return $form->getForm();
 	}
 
-	public function getGeneratedFilters()
-	{
-		return isset($this->generatedFilters) ? $this->generatedFilters : [];
-	}
-
 	public function handleFiltersForm($map, $form)
 	{
 		if (!($form->isSubmitted() && $form->isValid())) return false;
 
 		$fields = $this->getGeneratedFilters();
 		$object = $this->getNewItem($map);
-		$form = $this->createFormBuilder($object);
 		$isUploadable = $this->isUploadable($map);
 		$upload_path_field = $this->getConfigKey($map,'upload_path_field');
 		$filters = [];
@@ -1454,11 +1460,19 @@ class AdminController
 				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
 				if ($typesGetter)
 				{
-					$filters[count($filters)] = ucfirst($field) . ':select';
+					$this->addFilter($map, [
+						'field' => $field,
+						'method' => 'IS',
+						'value' => $form[$field]->getData()
+					]);
 				}
 				else
 				{
-					$filters[count($filters)] = ucfirst($field) . ':text';
+					$this->addFilter($map, [
+						'field' => $field,
+						'method' => $form[$field . '_method']->getData(),
+						'value' => $form[$field]->getData()
+					]);
 				}
 			}
 		}
@@ -1654,7 +1668,7 @@ class AdminController
 		return $ids;
 	}
 
-	public function getList($map, $trashValue = null, $filters = false)
+	public function getList($map, $trashValue = null, $filters = null)
 	{
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
@@ -2350,13 +2364,97 @@ class AdminController
 		return ['success' => true];
 	}
 
+	public function addFiltersByParams($data)
+	{
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('filters', $data)) {
+			return ['success' => false, 'error' => 'Bad Request.'];
+		}
+		$entity = $this->getEntity($data['section'], $data['entity']);
+		if (!$entity) {
+			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		if (is_array($data['filters'])) {
+			foreach($data['filters'] as $el) {
+				$this->addFilter($entity, $el);
+			}
+		}
+		else if ($data['filters'] == 'unsetAll') {
+			$this->unsetAllFilters($entity);
+		}
+		else return ['success' => false, 'error' => 'Bad Filter Value.'];
+		return ['success' => true];
+	}
+
+	/*
+		------------> Filters
+	*/
+
+	public function getGeneratedFilters($entity)
+	{
+		return $this->session->get('admin_filtersList_'.$entity['name'], []);
+	}
+
+	public function setGeneratedFilters($entity, $filters)
+	{
+		$this->session->set('admin_filtersList_'.$entity['name'], $filters);
+	}
+
+	public function getFilters($entity)
+	{
+		return $this->session->get('admin_filtersData_'.$entity['name'], []);
+	}
+
+	public function setFilters($entity, $filters)
+	{
+		$this->session->set('admin_filtersData_'.$entity['name'], $filters);
+	}
+
+	public function unsetAllFilters($entity)
+	{
+		$this->setFilters($entity, []);
+	}
+
+	public function hasFilters($entity)
+	{
+		return !!count($this->getFilters($entity));
+	}
+
+	public function addFilter($entity, $filter)
+	{
+		if (!array_key_exists('field', $filter)) return;
+		if (!in_array($filter['field'], $this->getFields($entity))) return;
+		if (!array_key_exists('value', $filter)) return;
+		if (!array_key_exists('method', $filter)) $filter['method'] = false;
+		$this->setFilter($entity, $filter);
+		return true;
+	}
+
+	public function setFilter($entity, $filter)
+	{
+		$filters = $this->getFilters($entity);
+		$filters[$filter['field']] = [
+			'method' => $filter['method'],
+			'value' => $filter['value']
+		];
+		$this->setFilters($entity, $filters);
+	}
+
+	public function unsetFilter($entity, $filter)
+	{
+		$filters = $this->getFilters($entity);
+		if (array_key_exists($filter, $filters)) {
+			unset($filters[$filter]);
+			$this->setFilters($entity, $filters);
+		}
+	}
+
 	/*
 		------------> Queries
 	*/
 
-	public function addDefaultQueries($map, &$query, $trashValue = null, $filters = false)
+	public function addDefaultQueries($map, &$query, $trashValue = null, $filters = null)
 	{
-		if ($filters) $query = $this->addFiltersQuery($map, $query, $filters);
+		if ($filters !== false) $query = $this->addFiltersQuery($map, $query, $filters);
 		$query = $this->addSearchQuery($map, $query);
 		$query = $this->addTrashQuery($map, $query, $trashValue);
 		$query = $this->addOrderByQuery($map, $query);
@@ -2366,21 +2464,21 @@ class AdminController
 
 	public function addFiltersQuery($map, &$query, $filters)
 	{
+		if ($filters == null) $filters = $this->getFilters($map);
 		$fields = $this->getFields($map);
 		foreach ($filters as $key => $data) {
 			if (!in_array($key, $fields)) {
 				continue;
 			}
-			if (!is_array($data)) {
-				$value = $data;
-				$op = '=';
-			} else {
-				if(!array_key_exists('val', $data)) continue;
-				if($data['val'] == "") $value = null;
-				if(!array_key_exists('op', $data)) $op = 'LIKE';
-			}
-			$query->andWhere($query->getRootAlias() . '.' . $key . ' ' . $op . ' :' . $key);
-			$query->setParameter(':' . $key, $value);
+			if (!is_array($data)) continue;
+			if (!array_key_exists('value', $data)) $value = null;
+			else $value = $data['value'];
+			if (!array_key_exists('method', $data)) $method = 'LIKE';
+			else $method = $data['method'];
+			// if($data['value'] == "") $value = null;
+			// var_dump($method);die();
+			$query->andWhere($query->getRootAlias() . '.' . $key . ' ' . $method . ' :' . $key);
+			$query->setParameter($key, "%$value%");
 		}
 		return $query;
 	}
@@ -2456,46 +2554,6 @@ class AdminController
 	public function generateUrl($route, $parameters = [], $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
 	{
 		return $this->router->generate($route, $parameters, $referenceType);
-	}
-
-	/*
-		------------> CODE IN PAUSE O_O ( Filters )
-	*/
-
-	public function getEntityFilters($entity)
-	{
-		return $this->session->get('admin_filters_'.$entity['name'], []);
-	}
-
-	public function hasEntityFilters($entity)
-	{
-		return !!count($this->getEntityFilters($entity));
-	}
-
-	public function setEntityFilters($entity, $filters)
-	{
-		$this->session->set('admin_filters_'.$entity['name'], $filters);
-	}
-
-	public function removeEntityFilters($entity)
-	{
-		$this->session->set('admin_filters_'.$entity['name'], []);
-	}
-
-	public function getEntityFilterFields($entity)
-	{
-		if (array_key_exists('filters', $entity) && count($entity['filters'])) {
-			return $entity['filters'];
-		}
-		return [];
-	}
-
-	public function hasEntityFilterFields($entity)
-	{
-		if (array_key_exists('filters', $entity) && count($entity['filters'])) {
-			return true;
-		}
-		return false;
 	}
 
 }

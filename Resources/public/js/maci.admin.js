@@ -113,48 +113,105 @@ $(document).ready(function(e) {
 		});
 	});
 
+	var saveFilters = function(data) {
+		$.ajax({
+			type: 'POST',
+			data: {
+				'data': data
+			},
+			url: '/mcm/ajax',
+			success: function(d,s,x) {
+				console.log(d);
+				window.location.reload();
+			}
+		});
+	};
+
 	$('.filters-container').each(function(i,el) {
 		var fieldList = $(el).attr('data').split(','),
-			listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el),
-			select = $('<select/>').addClass('form-control add-filter').appendTo(el),
-			submit = $('<button/>').addClass('btn btn-success').text('Set').appendTo(el);
+		listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el),
+		select = $('<select/>').addClass('form-control add-filter').appendTo(el),
+		submit = $('<button/>').addClass('btn btn-success').text('Set').click(function(e) {
+			e.preventDefault();
+			var data = [];
+			for (var i = 0; i < fieldList.length; i++)
+			{
+				if (fieldList[i].el != false) {
+					if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
+					data[data.length] = {
+						'field': fieldList[i].field,
+						'value': fieldList[i].el.val(),
+						'method': fieldList[i].type == 'select' ? '=' : fieldList[i].m_el.val()
+					};
+				}
+			}
+			var rel = $(el).attr('rel').split(':');
+			saveFilters({
+				'set_filters': {
+					'section': rel[0],
+					'entity': rel[1],
+					'filters': data.length ? data : 'unsetAll'
+				}
+			});
+		}).appendTo(el);
 
-		listWrapper.prev().hide();
 		$('<option/>').attr('value', 'add-filter').text('Add Filter').appendTo(select);
 		$('<div/>').addClass('row filter-row').appendTo(listWrapper).append($('<label/>').text('Add Filters'));
 
-		for (var i = 0; i < fieldList.length; i++) {
-			fieldList[i] = fieldList[i].split(':');
-			fieldList[i] = {
-				'added': false,
-				'label': fieldList[i][0].replace('_', ' '),
-				'field': fieldList[i][0].toLowerCase(),
-				'type': fieldList[i][1],
-			};
-			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
-		}
-
-		select.change(function(e) {
-			var index = select.val() == 'add-filter' ? false : parseInt(select.val());
-			if (!index || fieldList[index].added) return;
+		var addFilter = function(index) {
+			if (index === false || fieldList[index].el != false) return;
 			var row = $('<div/>').addClass('row filter-row');
-			if (fieldList[index].type == 'select')
+			if (fieldList[index].type == 'text')
 			{
-				$('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
+				$(el).find('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
 					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
-				$('#form_' + fieldList[index].field).clone()
-					.attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
-				fieldList[index].added = true;
+				$(el).find('label[for=form_' + fieldList[index].field + '_method]').clone()
+					.attr('for', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
+				var method = $(el).find('#form_' + fieldList[index].field + '_method').clone().change(function(e) {
+					fieldList[index].method = method.val();
+				}).attr('id', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
+				var input = $(el).find('#form_' + fieldList[index].field).clone().change(function(e) {
+					fieldList[index].value = input.val();
+				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
+				fieldList[index].el = input;
+				fieldList[index].m_el = method;
+			}
+			else if (fieldList[index].type == 'select')
+			{
+				$(el).find('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
+					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
+				var input = $(el).find('#form_' + fieldList[index].field).clone().change(function(e) {
+					fieldList[index].value = input.val();
+					fieldList[index].method = '=';
+				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
+				fieldList[index].el = input;
 			}
 			else return;
 			row.appendTo(listWrapper);
 			var remove = $('<button/>').addClass('btn btn-danger').click(function(e) {
 				e.preventDefault();
 				remove.parent().remove();
-				fieldList[index].added = false;
+				fieldList[index].el = false;
+				fieldList[index].m_el = false;
 			}).appendTo(row).append($("<i class='fas fa-times'></i>"));
+		}
+
+		select.change(function(e) {
+			addFilter(select.val() == 'add-filter' ? false : parseInt(select.val()));
 		});
 
+		for (var i = 0; i < fieldList.length; i++) {
+			fieldList[i] = fieldList[i].split(':');
+			fieldList[i] = {
+				'el': false,
+				'm_el': false,
+				'label': fieldList[i][0].replace('_', ' '),
+				'field': fieldList[i][0].toLowerCase(),
+				'type': fieldList[i][1]
+			};
+			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
+			if ($('#form_set_filter_for_' + fieldList[i].field).attr('checked') == "checked") addFilter(i);
+		}
 
 	});
 

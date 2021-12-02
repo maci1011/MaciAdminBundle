@@ -247,9 +247,9 @@ h4 {
 
 /*   -----> Pagination <-----   */
 
+.pagination-form-container,
 .pagination-container {
-	padding-top: 10px;
-	padding-bottom: 20px;
+	padding: 16px;
 }
 
 ul.pagination {
