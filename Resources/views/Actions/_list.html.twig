@@ -1,7 +1,7 @@
 
 {% set listLen = pager is defined ? pager.pageList|length : list|length %}
 
-{% if listLen or has_filters %}
+{% if listLen or (has_filters is defined and has_filters) %}
 {% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}
 {% endif %}
 
