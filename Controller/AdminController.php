@@ -1384,6 +1384,7 @@ class AdminController
 				(!$isUploadable || $field != $upload_path_field) &&
 				!in_array($field, ['locale']))
 			{
+				$label = ucwords(str_replace('_', ' ', $field));
 				$val = array_key_exists($field, $savedFilters) ? $savedFilters[$field]['value'] : '';
 				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
 				$form->add('set_filter_for_' . $field, CheckboxType::class, array(
@@ -1406,7 +1407,7 @@ class AdminController
 						'choices' => $list,
 						'data' => $val == '' ? $list[array_keys($list)[0]] : $val
 					]);
-					$filters[count($filters)] = ucfirst($field) . ':select';
+					$filters[count($filters)] = $label . ':select';
 				}
 				else
 				{
@@ -1420,13 +1421,13 @@ class AdminController
 						'data' => array_key_exists($field, $savedFilters) ? $savedFilters[$field]['method'] : 'LIKE'
 					]);
 					$form->add($field, TextType::class, [
-						'attr' => ['placeholder' => ucfirst($field)],
+						'attr' => ['placeholder' => $label],
 						'label_attr' => array(
 							'class' => 'sr-only'
 						),
 						'data' => $val
 					]);
-					$filters[count($filters)] = ucfirst($field) . ':text';
+					$filters[count($filters)] = $label . ':text';
 				}
 			}
 		}

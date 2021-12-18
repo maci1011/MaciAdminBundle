@@ -205,8 +205,8 @@ $(document).ready(function(e) {
 			fieldList[i] = {
 				'el': false,
 				'm_el': false,
-				'label': fieldList[i][0].replace('_', ' '),
-				'field': fieldList[i][0].toLowerCase(),
+				'label': fieldList[i][0],
+				'field': fieldList[i][0].replace(' ', '_').toLowerCase(),
 				'type': fieldList[i][1]
 			};
 			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
