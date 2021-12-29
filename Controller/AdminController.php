@@ -419,7 +419,7 @@ class AdminController
 	// --- Check User Auths
 	public function checkAuth()
 	{
-		if (!count($this->_auth_sections) || !count($this->_sections)) {
+		if (!$this->authorizationChecker->isGranted('ROLE_USER') || !count($this->_auth_sections) || !count($this->_sections)) {
 			return false;
 		}
 		return true;
