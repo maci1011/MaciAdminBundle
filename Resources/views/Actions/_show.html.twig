@@ -2,9 +2,25 @@
 <div class="container-fluid">
 <div class="details-list">
 
-	{% for field, val in data %}
+	<div class="row details-item odd">
 
-	<div class="row details-item {% if loop.index is even %}even{% else %}odd{% endif %}">
+		<div class="col-xs-4">
+
+			<span class="item-label">{{ item_identifier }}</span>
+
+		</div>
+
+		<div class="col-xs-8">
+
+			{% include "MaciAdminBundle:Actions:_item_field.html.twig" with { 'field': item_identifier } %}
+
+		</div>
+
+	</div>
+
+	{% for field in fields %}
+
+	<div class="row details-item {% if loop.index is even %}odd{% else %}even{% endif %}">
 
 		<div class="col-xs-4">
 

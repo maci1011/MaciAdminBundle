@@ -149,8 +149,7 @@ class DefaultController extends AbstractController
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'identifier' => $this->mcm->getIdentifierValue($entity, $item),
-			'item' => $item,
-			'data' => $this->mcm->getItemData($entity, $item)
+			'item' => $item
 		]);
 	}
 

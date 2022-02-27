@@ -35,8 +35,8 @@
 
 {% if val is not defined %}
 
-{% set fldLabel = (field|capitalize ~ 'Label') %}
-{% set fldValue = (field|capitalize ~ 'Value') %}
+{% set fldLabel = (field ~ 'Label') %}
+{% set fldValue = (field ~ 'Value') %}
 {% set fldCamel = (field|replace({'_': ' '})|capitalize|replace({' ': ''})) %}
 
 {% if attribute(item, fldLabel) is defined %}
@@ -65,7 +65,7 @@
 
 
 {% if not cuttext is defined %}
-{% set cuttext = false %}
+{% set cuttext = 0 %}
 {% endif %}
 
 
@@ -73,9 +73,10 @@
 
 <span class="item-field-value"><i>NULL</i></span>
 
+{#}
 {% elseif field == '_preview' %}
-
 <img class="item-preview img-fluid" src="{{ asset(item.webPreview|imagine_filter('maci_admin_list_preview')) }}" alt="preview" />
+{#}
 
 {% elseif val.timestamp is defined %}
 
@@ -95,8 +96,8 @@
 
 {% elseif val|length  %}
 
-{% if cuttext  %}
-<span class="item-field-value">{{ val[:72] ~ (val|length < 72 ? '' : '...') }}</span>
+{% if 0 < cuttext  %}
+<span class="item-field-value">{{ val[:cuttext] ~ (val|length < cuttext ? '' : '...') }}</span>
 {% else  %}
 <span class="item-field-value">{{ val }}</span>
 {% endif %}
