@@ -2471,15 +2471,20 @@ class AdminController
 			if (!in_array($key, $fields)) {
 				continue;
 			}
-			if (!is_array($data)) continue;
-			if (!array_key_exists('value', $data)) $value = null;
-			else $value = $data['value'];
-			if (!array_key_exists('method', $data)) $method = 'LIKE';
-			else $method = $data['method'];
-			// if($data['value'] == "") $value = null;
-			// var_dump($method);die();
+			if (is_array($data)) {
+				if (!array_key_exists('value', $data)) $value = null;
+				else $value = $data['value'];
+				if (!array_key_exists('method', $data)) $method = 'LIKE';
+				else $method = $data['method'];
+			}
+			else
+			{
+				if (!is_string($data)) continue;
+				$value = $data;
+				$method = '=';
+			}
 			$query->andWhere($query->getRootAlias() . '.' . $key . ' ' . $method . ' :' . $key);
-			$query->setParameter($key, "%$value%");
+			$query->setParameter($key, "$value");
 		}
 		return $query;
 	}

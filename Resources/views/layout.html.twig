@@ -2,23 +2,6 @@
 {% extends "@MaciAdmin/base.html.twig" %}
 
 
-{% block javascripts %}
-
-	{{ parent() }}
-
-	<script>
-
-	$("#menu-toggle").click(function(e) {
-		e.preventDefault();
-		$("#wrapper").toggleClass("toggled");
-		$(this).toggleClass('active');
-	});
-
-	</script>
-
-{% endblock %}
-
-
 {% block body %}
 
 
@@ -56,7 +39,13 @@
 		<nav>
 			<ul class="nav navbar-nav navbar-right">
 				<li>
+					<span class="navbar-text">@{{ app.user.username }}</span>
+				</li>
+				<li>
 					<span class="navbar-text">Locale: {{ app.request.locale|upper }}</span>
+				</li>
+				<li>
+					<a class="nav-link" href="{{ path('fos_user_security_logout') }}">Logout</a>
 				</li>
 			</ul>
 		</nav>
@@ -132,4 +121,21 @@
 
 
 {% endblock body %}
+
+
+{% block javascripts %}
+
+	{{ parent() }}
+
+	<script>
+
+	$("#menu-toggle").click(function(e) {
+		e.preventDefault();
+		$("#wrapper").toggleClass("toggled");
+		$(this).toggleClass('active');
+	});
+
+	</script>
+
+{% endblock %}
 
