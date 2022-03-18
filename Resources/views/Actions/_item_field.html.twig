@@ -80,7 +80,11 @@
 
 {% elseif val.timestamp is defined %}
 
+{% if val|date('H') == '00' and val|date('i') == '00' and val|date('s') == '00' %}
+<span class="item-field-value">{{ val|date('d/m/Y') }}</span>
+{% else %}
 <span class="item-field-value">{{ val|date('d/m/Y H:i:s') }}</span>
+{% endif %}
 
 {% elseif val is iterable %}
 
