@@ -1029,15 +1029,16 @@ class AdminController
 		return $associations;
 	}
 
+	public function getAssociationMappings($map)
+	{
+		return $this->getMetadata($map)->associationMappings;
+	}
+
 	public function getAssociationMetadata($map, $association)
 	{
-		$metadata = $this->getMetadata($map);
-
-		if (array_key_exists($association, $metadata->associationMappings)) {
-			return $metadata->associationMappings[$association];
-		}
-
-		return false;
+		$am = $this->getAssociationMappings($map);
+		if (!array_key_exists($association, $am)) return false;
+		return $am[$association];
 	}
 
 	public function getBridge($relation, $association)
@@ -1551,12 +1552,19 @@ class AdminController
 		return $data;
 	}
 
-	public function setItem($map, $item, $data, $setters = false)
+	public function setItem($map, $item, $data)
 	{
-		if (!$setters) $setters = $this->getSetters($map);
+		$associations = $this->getAssociations($map);
 		foreach ($data as $field => $value) {
 			$setter = $this->getSetterMethod($item, $field);
 			if (!$setter) {
+				continue;
+			}
+			if (in_array($field, $associations))
+			{
+				$relation = $this->getRelation($map, $field);
+				if (!$relation) continue;
+				$this->addRelationItems($map, $relation, $item, $this->getList($relation, false, [$this->getIdentifier($relation) => $value]));
 				continue;
 			}
 			call_user_func_array([$item, $setter], [$value]);
@@ -1636,7 +1644,6 @@ class AdminController
 	{
 		$obj_list = [];
 		$ids_list = $this->getListIdentifiers($map, $list);
-		$repo = $this->getRepository($map);
 		if(count($ids_list)) {
 			foreach ($ids as $_id) {
 				if (trim($_id) === "") {
@@ -1700,16 +1707,17 @@ class AdminController
 		$repo = $this->getRepository($mainMap);
 		$query = $repo->createQueryBuilder('r');
 		$root = $query->getRootAlias();
+		// todo: add a config option for this (remove clones)
 		$index = 0;
 		foreach ($relation_items as $obj) {
 			if (is_object($obj)) {
 				$parameter = ':id_' . $index;
 				$query->andWhere($root . '.' . $inverseField . ' != ' . $parameter);
-				$query->setParameter($parameter, call_user_func_array(array($obj, ('get'.ucfirst($inverseField))), []));
+				$query->setParameter($parameter, call_user_func_array([$obj, ('get'.ucfirst($inverseField))], []));
 				$index++;
 			}
 		}
-		// todo: an option fot this
+		// todo: add a config option for this (remove self)
 		if ($this->getClass($map) === $this->getClass($relation) && !$bridge) {
 			$query->andWhere($root . '.' . $inverseField . ' != :pid');
 			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), []));
@@ -2039,7 +2047,7 @@ class AdminController
 			$this->session->getFlashBag()->add('error', $managerName . ' Method for ' . $field . ' in ' . $this->getClass($entity) . ' not found.');
 			return false;
 		}
-		call_user_func_array(array($item, $manager), array((strpos($managerMethod, 'Remover') !== false && !$this->getRemoverMethod($item, $field)) ? null : $obj));
+		call_user_func_array([$item, $manager], [(strpos($managerMethod, 'Remover') !== false && !$this->getRemoverMethod($item, $field)) ? null : $obj]);
 		return true;
 	}
 
@@ -2286,23 +2294,49 @@ class AdminController
 		return $this->getItemData($entity, $item);
 	}
 
-	public function newItemByParams($data)
+	public function newItemByParams($entity, $params)
 	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('data', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
+		$item = $this->getNewItem($entity);
+		$this->setItem($entity, $item, $params);
+		$this->om->persist($item);
+		$this->om->flush();
+		return $item;
+	}
+
+	public function newItemsByParams($data)
+	{
+		if (!is_array($data) || !array_key_exists('section', $data) ||
+			!array_key_exists('entity', $data) || !array_key_exists('params', $data)
+		) return ['success' => false, 'error' => 'Bad Request.'];
 		$entity = $this->getEntity($data['section'], $data['entity']);
 		if (!$entity) {
 			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
 		}
-		$item = $this->getNewItem($entity);
-		if (!$item) {
-			return ['success' => false, 'error' => 'Item "' . $data['id'] . '" for entity "' . $entity['label'] . '" not Found.'];
+		if (!array_key_exists(0, $data['params']))
+			return ['success' => true, 'id' => $this->getIdentifierValue($entity, $this->newItemByParams($entity, $data['params']))];
+		$list = [];
+		$items = [];
+		for ($i=0; $i < count($data['params']); $i++) { 
+			$items[$i] = $this->newItemByParams($entity, $data['params'][$i]);
+			$list[$i] = ['success' => true, 'id' => $this->getIdentifierValue($entity, $items[$i])];
 		}
-		$this->setItem($entity, $item, $data['data']);
-		$this->om->persist($item);
-		$this->om->flush();
-		return ['success' => true, 'id' => $this->getIdentifierValue($entity, $item)];
+		$result = ['success' => true, 'list' => $list];
+		if (!array_key_exists('relations', $data) || count($items) == 0) return $result;
+		$associations = $this->getAssociations($entity);
+		foreach ($data['relations'] as $field => $value)
+		{
+			$setter = $this->getSetterMethod($items[0], $field);
+			if (!$setter) {
+				continue;
+			}
+			if (!in_array($field, $associations)) continue;
+			$relation = $this->getRelation($entity, $field);
+			if (!$relation) continue;
+			$relList = $this->getList($relation, false, [$this->getIdentifier($relation) => $value]);
+			for ($i=0; $i < count($items); $i++)
+				$this->addRelationItems($entity, $relation, $items[$i], $relList);
+		}
+		return $result;
 	}
 
 	public function editItemByParams($data)
@@ -2466,12 +2500,12 @@ class AdminController
 	public function addFiltersQuery($map, &$query, $filters)
 	{
 		if ($filters == null) $filters = $this->getFilters($map);
-		$fields = $this->getFields($map);
+		$fields = $this->getFields($map, false);
 		foreach ($filters as $key => $data) {
 			if (!in_array($key, $fields)) {
 				continue;
 			}
-			if (is_array($data)) {
+			if (is_array($data) && !array_key_exists(0, $data)) {
 				if (!array_key_exists('value', $data)) $value = null;
 				else $value = $data['value'];
 				if (!array_key_exists('method', $data)) $method = 'LIKE';
@@ -2479,7 +2513,6 @@ class AdminController
 			}
 			else
 			{
-				if (!is_string($data)) continue;
 				$value = $data;
 				$method = '=';
 			}

@@ -121,6 +121,8 @@ class ViewController extends AbstractController
 			return new JsonResponse(['success' => false, 'error' => 'No Data.'], 200);
 		}
 
+		// $om = $this->getDoctrine()->getManager();
+
 		// --- List
 
 		if (array_key_exists('list', $data)) {
@@ -136,7 +138,7 @@ class ViewController extends AbstractController
 		// --- New
 
 		if (array_key_exists('new', $data)) {
-			$data['new'] = $admin->newItemByParams($data['new']);
+			$data['new'] = $admin->newItemsByParams($data['new']);
 		}
 
 		// --- Edit
