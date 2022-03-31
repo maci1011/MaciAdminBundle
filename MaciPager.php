@@ -41,6 +41,11 @@ class MaciPager
 		return $this->page;
 	}
 
+	public function getPage0()
+	{
+		return $this->page - 1;
+	}
+
 	public function setPage($page)
 	{
 		$this->page = ($this->getMaxPages() < $page) ? 1 : $page;
@@ -88,7 +93,7 @@ class MaciPager
 
 	public function getIdentifier($id)
 	{
-		return $this->identifiers[$id];
+		return $this->identifiers[$this->getOffset() + $id];
 	}
 
 	/* Utils */
