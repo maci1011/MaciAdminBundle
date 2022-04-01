@@ -213,8 +213,8 @@ $(document).ready(function(e) {
 					break;
 				}
 			}
-			if (found) submit.text('Apply');
-			else submit.text('Reset');
+			if (found) submit.text('Apply Filters');
+			else submit.text('Reset Filters');
 		});
 
 		for (var i = 0; i < fieldList.length; i++) {
