@@ -10,33 +10,33 @@
 		<ul class="pagination">
 			{% if not pager.hasRangeFirst() %}
 			<li>
-				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": 1 })) }}">
+				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "p": 1 })) }}">
 					<span class="glyphicon glyphicon-step-backward"></span>
 				</a>
 			</li>
 			{% endif %}
 			{% if pager.hasPrev() %}
 			<li>
-				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.prev })) }}">
+				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "p": pager.prev })) }}">
 					<span class="glyphicon glyphicon-chevron-left"></span>
 				</a>
 			</li>
 			{% endif %}
 			{% for page in pager.getPageRange() %}
 		    	<li {% if pager.current(page) %}class="active"{% endif %}>
-		    		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": page })) }}">{{ page }}</a>
+		    		<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "p": page })) }}">{{ page }}</a>
 		    	</li>
 			{% endfor %}
 			{% if pager.hasNext() %}
 			<li>
-				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.next })) }}">
+				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "p": pager.next })) }}">
 					<span class="glyphicon glyphicon-chevron-right"></span>
 				</a>
 			</li>
 			{% endif %}
 			{% if not pager.hasRangeLast() %}
 			<li>
-				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "page": pager.maxPages })) }}">
+				<a href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge(app.request.query.all)|merge({ "p": pager.maxPages })) }}">
 					<span class="glyphicon glyphicon-step-forward"></span>
 				</a>
 			</li>

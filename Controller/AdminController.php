@@ -658,6 +658,7 @@ class AdminController
 			'item_identifier' => $this->getIdentifier($map),
 			'is_entity_uploadable' => $this->isUploadable($map),
 			// 'list_filters_form' => $this->getFiltersForm($map)->createView(),
+			'search_query' => $this->getSearchStoredQuery($map),
 			'sortable' => ($this->isSortable($map) ? $this->generateUrl('maci_admin_view', array(
 				'section'=>$map['section'],'entity'=>$map['name'],
 				'action'=>'reorder'
@@ -1939,7 +1940,7 @@ class AdminController
 
 	public function getPager($map, $list, $opt = [])
 	{
-		$pager = new MaciPager($list, $this->request->get('page', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
+		$pager = new MaciPager($list, $this->request->get('p', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
 		$pager->setForm($this->getPagerForm($map, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;
@@ -1948,7 +1949,7 @@ class AdminController
 	public function getPagerForm($map, $pager = false, $opt = [])
 	{
 		$options = array(
-			'page' => $this->request->get('page', 1),
+			'page' => $this->request->get('p', 1),
 			'page_limit' => $this->getPager_PageLimit($map),
 			'order_by_field' => $this->getPager_OrderByField($map),
 			'order_by_sort' => $this->getPager_OrderBySort($map)
@@ -2524,15 +2525,26 @@ class AdminController
 
 	public function addSearchQuery($map, &$query)
 	{
-		$search = $this->request->get('s', false);
+		$search = $this->getSearchStoredQuery($map);
 		if ($search) {
 			$stringFields = $this->getFieldsByType($map);
 			foreach ($stringFields as $field) {
 				$query->orWhere($query->getRootAlias() . '.' . $field . ' LIKE :search');
 			}
 			$query->setParameter('search', "%$search%");
+			$this->setSearchStoredQuery($map, $search);
 		}
 		return $query;
+	}
+
+	public function getSearchStoredQuery($entity)
+	{
+		return $this->session->get('admin_searchQuery_'.$entity['name'], false);
+	}
+
+	public function setSearchStoredQuery($entity, $query)
+	{
+		$this->session->set('admin_searchQuery_'.$entity['name'], $query);
 	}
 
 	public function addTrashQuery($map, $query, $trashValue = null)

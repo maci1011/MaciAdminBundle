@@ -1,7 +1,7 @@
 
 <form action="{{ path(app.request.get('_route'), app.request.get('_route_params')) }}" class="navbar-form navbar-right" method="GET">
 	<div class="form-group">
-		<input type="text" class="form-control" placeholder="Search" name="s" value="{{ app.request.get('s') }}" />
+		<input type="text" class="form-control" placeholder="Search" name="s" value="{{ search_query }}" />
 	</div>
 	<button type="submit" class="btn btn-default">
 		<span class="glyphicon glyphicon-search"></span>

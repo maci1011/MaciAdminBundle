@@ -109,17 +109,23 @@ class DefaultController extends AbstractController
 			];
 		}
 
+		if (array_key_exists('s', $_GET))
+		{
+			$this->mcm->setSearchStoredQuery($entity, $this->request->get('s', false));
+			return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
+		}
+
 		$pager = $this->mcm->getPager($entity, $list);
 
 		if (!$pager) {
 			return false;
 		}
 
-		if ($this->request->get('page') && $this->request->get('page') != $pager->getPage()) {
+		if ($this->request->get('p') && $this->request->get('p') != $pager->getPage()) {
 			return $this->mcm->getDefaultEntityRedirectParams($entity, (
 				$trash ? 'trash' : 'list'
 			), null, (
-				1 < $pager->getPage() ? ['page'=>$pager->getPage()] : []
+				1 < $pager->getPage() ? ['p'=>$pager->getPage()] : []
 			));
 		}
 
