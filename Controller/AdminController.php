@@ -2489,8 +2489,8 @@ class AdminController
 
 	public function addDefaultQueries($map, &$query, $trashValue = null, $filters = null)
 	{
-		if ($filters !== false) $query = $this->addFiltersQuery($map, $query, $filters);
 		$query = $this->addSearchQuery($map, $query);
+		if ($filters !== false) $query = $this->addFiltersQuery($map, $query, $filters);
 		$query = $this->addTrashQuery($map, $query, $trashValue);
 		$query = $this->addOrderByQuery($map, $query);
 

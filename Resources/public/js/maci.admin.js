@@ -123,6 +123,10 @@ $(document).ready(function(e) {
 			success: function(d,s,x) {
 				console.log(d);
 				window.location.reload();
+			},
+			error: function(d,s,x) {
+				console.log(d);
+				alert('Error!');
 			}
 		});
 	};
@@ -131,13 +135,13 @@ $(document).ready(function(e) {
 		var fieldList = $(el).attr('data').split(','),
 		listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el),
 		select = $('<select/>').addClass('form-control add-filter').appendTo(el),
-		submit = $('<button/>').addClass('btn btn-success').text('Set').click(function(e) {
+		submit = $('<button/>').addClass('btn btn-success').click(function(e) {
 			e.preventDefault();
 			var data = [];
 			for (var i = 0; i < fieldList.length; i++)
 			{
 				if (fieldList[i].el != false) {
-					if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
+					// if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
 					data[data.length] = {
 						'field': fieldList[i].field,
 						'value': fieldList[i].el.val(),
@@ -193,11 +197,24 @@ $(document).ready(function(e) {
 				remove.parent().remove();
 				fieldList[index].el = false;
 				fieldList[index].m_el = false;
+				select.val('add-filter').change();
 			}).appendTo(row).append($("<i class='fas fa-times'></i>"));
 		}
 
 		select.change(function(e) {
 			addFilter(select.val() == 'add-filter' ? false : parseInt(select.val()));
+			select.val('add-filter');
+			var found = false;
+			for (var i = 0; i < fieldList.length; i++)
+			{
+				if (fieldList[i].el != false)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (found) submit.text('Apply');
+			else submit.text('Reset');
 		});
 
 		for (var i = 0; i < fieldList.length; i++) {
@@ -212,6 +229,8 @@ $(document).ready(function(e) {
 			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
 			if ($('#form_set_filter_for_' + fieldList[i].field).attr('checked') == "checked") addFilter(i);
 		}
+
+		select.change();
 
 	});
 
