@@ -115,13 +115,21 @@ class DefaultController extends AbstractController
 			return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
 		}
 
+		if (array_key_exists('p', $_GET))
+		{
+			$this->mcm->setStoredPage($entity, $this->request->get('p', false));
+			return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
+		}
+
 		$pager = $this->mcm->getPager($entity, $list);
 
 		if (!$pager) {
 			return false;
 		}
 
-		if ($this->request->get('p') && $this->request->get('p') != $pager->getPage()) {
+		$page = $this->mcm->getStoredPage($entity);
+		if ($page && $page != $pager->getPage())
+		{
 			return $this->mcm->getDefaultEntityRedirectParams($entity, (
 				$trash ? 'trash' : 'list'
 			), null, (

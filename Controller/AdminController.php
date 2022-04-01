@@ -659,6 +659,7 @@ class AdminController
 			'is_entity_uploadable' => $this->isUploadable($map),
 			// 'list_filters_form' => $this->getFiltersForm($map)->createView(),
 			'search_query' => $this->getSearchStoredQuery($map),
+			'list_page' => $this->getStoredPage($map),
 			'sortable' => ($this->isSortable($map) ? $this->generateUrl('maci_admin_view', array(
 				'section'=>$map['section'],'entity'=>$map['name'],
 				'action'=>'reorder'
@@ -1940,7 +1941,7 @@ class AdminController
 
 	public function getPager($map, $list, $opt = [])
 	{
-		$pager = new MaciPager($list, $this->request->get('p', 1), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
+		$pager = new MaciPager($list, $this->getStoredPage($map), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
 		$pager->setForm($this->getPagerForm($map, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;
@@ -1959,7 +1960,8 @@ class AdminController
 			->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $opt))
 			->add('page', IntegerType::class, array(
 				'label' => 'Page:',
-				'attr' => $page_attr
+				'attr' => $page_attr,
+				'data' => $this->getStoredPage($map)
 			))
 			->add('page_limit', IntegerType::class, array(
 				'label' => 'Items per Page:'
@@ -2498,6 +2500,20 @@ class AdminController
 		return $query;
 	}
 
+	public function addSearchQuery($map, &$query)
+	{
+		$search = $this->getSearchStoredQuery($map);
+		if ($search) {
+			$stringFields = $this->getFieldsByType($map);
+			foreach ($stringFields as $field) {
+				$query->orWhere($query->getRootAlias() . '.' . $field . ' LIKE :search');
+			}
+			$query->setParameter('search', "%$search%");
+			$this->setSearchStoredQuery($map, $search);
+		}
+		return $query;
+	}
+
 	public function addFiltersQuery($map, &$query, $filters)
 	{
 		if ($filters == null) $filters = $this->getFilters($map);
@@ -2523,30 +2539,6 @@ class AdminController
 		return $query;
 	}
 
-	public function addSearchQuery($map, &$query)
-	{
-		$search = $this->getSearchStoredQuery($map);
-		if ($search) {
-			$stringFields = $this->getFieldsByType($map);
-			foreach ($stringFields as $field) {
-				$query->orWhere($query->getRootAlias() . '.' . $field . ' LIKE :search');
-			}
-			$query->setParameter('search', "%$search%");
-			$this->setSearchStoredQuery($map, $search);
-		}
-		return $query;
-	}
-
-	public function getSearchStoredQuery($entity)
-	{
-		return $this->session->get('admin_searchQuery_'.$entity['name'], false);
-	}
-
-	public function setSearchStoredQuery($entity, $query)
-	{
-		$this->session->set('admin_searchQuery_'.$entity['name'], $query);
-	}
-
 	public function addTrashQuery($map, $query, $trashValue = null)
 	{
 		if ($trashValue !== false && $trashValue !== true) {
@@ -2567,6 +2559,26 @@ class AdminController
 	{
 		$query->orderBy($query->getRootAlias() . '.' . $this->getPager_OrderByField($map), $this->getPager_OrderBySort($map));
 		return $query;
+	}
+
+	public function getSearchStoredQuery($entity)
+	{
+		return $this->session->get('admin_searchQuery_'.$entity['name'], false);
+	}
+
+	public function setSearchStoredQuery($entity, $query)
+	{
+		$this->session->set('admin_searchQuery_'.$entity['name'], $query);
+	}
+
+	public function getStoredPage($entity)
+	{
+		return $this->session->get('admin_listPage_'.$entity['name'], 1);
+	}
+
+	public function setStoredPage($entity, $query)
+	{
+		$this->session->set('admin_listPage_'.$entity['name'], $query);
 	}
 
 	/*
