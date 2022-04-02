@@ -127,16 +127,6 @@ class DefaultController extends AbstractController
 			return false;
 		}
 
-		$page = $this->mcm->getStoredPage($entity);
-		if ($page && $page != $pager->getPage())
-		{
-			return $this->mcm->getDefaultEntityRedirectParams($entity, (
-				$trash ? 'trash' : 'list'
-			), null, (
-				1 < $pager->getPage() ? ['p'=>$pager->getPage()] : []
-			));
-		}
-
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'pager' => $pager,
 			'form_filters' => $this->mcm->generateFiltersForm($entity)->createView(),
@@ -465,11 +455,14 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
+		$r = $this->relationGETQueriesRedirect($entity, $relation);
+		if ($r) return $r;
+
 		$list = $this->mcm->getRelationItems($relation, $item);
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-		$pager = $this->mcm->getPager($relation, $list, array('redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))));
+		$pager = $this->mcm->getPager($relation, $list, ['redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))], $entity);
 
 		if (!$pager) {
 			return false;
@@ -559,6 +552,9 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
+		$r = $this->relationGETQueriesRedirect($entity, $relation, 'add');
+		if ($r) return $r;
+
 		$list = $this->mcm->getListForRelation($entity, $relation, $item);
 
 		if ($this->request->getMethod() === 'POST') {
@@ -599,6 +595,18 @@ class DefaultController extends AbstractController
 
 		$bridge = $this->mcm->getCurrentBridge();
 		if (!$bridge) return false;
+
+		if (array_key_exists('s', $_GET))
+		{
+			$this->mcm->setSearchStoredQuery($relation, $this->request->get('s', false), $entity);
+			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $action);
+		}
+
+		if (array_key_exists('p', $_GET))
+		{
+			$this->mcm->setStoredPage($relation, $this->request->get('p', false), $entity);
+			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $action);
+		}
 
 		$list = $this->mcm->getListForRelation($entity, $relation, $item, $bridge);
 
@@ -822,6 +830,23 @@ class DefaultController extends AbstractController
 		$this->om->flush();
 
 		return array('success' => true);
+	}
+
+	public function relationGETQueriesRedirect($entity, $relation, $action = 'list')
+	{
+		if (array_key_exists('s', $_GET))
+		{
+			$this->mcm->setSearchStoredQuery($relation, $this->request->get('s', false), $entity);
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $action);
+		}
+
+		if (array_key_exists('p', $_GET))
+		{
+			$this->mcm->setStoredPage($relation, $this->request->get('p', false), $entity);
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $action);
+		}
+
+		return false;
 	}
 
 }

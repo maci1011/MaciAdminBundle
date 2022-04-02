@@ -11,8 +11,7 @@ h1 {
 }
 
 h2 {
-	padding-top: 15px;
-	font-size: 16pt;
+	font-size: 15pt;
 }
 
 h3 {
@@ -103,6 +102,17 @@ h4 {
 }
 
 /*   -----> Content Navbar <-----   */
+
+.header-title {
+	padding: 5px 0 10px;
+	font-size: 16pt;
+}
+
+.header-description {
+	font-size: 12pt;
+	font-weight: normal;
+	padding-left: 15px;
+}
 
 .content-navbar .nav {
 	margin: 0 0 15px 0;

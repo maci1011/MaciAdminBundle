@@ -13,7 +13,7 @@
 
 {% if id is defined and id %}
 
-<h2>Item: {{ item }}</h2>
+<h2 class="header-title">Item: {{ item }}</h2>
 
 <div id="itembar" class="actionsbar content-navbar container-fluid">
 	<nav>
@@ -24,24 +24,19 @@
 
 {% if relation is defined and relation %}
 
-<h3>Relation: {{ relation_label }}</h3>
+<h3 class="header-title">Relation: {{ association_label }} <span class="header-description">Entity: {{ relation_label }}</span></h3>
 
 <div id="relationbar" class="actionsbar content-navbar container-fluid">
 	<nav>
 		{{ knp_menu_render('admin_item_relation_actions', {'currentClass': 'active'}) }}
-		{% if relation_search is defined and relation_search %}
-		{% include "MaciAdminBundle:Default:_view_header_search_form.html.twig" %}
-		{% endif %}
 	</nav>
 </div>
 
 
 {% endif %}
 
-{% else %}
-
-<h2>{{ action_label }}</h2>
-
 {% endif %}
+
+<h4 class="header-title">{{ relation_action_label is defined ? relation_action_label : action_label }}</h4>
 
 {% endif %}

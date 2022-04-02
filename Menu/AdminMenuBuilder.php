@@ -128,12 +128,17 @@ class AdminMenuBuilder
 		foreach ($single_actions as $action) {
 			if ($action === 'relations') {
 				if ( count($associations) ) {
+					$current_relation = $this->mcm->getCurrentRelation();
 					foreach ($associations as $relation) {
 						$relAction = $this->mcm->getRelationDefaultAction($entity, $relation);
-						$menu->addChild($this->mcm->generateLabel($relation), array(
+						$label = $this->mcm->generateLabel($relation);
+						$menu->addChild($label, array(
 							'route' => 'maci_admin_view',
 							'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => $action, 'id' => $id, 'relation' => $relation, 'relAction' => $relAction)
 						));
+						if (!$current_relation) continue;
+						if ($current_relation['association'] == $relation)
+							$menu[$label]->setCurrent(true);
 					}
 				}
 			} else {
@@ -171,7 +176,7 @@ class AdminMenuBuilder
 			'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => $relation_default_action)
 		));
 
-		$menu->addChild($this->mcm->generateLabel('New ' . $relation['label']), array(
+		$menu->addChild($this->mcm->generateLabel('New ' . $this->mcm->generateLabel($relation['association'])), array(
 			'route' => 'maci_admin_view',
 			'routeParameters' => array('section' => $section, 'entity' => $entity['name'], 'action' => 'relations', 'id' => $id, 'relation' => $relation['association'], 'relAction' => 'new')
 		));

@@ -678,6 +678,7 @@ class AdminController
 			'fields' => $this->getFields($relation),
 			'list_fields' => $this->getListFields($relation),
 			'relation' => $relation['association'],
+			'association_label' => $this->generateLabel($relation['association']),
 			'relation_label' => $relation['label'],
 			'relation_section' => $relation['section'],
 			'relation_entity' => $relation['name'],
@@ -1939,9 +1940,9 @@ class AdminController
 		------------> Pager
 	*/
 
-	public function getPager($map, $list, $opt = [])
+	public function getPager($map, $list, $opt = [], $parent = false)
 	{
-		$pager = new MaciPager($list, $this->getStoredPage($map), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
+		$pager = new MaciPager($list, $this->getStoredPage($map, $parent), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
 		$pager->setForm($this->getPagerForm($map, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;
@@ -2561,24 +2562,40 @@ class AdminController
 		return $query;
 	}
 
-	public function getSearchStoredQuery($entity)
+	public function getSearchStoredQueryLabel($entity, $parent = false)
 	{
-		return $this->session->get('admin_searchQuery_'.$entity['name'], false);
+		return 'admin_searchQuery' . ($parent ? '_' . $parent['name'] . '_relation_' : '') . '_' . $entity['name'];
 	}
 
-	public function setSearchStoredQuery($entity, $query)
+	public function getSearchStoredQuery($entity, $parent = false)
 	{
-		$this->session->set('admin_searchQuery_'.$entity['name'], $query);
+		return $this->session->get($this->getSearchStoredQueryLabel($entity, $parent), false);
 	}
 
-	public function getStoredPage($entity)
+	public function setSearchStoredQuery($entity, $query, $parent = false)
 	{
-		return $this->session->get('admin_listPage_'.$entity['name'], 1);
+		$this->session->set($this->getSearchStoredQueryLabel($entity, $parent), $query);
 	}
 
-	public function setStoredPage($entity, $query)
+	public function getStoredPageLabel($entity, $parent = false)
 	{
-		$this->session->set('admin_listPage_'.$entity['name'], $query);
+		$action = $this->getCurrentRelationAction();
+		if (!$action) $action = $this->getCurrentAction();
+		return
+			'admin_listPage' .
+			($parent ? '_' . $parent['name'] . '_relation_' : '') .
+			'_' . $entity['name'] . ($action ? '_action_' . $action : '')
+		;
+	}
+
+	public function getStoredPage($entity, $parent = false)
+	{
+		return $this->session->get($this->getStoredPageLabel($entity, $parent), 1);
+	}
+
+	public function setStoredPage($entity, $query, $parent = false)
+	{
+		$this->session->set($this->getStoredPageLabel($entity, $parent), $query);
 	}
 
 	/*
