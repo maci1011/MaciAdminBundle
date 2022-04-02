@@ -122,6 +122,7 @@ class DefaultController extends AbstractController
 		}
 
 		$pager = $this->mcm->getPager($entity, $list);
+		$pager->setPage($this->mcm->getStoredPage($entity));
 
 		if (!$pager) {
 			return false;
@@ -462,7 +463,8 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-		$pager = $this->mcm->getPager($relation, $list, ['redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))], $entity);
+		$pager = $this->mcm->getPager($relation, $list, ['redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))]);
+		$pager->setPage($this->mcm->getStoredPage($relation, $entity));
 
 		if (!$pager) {
 			return false;
@@ -568,7 +570,8 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($relation, $list, array('redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))));
+		$pager = $this->mcm->getPager($relation, $list, ['redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))]);
+		$pager->setPage($this->mcm->getStoredPage($relation, $entity));
 
 		if (!$pager) {
 			return false;
@@ -621,7 +624,8 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($bridge, $list, array('redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))));
+		$pager = $this->mcm->getPager($bridge, $list, ['redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))]);
+		$pager->setPage($this->mcm->getStoredPage($bridge, $relation));
 
 		if (!$pager) {
 			return false;

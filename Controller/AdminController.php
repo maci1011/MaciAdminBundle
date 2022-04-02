@@ -1940,9 +1940,9 @@ class AdminController
 		------------> Pager
 	*/
 
-	public function getPager($map, $list, $opt = [], $parent = false)
+	public function getPager($map, $list, $opt = [])
 	{
-		$pager = new MaciPager($list, $this->getStoredPage($map, $parent), $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
+		$pager = new MaciPager($list, $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
 		$pager->setForm($this->getPagerForm($map, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;

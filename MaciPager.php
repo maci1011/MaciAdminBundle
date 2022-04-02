@@ -18,12 +18,12 @@ class MaciPager
 
 	private $identifiers;
 
-	public function __construct($result = null, $page = 1, $limit = 10, $range = 5)
+	public function __construct($result = null, $limit = 10, $range = 5)
 	{
 		$this->result = $result;
 		$this->limit = $limit;
+		$this->page = 1;
 		$this->range = $range;
-		$this->setPage($page);
 	}
 
 	public function getResult()
