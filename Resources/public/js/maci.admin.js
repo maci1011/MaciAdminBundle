@@ -132,10 +132,12 @@ $(document).ready(function(e) {
 	};
 
 	$('.filters-container').each(function(i,el) {
-		var fieldList = $(el).attr('data').split(','),
+		var filtersContainer = $(el), filtersBar = $(el).prev(),
+		filtersNavUL = filtersBar.find('.filters-nav > ul'),
+		fieldList = $(el).attr('data').split(','),
 		listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el),
-		select = $('<select/>').addClass('form-control add-filter').appendTo(el),
-		submit = $('<button/>').addClass('btn btn-success').click(function(e) {
+		select = $('<select/>').addClass('form-control add-filter').appendTo(filtersNavUL),
+		submit = $('<button/>').addClass('btn btn-primary').click(function(e) {
 			e.preventDefault();
 			var data = [];
 			for (var i = 0; i < fieldList.length; i++)
@@ -157,10 +159,12 @@ $(document).ready(function(e) {
 					'filters': data.length ? data : 'unsetAll'
 				}
 			});
-		}).appendTo(el);
+		}).appendTo(filtersNavUL);
+
+		select.wrap($('<li/>').addClass('nav-item'));
+		submit.wrap($('<li/>').addClass('nav-item'));
 
 		$('<option/>').attr('value', 'add-filter').text('Add Filter').appendTo(select);
-		$('<div/>').addClass('row filter-row').appendTo(listWrapper).append($('<label/>').text('Add Filters'));
 
 		var addFilter = function(index) {
 			if (index === false || fieldList[index].el != false) return;
@@ -213,8 +217,16 @@ $(document).ready(function(e) {
 					break;
 				}
 			}
-			if (found) submit.text('Apply Filters');
-			else submit.text('Reset Filters');
+			if (found)
+			{
+				submit.text('Apply Filters');
+				listWrapper.parent().show();
+			}
+			else
+			{
+				submit.text('Reset Filters');
+				listWrapper.parent().hide();
+			}
 		});
 
 		for (var i = 0; i < fieldList.length; i++) {

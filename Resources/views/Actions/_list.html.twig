@@ -1,13 +1,7 @@
 
 {% set listLen = pager is defined ? pager.pageList|length : list|length %}
 
-{% if listLen or (has_filters is defined and has_filters) %}
-{% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}
-{% endif %}
-
 {% if listLen %}
-
-{#% include "MaciAdminBundle:Actions:_filters.html.twig" %#}
 
 {% if type is not defined or not type in ['list', 'relation', 'add', 'set'] %}
 {% set type = 'list' %}
@@ -28,6 +22,8 @@
 {% if listLen == 1 %}
 {% set multipleCheckbox = false %}
 {% endif %}
+
+{% include "MaciAdminBundle:Actions:_list_filters_bar.html.twig" %}
 
 {% include "MaciAdminBundle:Actions:_list_pagination_form.html.twig" %}
 

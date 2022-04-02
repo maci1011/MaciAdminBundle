@@ -1,0 +1,21 @@
+
+<div id="filtersbar" class="container-fluid">
+
+	<nav class="filters-nav">
+		<ul class="nav navbar-nav">
+			<li class="nav-item">
+				<span class="navbar-text">List Filters:</span>
+			</li>
+		</ul>
+	</nav>
+
+	{% if entity_search is defined and entity_search %}
+	<nav>
+		<div class="nav navbar-nav navbar-right">
+			{% include "MaciAdminBundle:Actions:_list_search_form.html.twig" %}
+		</div>
+	</nav>
+	{% endif %}
+</div>
+
+{% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}

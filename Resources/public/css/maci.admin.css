@@ -11,7 +11,8 @@ h1 {
 }
 
 h2 {
-	font-size: 14pt;
+	padding-top: 15px;
+	font-size: 16pt;
 }
 
 h3 {
@@ -147,6 +148,7 @@ h4 {
 	overflow-x: auto;
 	overflow-y: hidden;
 	width: 100%;
+	padding: 16px 0;
 }
 
 .list-default > .table {
@@ -251,9 +253,10 @@ h4 {
 
 /*   -----> Pagination <-----   */
 
-.pagination-form-container,
-.pagination-container {
-	padding: 16px;
+#filtersbar,
+.pagination-container,
+.pagination-form-container {
+	padding-top: 15px;
 }
 
 ul.pagination {
@@ -280,10 +283,6 @@ form.pagination-form.navbar-form .form-control {
 	text-transform: capitalize;
 }
 
-.filters-container {
-	padding: 12px 15px 24px;
-}
-
 .filter-row {
 	padding: 8px 16px;
 }
@@ -305,6 +304,15 @@ form.pagination-form.navbar-form .form-control {
 select.add-filter {
 	display: inline-block;
 	width: auto;
+}
+
+#filtersbar .navbar-text {
+	padding-left: 0;
+	font-weight: bold;
+}
+
+#filtersbar .btn-primary,
+select.add-filter {
 	margin: 8px 8px 0 0;
 }
 
