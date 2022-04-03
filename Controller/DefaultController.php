@@ -373,8 +373,8 @@ class DefaultController extends AbstractController
 		if ($form->isSubmitted() && $form->isValid()) {
 
 			$this->mcm->setPager_PageLimit($entity, $form->get('page_limit')->getData());
-			$this->mcm->setPager_OrderByField($entity, $form->get('order_by_field')->getData());
-			$this->mcm->setPager_OrderBySort($entity, $form->get('order_by_sort')->getData());
+			$this->mcm->setPagerForm_OrderByField($entity, $form->get('order_by_field')->getData());
+			$this->mcm->setPagerForm_OrderBySort($entity, $form->get('order_by_sort')->getData());
 
 			$page = (int) $form->get('page')->getData();
 			if (1<$page) $opt['page'] = $page;
@@ -446,8 +446,7 @@ class DefaultController extends AbstractController
 		$list = $this->mcm->getRelationItems($relation, $item);
 		$pager = $this->mcm->getPager($relation, $list, [
 			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))
-		]);
-		$pager->setPage($this->mcm->getStoredPage($entity, 'list', $relation));
+		], $this->mcm->getStoredPage($entity, 'list', $relation));
 
 		if (!$pager) return false;
 
@@ -551,8 +550,7 @@ class DefaultController extends AbstractController
 
 		$pager = $this->mcm->getPager($relation, $list, [
 			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))
-		]);
-		$pager->setPage($this->mcm->getStoredPage($entity, 'add', $relation));
+		], $this->mcm->getStoredPage($entity, 'add', $relation));
 
 		if (!$pager) {
 			return false;
@@ -599,8 +597,7 @@ class DefaultController extends AbstractController
 
 		$pager = $this->mcm->getPager($bridge, $list, [
 			'redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))
-		]);
-		$pager->setPage($this->mcm->getStoredPage($entity, 'add', $relation, $bridge));
+		], $this->mcm->getStoredPage($entity, 'add', $relation, $bridge));
 
 		if (!$pager) {
 			return false;
