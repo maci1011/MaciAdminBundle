@@ -100,29 +100,12 @@ class DefaultController extends AbstractController
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
 
+		if ($this->mcm->setStoredSearchQueryFromRequest($entity, 'list') ||
+			$this->mcm->setStoredPageFromRequest($entity, 'list')
+		) return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
+
 		$list = $this->mcm->getList($entity, $trash);
-
-		if ($this->request->isXmlHttpRequest()) {
-			return [
-				'list' => $this->mcm->getDataFromList($entity, $list),
-				'success' => true
-			];
-		}
-
-		if (array_key_exists('s', $_GET))
-		{
-			$this->mcm->setSearchStoredQuery($entity, $this->request->get('s', false));
-			return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
-		}
-
-		if (array_key_exists('p', $_GET))
-		{
-			$this->mcm->setStoredPage($entity, $this->request->get('p', false));
-			return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
-		}
-
-		$pager = $this->mcm->getPager($entity, $list);
-		$pager->setPage($this->mcm->getStoredPage($entity));
+		$pager = $this->mcm->getPager($entity, $list, [], $this->mcm->getStoredPage($entity, 'list'));
 
 		if (!$pager) {
 			return false;
@@ -400,7 +383,7 @@ class DefaultController extends AbstractController
 
 		$redirect = $this->request->get('redirect');
 		if ($redirect) {
-			return array('redirect_url' => $redirect);
+			return ['redirect_url' => $redirect];
 		}
 
 		return $this->mcm->getDefaultEntityRedirectParams($entity, 'list', null, $opt);
@@ -456,28 +439,23 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
-		$r = $this->relationGETQueriesRedirect($entity, $relation);
-		if ($r) return $r;
+		if ($this->mcm->setStoredSearchQueryFromRequest($entity, 'list', $relation) ||
+			$this->mcm->setStoredPageFromRequest($entity, 'list', $relation)
+		) return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
 
 		$list = $this->mcm->getRelationItems($relation, $item);
+		$pager = $this->mcm->getPager($relation, $list, [
+			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))
+		]);
+		$pager->setPage($this->mcm->getStoredPage($entity, 'list', $relation));
+
+		if (!$pager) return false;
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
-
-		$pager = $this->mcm->getPager($relation, $list, ['redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))]);
-		$pager->setPage($this->mcm->getStoredPage($relation, $entity));
-
-		if (!$pager) {
-			return false;
-		}
-
 		$params['pager'] = $pager;
 		$params['relation_search'] = true;
 
-		if ($this->mcm->isSortable($relation)) {
-
-			$pager->setLimit(0);
-
-		}
+		if ($this->mcm->isSortable($relation)) $pager->setLimit(0);
 
 		return $params;
 	}
@@ -554,8 +532,9 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
-		$r = $this->relationGETQueriesRedirect($entity, $relation, 'add');
-		if ($r) return $r;
+		if ($this->mcm->setStoredSearchQueryFromRequest($entity, 'add', $relation) ||
+			$this->mcm->setStoredPageFromRequest($entity, 'add', $relation)
+		) return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'add');
 
 		$list = $this->mcm->getListForRelation($entity, $relation, $item);
 
@@ -570,8 +549,10 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($relation, $list, ['redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))]);
-		$pager->setPage($this->mcm->getStoredPage($relation, $entity));
+		$pager = $this->mcm->getPager($relation, $list, [
+			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))
+		]);
+		$pager->setPage($this->mcm->getStoredPage($entity, 'add', $relation));
 
 		if (!$pager) {
 			return false;
@@ -599,17 +580,9 @@ class DefaultController extends AbstractController
 		$bridge = $this->mcm->getCurrentBridge();
 		if (!$bridge) return false;
 
-		if (array_key_exists('s', $_GET))
-		{
-			$this->mcm->setSearchStoredQuery($relation, $this->request->get('s', false), $entity);
-			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $action);
-		}
-
-		if (array_key_exists('p', $_GET))
-		{
-			$this->mcm->setStoredPage($relation, $this->request->get('p', false), $entity);
-			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $action);
-		}
+		if ($this->mcm->setStoredSearchQueryFromRequest($entity, 'add', $relation, $bridge) ||
+			$this->mcm->setStoredPageFromRequest($entity, 'add', $relation, $bridge)
+		) return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, 'add');
 
 		$list = $this->mcm->getListForRelation($entity, $relation, $item, $bridge);
 
@@ -624,8 +597,10 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($bridge, $list, ['redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))]);
-		$pager->setPage($this->mcm->getStoredPage($bridge, $relation));
+		$pager = $this->mcm->getPager($bridge, $list, [
+			'redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))
+		]);
+		$pager->setPage($this->mcm->getStoredPage($entity, 'add', $relation, $bridge));
 
 		if (!$pager) {
 			return false;
@@ -834,23 +809,6 @@ class DefaultController extends AbstractController
 		$this->om->flush();
 
 		return array('success' => true);
-	}
-
-	public function relationGETQueriesRedirect($entity, $relation, $action = 'list')
-	{
-		if (array_key_exists('s', $_GET))
-		{
-			$this->mcm->setSearchStoredQuery($relation, $this->request->get('s', false), $entity);
-			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $action);
-		}
-
-		if (array_key_exists('p', $_GET))
-		{
-			$this->mcm->setStoredPage($relation, $this->request->get('p', false), $entity);
-			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $action);
-		}
-
-		return false;
 	}
 
 }

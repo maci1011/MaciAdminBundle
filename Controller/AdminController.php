@@ -658,8 +658,8 @@ class AdminController
 			'item_identifier' => $this->getIdentifier($map),
 			'is_entity_uploadable' => $this->isUploadable($map),
 			// 'list_filters_form' => $this->getFiltersForm($map)->createView(),
-			'search_query' => $this->getSearchStoredQuery($map),
-			'list_page' => $this->getStoredPage($map),
+			'search_query' => $this->getStoredSearchQuery($map, $action),
+			'list_page' => $this->getStoredPage($map, $action),
 			'sortable' => ($this->isSortable($map) ? $this->generateUrl('maci_admin_view', array(
 				'section'=>$map['section'],'entity'=>$map['name'],
 				'action'=>'reorder'
@@ -690,6 +690,8 @@ class AdminController
 			'uploadable_bridges' => $this->getUpladableBridges($relation),
 			'is_relation_uploadable' => $this->isUploadable($relation),
 			// 'list_filters_form' => $this->getFiltersForm($relation),
+			'search_query' => $this->getStoredSearchQuery($map, $relAction, $relation),
+			'list_page' => $this->getStoredPage($map, $relAction, $relation),
 			'sortable' => ($this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
 				'section'=>$map['section'],'entity'=>$map['name'],
 				'action'=>'relations','id'=>$this->request->get('id'),
@@ -713,6 +715,9 @@ class AdminController
 		return array_merge($this->getDefaultRelationParams($map,$relation),array(
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
+			// 'list_filters_form' => $this->getFiltersForm($bridge),
+			'search_query' => $this->getStoredSearchQuery($map, $relAction, $relation, $bridge),
+			'list_page' => $this->getStoredPage($map, $relAction, $relation, $bridge),
 			'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
 			'relation_action' => $relAction,
 			'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
@@ -1940,9 +1945,10 @@ class AdminController
 		------------> Pager
 	*/
 
-	public function getPager($map, $list, $opt = [])
+	public function getPager($map, $list, $opt = [], $page = 1)
 	{
 		$pager = new MaciPager($list, $this->getPager_PageLimit($map), $this->getPager_PageRange($map));
+		$pager->setPage($page);
 		$pager->setForm($this->getPagerForm($map, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;
@@ -1956,13 +1962,12 @@ class AdminController
 			'order_by_field' => $this->getPager_OrderByField($map),
 			'order_by_sort' => $this->getPager_OrderBySort($map)
 		);
-		$page_attr = $pager ? array('max' => $pager->getMaxPages()) : [];
+		$page_attr = $pager ? ['max' => $pager->getMaxPages()] : [];
 		return $this->createFormBuilder($options)
 			->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $opt))
 			->add('page', IntegerType::class, array(
 				'label' => 'Page:',
-				'attr' => $page_attr,
-				'data' => $this->getStoredPage($map)
+				'attr' => $page_attr
 			))
 			->add('page_limit', IntegerType::class, array(
 				'label' => 'Items per Page:'
@@ -2503,14 +2508,13 @@ class AdminController
 
 	public function addSearchQuery($map, &$query)
 	{
-		$search = $this->getSearchStoredQuery($map);
+		$search = $this->getStoredSearchQuery($map);
 		if ($search) {
 			$stringFields = $this->getFieldsByType($map);
 			foreach ($stringFields as $field) {
 				$query->orWhere($query->getRootAlias() . '.' . $field . ' LIKE :search');
 			}
 			$query->setParameter('search', "%$search%");
-			$this->setSearchStoredQuery($map, $search);
 		}
 		return $query;
 	}
@@ -2562,40 +2566,58 @@ class AdminController
 		return $query;
 	}
 
-	public function getSearchStoredQueryLabel($entity, $parent = false)
+	public function getSessionIdentifier($entity, $action = false, $relation = false, $bridge = false)
 	{
-		return 'admin_searchQuery' . ($parent ? '_' . $parent['name'] . '_relation_' : '') . '_' . $entity['name'];
-	}
-
-	public function getSearchStoredQuery($entity, $parent = false)
-	{
-		return $this->session->get($this->getSearchStoredQueryLabel($entity, $parent), false);
-	}
-
-	public function setSearchStoredQuery($entity, $query, $parent = false)
-	{
-		$this->session->set($this->getSearchStoredQueryLabel($entity, $parent), $query);
-	}
-
-	public function getStoredPageLabel($entity, $parent = false)
-	{
-		$action = $this->getCurrentRelationAction();
-		if (!$action) $action = $this->getCurrentAction();
 		return
-			'admin_listPage' .
-			($parent ? '_' . $parent['name'] . '_relation_' : '') .
-			'_' . $entity['name'] . ($action ? '_action_' . $action : '')
+			$entity['name'] . '_' .
+			($relation ? 'relation_' . $relation['name'] : '') .
+			($bridge ? 'bridge_' . $bridge['name'] : '') .
+			($action ? 'action_' . $action['name'] : '')
 		;
 	}
 
-	public function getStoredPage($entity, $parent = false)
+	public function getStoredSearchQueryLabel($entity, $action = false, $relation = false, $bridge = false)
 	{
-		return $this->session->get($this->getStoredPageLabel($entity, $parent), 1);
+		return 'admin_searchQuery_' . $this->getSessionIdentifier($entity, $action, $relation, $bridge);
 	}
 
-	public function setStoredPage($entity, $query, $parent = false)
+	public function getStoredSearchQuery($entity, $action = false, $relation = false, $bridge = false)
 	{
-		$this->session->set($this->getStoredPageLabel($entity, $parent), $query);
+		return $this->session->get($this->getStoredSearchQueryLabel($entity, $action, $relation, $bridge), false);
+	}
+
+	public function setStoredSearchQuery($query, $entity, $action = false, $relation = false, $bridge = false)
+	{
+		$this->session->set($this->getStoredSearchQueryLabel($entity, $action, $relation, $bridge), $query);
+	}
+
+	public function setStoredSearchQueryFromRequest($entity, $action = false, $relation = false, $bridge = false)
+	{
+		if (!array_key_exists('s', $_GET)) return false;
+		$this->setStoredSearchQuery($this->request->get('s', false), $entity, $action, $relation, $bridge);
+		return true;
+	}
+
+	public function getStoredPageLabel($entity, $action = false, $relation = false, $bridge = false)
+	{
+		return 'admin_listPage_' . $this->getSessionIdentifier($entity, $action, $relation, $bridge);
+	}
+
+	public function getStoredPage($entity, $action = false, $relation = false, $bridge = false)
+	{
+		return $this->session->get($this->getStoredPageLabel($entity, $action, $relation, $bridge), 1);
+	}
+
+	public function setStoredPage($query, $entity, $action = false, $relation = false, $bridge = false)
+	{
+		$this->session->set($this->getStoredPageLabel($entity, $action, $relation, $bridge), $query);
+	}
+
+	public function setStoredPageFromRequest($entity, $action = false, $relation = false, $bridge = false)
+	{
+		if (!array_key_exists('p', $_GET)) return false;
+		$this->setStoredPage($this->request->get('p', false), $entity, $action, $relation, $bridge);
+		return true;
 	}
 
 	/*
