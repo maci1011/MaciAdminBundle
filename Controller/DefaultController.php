@@ -104,7 +104,7 @@ class DefaultController extends AbstractController
 			$this->mcm->setStoredPageFromRequest($entity, 'list')
 		) return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
 
-		$list = $this->mcm->getList($entity, $trash);
+		$list = $this->mcm->getList($entity, ['trash' => $trash]);
 		$pager = $this->mcm->getPager($entity, $list, [], $this->mcm->getStoredPage($entity, 'list'));
 
 		if (!$pager) {
@@ -222,7 +222,7 @@ class DefaultController extends AbstractController
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
 
-		$list = $this->mcm->getList($entity, null);
+		$list = $this->mcm->getList($entity, ['trash' => null]);
 
 		$item = $this->mcm->getCurrentItem();
 
@@ -444,9 +444,9 @@ class DefaultController extends AbstractController
 		) return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
 
 		$list = $this->mcm->getRelationItems($relation, $item);
-		$pager = $this->mcm->getPager($relation, $list, [
+		$pager = $this->mcm->getPager($relation, $list, ['url' => [
 			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))
-		], $this->mcm->getStoredPage($entity, 'list', $relation));
+		]], $this->mcm->getStoredPage($entity, 'list', $relation));
 
 		if (!$pager) return false;
 
@@ -548,9 +548,9 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($relation, $list, [
+		$pager = $this->mcm->getPager($relation, $list, ['url' => [
 			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $this->request->get('relAction'))
-		], $this->mcm->getStoredPage($entity, 'add', $relation));
+		]], $this->mcm->getStoredPage($entity, 'add', $relation));
 
 		if (!$pager) {
 			return false;
@@ -595,9 +595,9 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($bridge, $list, [
+		$pager = $this->mcm->getPager($bridge, $list, ['url' => [
 			'redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $this->request->get('relAction'))
-		], $this->mcm->getStoredPage($entity, 'add', $relation, $bridge));
+		]], $this->mcm->getStoredPage($entity, 'add', $relation, $bridge));
 
 		if (!$pager) {
 			return false;
