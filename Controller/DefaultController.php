@@ -408,9 +408,9 @@ class DefaultController extends AbstractController
 			return $this->mcm->getCurrentRedirectParams();
 
 		$list = $this->mcm->getRelationItems($relation, $item);
-		$pager = $this->mcm->getPager($relation, $relAction, $list, ['url' => [
-			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
-		]]);
+		$pager = $this->mcm->getPager($relation, $relAction, $list, [
+			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
+		]);
 
 		if (!$pager) return false;
 
@@ -512,9 +512,9 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($relation, $relAction, $list, ['url' => [
-			'redirect' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
-		]]);
+		$pager = $this->mcm->getPager($relation, $relAction, $list, [
+			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
+		]);
 
 		if (!$pager) {
 			return false;
