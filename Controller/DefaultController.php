@@ -76,11 +76,6 @@ class DefaultController extends AbstractController
 		return $this->mcmReorder();
 	}
 
-	public function setPagerOptionsAction()
-	{
-		return $this->mcmSetPagerOptions();
-	}
-
 	public function relationsAction()
 	{
 		return $this->mcmRelations();
@@ -358,36 +353,6 @@ class DefaultController extends AbstractController
 		return array('success' => true);
 	}
 
-	public function mcmSetPagerOptions()
-	{
-		$entity = $this->mcm->getCurrentEntity();
-		if (!$entity) return false;
-
-		$form = $this->mcm->getPagerForm($entity);
-
-		$form->handleRequest($this->request);
-
-		$opt = [];
-
-		if ($form->isSubmitted() && $form->isValid()) {
-
-			$this->mcm->setPager_PageLimit($entity, $form->get('page_limit')->getData());
-			$this->mcm->setPagerForm_OrderByField($entity, $form->get('order_by_field')->getData());
-			$this->mcm->setPagerForm_OrderBySort($entity, $form->get('order_by_sort')->getData());
-
-			$page = (int) $form->get('page')->getData();
-			if (1<$page) $opt['page'] = $page;
-
-		}
-
-		$redirect = $this->request->get('redirect');
-		if ($redirect) {
-			return ['redirect_url' => $redirect];
-		}
-
-		return $this->mcm->getDefaultEntityRedirectParams($entity, 'list', null, $opt);
-	}
-
 /*
 	---> Generic Relations Actions
 */
@@ -594,9 +559,9 @@ class DefaultController extends AbstractController
 
 		}
 
-		$pager = $this->mcm->getPager($bridge, $relAction, $list, ['url' => [
-			'redirect' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $relAction)
-		]]);
+		$pager = $this->mcm->getPager($bridge, $relAction, $list, [
+			'form_action' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $relAction)
+		]);
 
 		if (!$pager) {
 			return false;

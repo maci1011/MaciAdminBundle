@@ -969,6 +969,22 @@ class AdminController
 		return false;
 	}
 
+	public function getCurrentMap()
+	{
+		$entity = $this->getCurrentEntity();
+		if (!$entity) return false;
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return $entity;
+		$bridge = $this->getCurrentBridge();
+		if (!$bridge) return $relation;
+		return $bridge;
+	}
+
+	public function getCurrentMapAction()
+	{
+		return $this->getCurrentRelationAction() ? $this->getCurrentRelationAction() : $this->getCurrentAction();
+	}
+
 	/*
 		------------> Actions Functions
 	*/
@@ -1000,23 +1016,12 @@ class AdminController
 		return ['reorder'];
 	}
 
-	public function getSettingsActions($entity)
-	{
-		$actions = [];
-		if(in_array('list', $this->getMainActions($entity))) {
-			// $actions[] = 'setListFilters';
-			$actions[] = 'setPagerOptions';
-		}
-		return $actions;
-	}
-
 	public function getActions($entity)
 	{
 		return array_merge(
 			$this->getMainActions($entity),
 			$this->getSingleActions($entity),
-			$this->getMultipleActions($entity),
-			$this->getSettingsActions($entity)
+			$this->getMultipleActions($entity)
 		);
 	}
 
@@ -2005,9 +2010,11 @@ class AdminController
 			'order_by_sort' => array_key_exists('sort_order', $opt) ? $opt['sort_order'] : $this->getPagerForm_OrderBySort($map, $action)
 		];
 		$page_attr = $pager ? ['max' => $pager->getMaxPages()] : [];
-		$url_opt = array_key_exists('url', $opt) ? $opt['url'] : [];
+		$urlOpt = array_key_exists('url_opt', $opt) ? $opt['url_opt'] : [];
+		$formAction = array_key_exists('form_action', $opt) ?
+			$opt['form_action'] : $this->getEntityUrl($map, $action, null, $urlOpt);
 		return $this->createFormBuilder($values)
-			->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $url_opt))
+			->setAction($formAction)
 			->add('page', IntegerType::class, [
 				'label' => 'Page:',
 				'attr' => $page_attr
@@ -2069,6 +2076,21 @@ class AdminController
 	public function setPagerForm_OrderBySort($map, $action, $value)
 	{
 		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_sort'), $value);
+	}
+
+	public function setPagerOptions($map, $action, $pager = false, $opt = [])
+	{
+		$form = $this->getPagerForm($map, $action, $pager, $opt);
+		$form->handleRequest($this->request);
+		if ($form->isSubmitted() && $form->isValid()) {
+			$this->setPager_PageLimit($map, $action, $form->get('page_limit')->getData());
+			$this->setPagerForm_OrderByField($map, $action, $form->get('order_by_field')->getData());
+			$this->setPagerForm_OrderBySort($map, $action, $form->get('order_by_sort')->getData());
+			// $page = (int) $form->get('page')->getData();
+			// if (1<$page) $opt['page'] = $page;
+			return true;
+		}
+		return false;
 	}
 
 	/*
@@ -2639,13 +2661,7 @@ class AdminController
 	{
 		$entity = $this->getCurrentEntity();
 		if (!$entity) return null;
-		$action = $this->getCurrentAction();
-		$relation = $this->getCurrentRelation();
-		if (!$relation) return $this->getSessionIdentifier($entity, $action);
-		$action = $this->getCurrentRelationAction();
-		$bridge = $this->getCurrentBridge();
-		if (!$bridge) $this->getSessionIdentifier($relation, $action);
-		return $this->getSessionIdentifier($bridge, $action);
+		return $this->getSessionIdentifier($this->getCurrentMap(), $this->getCurrentMapAction());
 	}
 
 	public function getStoredSearchQueryLabel($entity, $action)
@@ -2694,7 +2710,8 @@ class AdminController
 
 	public function setSessionFromRequest($entity, $action)
 	{
-		return $this->setStoredSearchQueryFromRequest($entity, $action) ||
+		return $this->setPagerOptions($entity, $action) ||
+			$this->setStoredSearchQueryFromRequest($entity, $action) ||
 			$this->setStoredPageFromRequest($entity, $action);
 	}
 
