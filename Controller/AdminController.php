@@ -738,6 +738,16 @@ class AdminController
 		);
 	}
 
+	public function getDefaultSectionRedirectParams($section, $opt = [])
+	{
+		$params = $this->getDefaultRedirectParams();
+		if (!$this->isAuthSection($section)) return $params = $this->getDefaultRedirectParams();
+		$params['redirect_params'] = array_merge($params['redirect_params'], array(
+			'section' => $section
+		), $opt);
+		return $params;
+	}
+
 	public function getDefaultEntityRedirectParams($map, $action = 'list', $id = null, $opt = [])
 	{
 		if (in_array($action, $this->getSingleActions($map)) || ($this->hasTrash($map) && $action == 'trash')) {
@@ -770,17 +780,32 @@ class AdminController
 		return $params;
 	}
 
-	public function getDefaultBridgeRedirectParams($map, $relation, $bridge, $action = false, $id = null, $opt = [])
+	public function getDefaultBridgeRedirectParams($map, $relation, $bridge, $action = 'bridge', $id = null, $opt = [])
 	{
 		$id = $id === null ? $this->request->get('id', null) : $id;
 		if ($id === null) {
 			return $this->getDefaultEntityRedirectParams($map);
 		}
-		$params = $this->getDefaultRelationRedirectParams($map, $relation, 'bridge', $id);
+		$params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id);
 		$params['redirect_params'] = array_merge($params['redirect_params'], array(
 			'bridge' => $bridge['name']
 		), $opt);
 		return $params;
+	}
+
+	public function getCurrentRedirectParams($opt = [])
+	{
+		$section = $this->getCurrentSection();
+		if (!$section) return $this->getDefaultRedirectParams($opt);
+		$entity = $this->getCurrentEntity();
+		if (!$entity) return $this->getDefaultSectionRedirectParams($section);
+		$action = $this->getCurrentAction();
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return $this->getDefaultEntityRedirectParams($entity, $action, null, $opt);
+		$action = $this->getCurrentRelationAction();
+		$bridge = $this->getCurrentBridge();
+		if (!$bridge) return $this->getDefaultRelationRedirectParams($entity, $relation, $action, null, $opt);
+		return $this->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $action, null, $opt);
 	}
 
 	public function getDefaultUrl($opt = [])
@@ -801,7 +826,7 @@ class AdminController
 		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
 	}
 
-	public function getBridgeUrl($map, $relation, $bridge, $action = false, $id = null, $opt = [])
+	public function getBridgeUrl($map, $relation, $bridge, $action = 'bridge', $id = null, $opt = [])
 	{
 		$action_params = $this->getDefaultBridgeRedirectParams($map, $relation, $bridge, $action, $id, $opt);
 		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
@@ -1686,18 +1711,18 @@ class AdminController
 		return $ids;
 	}
 
-	public function getList($map, $options = [])
+	public function getList($map, $opt = [])
 	{
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
 		$root = $query->getRootAlias();
-		$this->addDefaultQueries($map, $query, $options);
+		$this->addDefaultQueries($map, $query, $opt);
 		$query = $query->getQuery();
 		$list = $query->getResult();
 		return $list;
 	}
 
-	public function getListForRelation($map, $relation, $item, $bridge = false)
+	public function getListForRelation($map, $relation, $item, $bridge = false, $opt = [])
 	{
 		$relation_items = $this->getRelationItems($relation, $item);
 		$inverseField = $this->getRelationInverseField($map, $relation);
@@ -1732,14 +1757,14 @@ class AdminController
 			$query->andWhere($root . '.' . $inverseField . ' != :pid');
 			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), []));
 		}
-		$this->addDefaultQueries($mainMap, $query, ['trash' => false]);
+		$this->addDefaultQueries($mainMap, $query, array_merge(['trash' => false], $opt));
 		$query = $query->getQuery();
 		return $query->getResult();
 	}
 
-	public function getListData($map, $fields = false, $options = [])
+	public function getListData($map, $fields = false, $opt = [])
 	{
-		$list = $this->getList($map, $options);
+		$list = $this->getList($map, $opt);
 		return $this->getDataFromList($map, $list, $fields);
 	}
 
@@ -1959,95 +1984,91 @@ class AdminController
 		------------> Pager
 	*/
 
-	public function getPager($map, $list, $opt = [], $page = 1)
+	public function getPager($map, $action, $list, $opt = [])
 	{
 		$pager = new MaciPager($list,
-			array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map),
-			array_key_exists('page_range', $opt) ? $opt['page_range'] : $this->getPager_PageRange($map)
+			array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map, $action),
+			array_key_exists('page_range', $opt) ? $opt['page_range'] : $this->getPager_PageRange($map, $action)
 		);
-		$pager->setPage($page == false ? $this->getStoredPage(false) : $page);
-		$pager->setForm($this->getPagerForm($map, $pager, $opt));
+		$pager->setPage(array_key_exists('page', $opt) ? $opt['page'] : $this->getStoredPage($map, $action));
+		$pager->setForm($this->getPagerForm($map, $action, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;
 	}
 
-	public function getPagerForm($map, $pager = false, $opt = [])
+	public function getPagerForm($map, $action, $pager = false, $opt = [])
 	{
-		$options = array(
-			'page' => $pager ? $pager->getPage() : $this->getStoredPage(false),
-			'page_limit' => array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map),
-			'order_by_field' => array_key_exists('sort_field', $opt) ? $opt['sort_field'] : $this->getPagerForm_OrderByField($map),
-			'order_by_sort' => array_key_exists('sort_order', $opt) ? $opt['sort_order'] : $this->getPagerForm_OrderBySort($map)
-		);
+		$values = [
+			'page' => $pager ? $pager->getPage() : $this->getStoredPage($map, $action),
+			'page_limit' => array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map, $action),
+			'order_by_field' => array_key_exists('sort_field', $opt) ? $opt['sort_field'] : $this->getPagerForm_OrderByField($map, $action),
+			'order_by_sort' => array_key_exists('sort_order', $opt) ? $opt['sort_order'] : $this->getPagerForm_OrderBySort($map, $action)
+		];
 		$page_attr = $pager ? ['max' => $pager->getMaxPages()] : [];
 		$url_opt = array_key_exists('url', $opt) ? $opt['url'] : [];
-		return $this->createFormBuilder($options)
+		return $this->createFormBuilder($values)
 			->setAction($this->getEntityUrl($map, 'setPagerOptions', null, $url_opt))
-			->add('page', IntegerType::class, array(
+			->add('page', IntegerType::class, [
 				'label' => 'Page:',
 				'attr' => $page_attr
-			))
-			->add('page_limit', IntegerType::class, array(
+			])
+			->add('page_limit', IntegerType::class, [
 				'label' => 'Items per Page:'
-			))
-			->add('order_by_field', ChoiceType::class, array(
+			])
+			->add('order_by_field', ChoiceType::class, [
 				'label' => 'Order By:',
 				'choices' => $this->getArrayWithLabels($this->getFields($map, false))
-			))
-			->add('order_by_sort', ChoiceType::class, array(
+			])
+			->add('order_by_sort', ChoiceType::class, [
 				'label' => 'Sort',
-				'label_attr' => array(
-					'class' => 'sr-only'
-				),
-				'choices' => array('Asc' => 'ASC', 'Desc' => 'DESC')
-			))
-			->add('set', SubmitType::class,  array(
-				'attr' => array(
-					'class' => 'btn btn-primary'
-				)
-			))
+				'label_attr' => ['class' => 'sr-only'],
+				'choices' => ['Asc' => 'ASC', 'Desc' => 'DESC']
+			])
+			->add('set', SubmitType::class,  [
+				'attr' => ['class' => 'btn btn-primary']
+			])
 			->getForm()
 		;
 	}
 
-	public function getPager_PageLimit($map, $identifier = false)
+	public function getPager_PageLimit($map, $action)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_page_limit'), ($map && array_key_exists('page_limit', $map) ? $map['page_limit'] : $this->_defaults['page_limit']));
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_page_limit'), ($map && array_key_exists('page_limit', $map) ? $map['page_limit'] : $this->_defaults['page_limit']));
 	}
 
-	public function setPager_PageLimit($map, $value, $identifier = false)
+	public function setPager_PageLimit($map, $action, $value)
 	{
-		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_page_limit'), $value);
+		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_page_limit'), $value);
 	}
 
-	public function getPager_PageRange($map, $identifier = false)
+	public function getPager_PageRange($map, $action)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_page_range'), ($map && array_key_exists('page_range', $map) ? $map['page_range'] : $this->_defaults['page_range']));
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_page_range'), ($map && array_key_exists('page_range', $map) ? $map['page_range'] : $this->_defaults['page_range']));
 	}
 
-	public function setPager_PageRange($map, $identifier = false)
+	public function setPager_PageRange($map, $action, $value)
 	{
-		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_page_range'), $value);
+		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_page_range'), $value);
 	}
 
-	public function getPagerForm_OrderByField($map, $identifier = false)
+	public function getPagerForm_OrderByField($map, $action)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_order_by_field'), $map ? $this->getIdentifier($map) : false);
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $map ? $this->getIdentifier($map) : false);
 	}
 
-	public function setPagerForm_OrderByField($map, $value, $identifier = false)
+	public function setPagerForm_OrderByField($map, $action, $value)
 	{
-		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_order_by_field'), $value);
+		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $value);
 	}
 
-	public function getPagerForm_OrderBySort($map, $identifier = false)
+	public function getPagerForm_OrderBySort($map, $action)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_order_by_sort'), 'DESC');
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_sort'), 'DESC');
 	}
 
-	public function setPagerForm_OrderBySort($map, $value, $identifier = false)
+	public function setPagerForm_OrderBySort($map, $action, $value)
 	{
-		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($identifier) . '_order_by_sort'), $value);
+		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_sort'), $value);
 	}
 
 	/*
@@ -2301,7 +2322,7 @@ class AdminController
 			$entity,
 			array_key_exists('fields', $data) ? $data['fields'] : false,
 			[
-				'session_identifier' => false,
+				'use_session' => false,
 				'search' => array_key_exists('search', $data) ? $data['search'] : false,
 				'trash' => array_key_exists('trash', $data) ? $data['trash'] : null,
 				'filters' => array_key_exists('filters', $data) ? $data['filters'] : false,
@@ -2426,7 +2447,7 @@ class AdminController
 		if (!$relation) {
 			return ['success' => false, 'error' => 'Relation "' . $data['relation'] . '" for entity "' . $data['entity'] . '" not Found.'];
 		}
-		$this->addRelationItems($entity, $relation, $item, $this->selectItems($relation,$this->getListForRelation($entity, $relation, $item),$data['ids']));
+		$this->addRelationItems($entity, $relation, $item, $this->selectItems($relation, $this->getListForRelation($entity, $relation, $item), $data['ids']));
 		$this->om->flush();
 		return ['success' => true];
 	}
@@ -2519,22 +2540,23 @@ class AdminController
 		------------> Queries
 	*/
 
-	public function addDefaultQueries($map, &$query, $options = [])
+	public function addDefaultQueries($map, &$query, $opt = [])
 	{
-		if (!array_key_exists('session_identifier', $options))
-			$options['session_identifier'] = array_key_exists('session_identifier', $map) ?
-				$map['session_identifier'] : $this->getCurrentSessionIdentifier();
-		$this->addSearchQuery($map, $query, $options);
-		$this->addFiltersQuery($map, $query, $options);
-		$this->addTrashQuery($map, $query, $options);
-		$this->addOrderByQuery($map, $query, $options);
+		if (!array_key_exists('action', $opt))
+			$opt['action'] = false;
+		if (!array_key_exists('use_session', $opt))
+			$opt['use_session'] = is_string($opt['action']);
+		$this->addSearchQuery($map, $query, $opt);
+		$this->addFiltersQuery($map, $query, $opt);
+		$this->addTrashQuery($map, $query, $opt);
+		$this->addOrderByQuery($map, $query, $opt);
 	}
 
-	public function addSearchQuery($map, &$query, $options)
+	public function addSearchQuery($map, &$query, $opt)
 	{
-		$search = array_key_exists('search', $options) ? $options['search'] : null;
+		$search = array_key_exists('search', $opt) ? $opt['search'] : null;
 		if ($search === false) return;
-		$search = $options['session_identifier'] ? $this->getStoredSearchQuery(false) : '';
+		$search = $opt['use_session'] ? $this->getStoredSearchQuery($map, $opt['action']) : '';
 		if (strlen($search))
 		{
 			$stringFields = $this->getFieldsByType($map);
@@ -2545,9 +2567,9 @@ class AdminController
 		}
 	}
 
-	public function addFiltersQuery($map, &$query, $options)
+	public function addFiltersQuery($map, &$query, $opt)
 	{
-		$filters = array_key_exists('filters', $options) ? $options['filters'] : null;
+		$filters = array_key_exists('filters', $opt) ? $opt['filters'] : null;
 		if ($filters === false) return;
 		if ($filters == null) $filters = $this->getFilters($map);
 		$fields = $this->getFields($map, false);
@@ -2571,9 +2593,9 @@ class AdminController
 		}
 	}
 
-	public function addTrashQuery($map, &$query, $options)
+	public function addTrashQuery($map, &$query, $opt)
 	{
-		$trashValue = array_key_exists('trash', $options) ? $options['trash'] : null;
+		$trashValue = array_key_exists('trash', $opt) ? $opt['trash'] : null;
 		if ($trashValue !== false && $trashValue !== true) return;
 		if ($this->hasTrash($map)) {
 			$fields = $this->getFields($map);
@@ -2585,14 +2607,14 @@ class AdminController
 		}
 	}
 
-	public function addOrderByQuery($map, &$query, $options)
+	public function addOrderByQuery($map, &$query, $opt)
 	{
-		$order = array_key_exists('order', $options) ? $options['order'] : [];
+		$order = array_key_exists('order', $opt) ? $opt['order'] : [];
 		if (!is_array($order)) return;
-		$field = $options['session_identifier'] ? $this->getPagerForm_OrderByField($map, $options['session_identifier']) : false;
+		$field = $opt['use_session'] ? $this->getPagerForm_OrderByField($map, $opt['action']) : false;
 		if (array_key_exists('field', $order)) $field = $order['field'];
 		if (!$field) $field = $this->getFields($map)[0];
-		$sort = $options['session_identifier'] ? $this->getPagerForm_OrderBySort($map, $options['session_identifier']) : 'DESC';
+		$sort = $opt['use_session'] ? $this->getPagerForm_OrderBySort($map, $opt['action']) : 'DESC';
 		if (array_key_exists('sort', $order)) $sort = $order['sort'];
 		$query->orderBy($query->getRootAlias() . '.' . $field, $sort);
 	}
@@ -2601,15 +2623,15 @@ class AdminController
 		------------> Session Parameters
 	*/
 
-	public function getSessionIdentifier($entity, $action = false, $relation = false, $bridge = false)
+	public function getSessionIdentifier($entity, $action)
 	{
 		if (!$entity) return $this->getCurrentSessionIdentifier();
 		if (is_string($entity)) return $entity;
 		return
-			$entity['name'] . '_' .
-			($relation ? 'relation_' . $relation['name'] : '') .
-			($bridge ? 'bridge_' . $bridge['name'] : '') .
-			($action ? 'action_' . $action : '')
+			(array_key_exists('parent_entity', $entity) ? $entity['parent_entity'] . '_r_' : '') .
+			(array_key_exists('parent_relation', $entity) ? $entity['parent_relation'] . '_b_' : '') .
+			$entity['name'] .
+			($action ? '_a_' . $action : '')
 		;
 	}
 
@@ -2617,55 +2639,63 @@ class AdminController
 	{
 		$entity = $this->getCurrentEntity();
 		if (!$entity) return null;
-		return $this->getSessionIdentifier(
-			$entity, $this->getCurrentRelationAction() ?
-				$this->getCurrentRelationAction() : $this->getCurrentAction(),
-			$this->getCurrentRelation(), $this->getCurrentBridge()
-		);
+		$action = $this->getCurrentAction();
+		$relation = $this->getCurrentRelation();
+		if (!$relation) return $this->getSessionIdentifier($entity, $action);
+		$action = $this->getCurrentRelationAction();
+		$bridge = $this->getCurrentBridge();
+		if (!$bridge) $this->getSessionIdentifier($relation, $action);
+		return $this->getSessionIdentifier($bridge, $action);
 	}
 
-	public function getStoredSearchQueryLabel($entity, $action = false, $relation = false, $bridge = false)
+	public function getStoredSearchQueryLabel($entity, $action)
 	{
-		return 'admin_searchQuery_' . $this->getSessionIdentifier($entity, $action, $relation, $bridge);
+		return 'mcm_sq_' . $this->getSessionIdentifier($entity, $action);
 	}
 
-	public function getStoredSearchQuery($entity, $action = false, $relation = false, $bridge = false)
+	public function getStoredSearchQuery($entity, $action)
 	{
-		return $this->session->get($this->getStoredSearchQueryLabel($entity, $action, $relation, $bridge), false);
+		return $this->session->get($this->getStoredSearchQueryLabel($entity, $action), false);
 	}
 
-	public function setStoredSearchQuery($query, $entity, $action = false, $relation = false, $bridge = false)
+	public function setStoredSearchQuery($entity, $action, $value)
 	{
-		$this->session->set($this->getStoredSearchQueryLabel($entity, $action, $relation, $bridge), $query);
+		$this->session->set($this->getStoredSearchQueryLabel($entity, $action), $value);
 	}
 
-	public function setStoredSearchQueryFromRequest($entity, $action = false, $relation = false, $bridge = false)
+	public function setStoredSearchQueryFromRequest($entity, $action)
 	{
 		if (!array_key_exists('s', $_GET)) return false;
-		$this->setStoredSearchQuery($this->request->get('s', false), $entity, $action, $relation, $bridge);
+		$this->setStoredSearchQuery($entity, $action, $this->request->get('s', false));
 		return true;
 	}
 
-	public function getStoredPageLabel($entity, $action = false, $relation = false, $bridge = false)
+	public function getStoredPageLabel($entity, $action)
 	{
-		return 'admin_listPage_' . $this->getSessionIdentifier($entity, $action, $relation, $bridge);
+		return 'mcm_lp_' . $this->getSessionIdentifier($entity, $action);
 	}
 
-	public function getStoredPage($entity, $action = false, $relation = false, $bridge = false)
+	public function getStoredPage($entity, $action)
 	{
-		return $this->session->get($this->getStoredPageLabel($entity, $action, $relation, $bridge), 1);
+		return $this->session->get($this->getStoredPageLabel($entity, $action), 1);
 	}
 
-	public function setStoredPage($query, $entity, $action = false, $relation = false, $bridge = false)
+	public function setStoredPage($entity, $action, $value)
 	{
-		$this->session->set($this->getStoredPageLabel($entity, $action, $relation, $bridge), $query);
+		$this->session->set($this->getStoredPageLabel($entity, $action), $value);
 	}
 
-	public function setStoredPageFromRequest($entity, $action = false, $relation = false, $bridge = false)
+	public function setStoredPageFromRequest($entity, $action)
 	{
 		if (!array_key_exists('p', $_GET)) return false;
-		$this->setStoredPage($this->request->get('p', false), $entity, $action, $relation, $bridge);
+		$this->setStoredPage($entity, $action, $this->request->get('p', false));
 		return true;
+	}
+
+	public function setSessionFromRequest($entity, $action)
+	{
+		return $this->setStoredSearchQueryFromRequest($entity, $action) ||
+			$this->setStoredPageFromRequest($entity, $action);
 	}
 
 	/*
@@ -2691,14 +2721,14 @@ class AdminController
 		return ucwords(str_replace('_', ' ', $str));
 	}
 
-	public function createForm($type, $data = null, array $options = [])
+	public function createForm($type, $data = null, array $opt = [])
 	{
-		return $this->formFactory->create($type, $data, $options);
+		return $this->formFactory->create($type, $data, $opt);
 	}
 
-	public function createFormBuilder($data = null, array $options = [])
+	public function createFormBuilder($data = null, array $opt = [])
 	{
-		return $this->formFactory->createBuilder(FormType::class, $data, $options);
+		return $this->formFactory->createBuilder(FormType::class, $data, $opt);
 	}
 
 	public function generateUrl($route, $parameters = [], $referenceType = UrlGeneratorInterface::ABSOLUTE_PATH)
