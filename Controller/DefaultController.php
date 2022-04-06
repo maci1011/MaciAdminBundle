@@ -95,21 +95,16 @@ class DefaultController extends AbstractController
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
 
-		if ($this->mcm->setSessionFromRequest($entity, 'list'))
+		$action = $this->mcm->getCurrentAction();
+		if ($this->mcm->setSessionFromRequest($entity, $action))
 			return $this->mcm->getCurrentRedirectParams();
 
 		$list = $this->mcm->getList($entity, ['trash' => $trash]);
-		$pager = $this->mcm->getPager($entity, 'list', $list);
-
-		if (!$pager) {
-			return false;
-		}
+		$pager = $this->mcm->getPager($entity, $action, $list);
+		if (!$pager) return false;
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'pager' => $pager,
-			'form_filters' => $this->mcm->generateFiltersForm($entity)->createView(),
-			'has_filters' => $this->mcm->hasFilters($entity),
-			'filters_list' => $this->mcm->getGeneratedFilters($entity),
 			'entity_search' => true
 		]);
 	}
@@ -197,18 +192,6 @@ class DefaultController extends AbstractController
 			'item' => $item,
 			'form' => $form->createView()
 		));
-	}
-
-	public function mcmFiltersForm()
-	{
-		$entity = $this->mcm->getCurrentEntity();
-		if (!$entity) return false;
-
-		$form = $this->mcm->generateFiltersForm($entity);
-		$form->handleRequest($this->request);
-		$this->mcm->handleFiltersForm($entity, $form);
-
-		return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
 	}
 
 	public function mcmRemove($trash = false)
