@@ -101,11 +101,11 @@ class DefaultController extends AbstractController
 
 		$list = $this->mcm->getList($entity, ['action' => $action, 'trash' => $trash]);
 		$pager = $this->mcm->getPager($entity, $action, $list);
-		if (!$pager) return false;
 
-		return array_merge($this->mcm->getDefaultEntityParams($entity), [
-			'pager' => $pager
-		]);
+		$params = $this->mcm->getDefaultEntityParams($entity);
+		$params['pager'] = $pager;
+
+		return $params;
 	}
 
 	public function mcmShow()
@@ -394,8 +394,6 @@ class DefaultController extends AbstractController
 			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
 		]);
 
-		if (!$pager) return false;
-
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 		$params['pager'] = $pager;
 
@@ -495,12 +493,7 @@ class DefaultController extends AbstractController
 			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
 		]);
 
-		if (!$pager) {
-			return false;
-		}
-
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
-
 		$params['pager'] = $pager;
 		$params['relation_search'] = true;
 
@@ -542,14 +535,8 @@ class DefaultController extends AbstractController
 			'form_action' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $relAction)
 		]);
 
-		if (!$pager) {
-			return false;
-		}
-
 		$params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
-
 		$params['pager'] = $pager;
-		$params['relation_search'] = true;
 
 		return $params;
 	}
