@@ -1,5 +1,5 @@
 
-{% if form_filters is defined %}
+{% if form_filters %}
 
 <div class="filters-container" data="{{ filters_list|length ? filters_list|join(',') : '' }}" rel="{{ section ~ ':' ~ entity }}">
 

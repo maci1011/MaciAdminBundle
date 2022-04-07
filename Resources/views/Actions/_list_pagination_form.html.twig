@@ -4,7 +4,6 @@
 <div class="pagination-form-container container-fluid">
 <nav>
 
-{% if pager.form %}
 {% set form = pager.form.createView %}
 {{ form_start(form, {'attr': {'class': 'admin-form pagination-form navbar-form navbar-left container-fluid'}}) }}
 	{% if pager.requiresPagination() %}
@@ -25,7 +24,6 @@
 	</div>
 	{{ form_rest(form) }}
 {{ form_end(form, {'render_rest': false}) }}
-{% endif %}
 
 </nav>
 </div>

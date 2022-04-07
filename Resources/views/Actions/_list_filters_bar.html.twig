@@ -1,7 +1,8 @@
 
+{% if form_search or form_filters %}
 <div id="filtersbar" class="container-fluid">
 
-	{% if form_filters is defined %}
+	{% if form_filters %}
 	<nav class="filters-nav">
 		<ul class="nav navbar-nav">
 			<li class="nav-item">
@@ -11,7 +12,7 @@
 	</nav>
 	{% endif %}
 
-	{% if (entity_search is defined and entity_search) or (relation_search is defined and relation_search) %}
+	{% if form_search %}
 	<nav>
 		<div class="nav navbar-nav navbar-right">
 			{% include "MaciAdminBundle:Actions:_list_search_form.html.twig" %}
@@ -19,5 +20,6 @@
 	</nav>
 	{% endif %}
 </div>
+{% endif %}
 
 {% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}

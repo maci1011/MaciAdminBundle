@@ -660,7 +660,7 @@ class AdminController
 			'item' => $this->getCurrentItem(),
 			'item_identifier' => $this->getIdentifier($map),
 			'is_entity_uploadable' => $this->isUploadable($map),
-			// 'list_filters_form' => $this->getFiltersForm($map)->createView(),
+			'form_search' => true,
 			'search_query' => $this->getStoredSearchQuery($map, $action),
 			'list_page' => $this->getStoredPage($map, $action),
 			'sortable' => ($this->isSortable($map) ? $this->generateUrl('maci_admin_view', array(
@@ -680,9 +680,11 @@ class AdminController
 		return array_merge($this->getDefaultEntityParams($map),array(
 			'fields' => $this->getFields($relation),
 			'list_fields' => $this->getListFields($relation),
-			'form_filters' => $this->generateFiltersForm($relation, $relAction)->createView(),
-			'has_filters' => $this->hasFilters($relation, $relAction),
-			'filters_list' => $this->getGeneratedFilters($relation, $relAction),
+			'form_filters' => false, // $this->generateFiltersForm($relation, $relAction)->createView(),
+			'has_filters' => false, // $this->hasFilters($relation, $relAction),
+			'filters_list' => false, // $this->getGeneratedFilters($relation, $relAction),
+			'form_search' => false,
+			'search_query' => '', // $this->getStoredSearchQuery($map, $relAction, $relation),
 			'relation' => $relation['association'],
 			'association_label' => $this->generateLabel($relation['association']),
 			'relation_label' => $relation['label'],
@@ -695,8 +697,6 @@ class AdminController
 			'bridges' => $this->getBridges($relation),
 			'uploadable_bridges' => $this->getUpladableBridges($relation),
 			'is_relation_uploadable' => $this->isUploadable($relation),
-			// 'list_filters_form' => $this->getFiltersForm($relation),
-			'search_query' => $this->getStoredSearchQuery($map, $relAction, $relation),
 			'list_page' => $this->getStoredPage($map, $relAction, $relation),
 			'sortable' => ($this->isSortable($relation) ? $this->generateUrl('maci_admin_view', array(
 				'section'=>$map['section'],'entity'=>$map['name'],
@@ -721,12 +721,11 @@ class AdminController
 		return array_merge($this->getDefaultRelationParams($map, $relation),array(
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
-			'form_filters' => $this->generateFiltersForm($bridge, $relAction)->createView(),
-			'has_filters' => $this->hasFilters($bridge, $relAction),
-			'filters_list' => $this->getGeneratedFilters($bridge, $relAction),
-			// 'list_filters_form' => $this->getFiltersForm($bridge),
-			'search_query' => $this->getStoredSearchQuery($map, $relAction, $relation, $bridge),
-			'list_page' => $this->getStoredPage($map, $relAction, $relation, $bridge),
+			'form_filters' => false, // $this->generateFiltersForm($bridge, $relAction)->createView(),
+			'has_filters' => false, // $this->hasFilters($bridge, $relAction),
+			'filters_list' => false, // $this->getGeneratedFilters($bridge, $relAction),
+			'search_query' => false, // $this->getStoredSearchQuery($relation, $relAction),
+			'list_page' => $this->getStoredPage($relation, $relAction),
 			'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
 			'relation_action' => $relAction,
 			'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
@@ -757,8 +756,9 @@ class AdminController
 		return $params;
 	}
 
-	public function getDefaultEntityRedirectParams($map, $action = 'list', $id = null, $opt = [])
+	public function getDefaultEntityRedirectParams($map, $action = false, $id = null, $opt = [])
 	{
+		if (!$action) $action = $this->getMainActions($map)[0];
 		if (in_array($action, $this->getSingleActions($map)) || ($this->hasTrash($map) && $action == 'trash')) {
 			$id = $id === null ? $this->request->get('id', null) : $id;
 		} else {
@@ -817,34 +817,57 @@ class AdminController
 		return $this->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $action, null, $opt);
 	}
 
-	public function getDefaultUrl($opt = [])
+	public function getUrl($params)
 	{
-		$action_params = $this->getDefaultRedirectParams($opt);
-		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+		return $this->generateUrl($params['redirect'], $params['redirect_params']);
+	}
+
+	public function getDefaultUrl($opt = [])
+	{;
+		return $this->getUrl($this->getDefaultRedirectParams($opt));
 	}
 
 	public function getSectionUrl($section, $opt = [])
 	{
-		$action_params = $this->getDefaultSectionRedirectParams($section, $opt);
-		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+		return $this->getUrl($this->getDefaultSectionRedirectParams($section, $opt));
 	}
 
-	public function getEntityUrl($map, $action = 'list', $id = null, $opt = [])
+	public function getEntityUrl($map, $action = false, $id = null, $opt = [])
 	{
-		$action_params = $this->getDefaultEntityRedirectParams($map, $action, $id, $opt);
-		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+		return $this->getUrl($this->getDefaultEntityRedirectParams($map, $action, $id, $opt));
 	}
 
 	public function getRelationUrl($map, $relation, $action = false, $id = null, $opt = [])
 	{
-		$action_params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id, $opt);
-		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+		return $this->getUrl($this->getDefaultRelationRedirectParams($map, $relation, $action, $id, $opt));
 	}
 
 	public function getBridgeUrl($map, $relation, $bridge, $action = 'bridge', $id = null, $opt = [])
 	{
-		$action_params = $this->getDefaultBridgeRedirectParams($map, $relation, $bridge, $action, $id, $opt);
-		return $this->generateUrl($action_params['redirect'], $action_params['redirect_params']);
+		return $this->getUrl($this->getDefaultBridgeRedirectParams($map, $relation, $bridge, $action, $id, $opt));
+	}
+
+	public function getMapUrl($map, $action = false, $id = null, $opt = [])
+	{
+		if ($id === null) $id = $this->request->get('id', null);
+		$params = $this->getDefaultRedirectParams([
+			'section' => $map['section'],
+			'entity' => array_key_exists('parent_entity', $map) ? $map['parent_entity'] : $map['name'],
+			'action' => array_key_exists('parent_entity', $map) ? 'relations' :
+				$action ? $action : $this->getMainActions($map)[0]
+		]);
+		$relation = array_key_exists('parent_relation', $map) ? $map['parent_relation'] :
+			array_key_exists('parent_entity', $map) ? $map['name'] : false;
+		$relAction = !array_key_exists('parent_entity', $map) ? false :
+			array_key_exists('parent_relation', $map) ? 'bridge' : 'list';
+		$bridge = array_key_exists('parent_relation', $map) ? $map['name'] : false;
+		if ($relation)
+		{
+			$params['relation'] = $relation;
+			$params['relAction'] = $relAction;
+			if ($bridge) $params['bridge'] = $bridge;
+		}
+		return $this->getUrl($params);
 	}
 
 	public function getCurrentUrl($opt = [])
@@ -1500,6 +1523,7 @@ class AdminController
 
 	public function handleFiltersForm($map, $action, $form)
 	{
+		$form->handleRequest($this->request);
 		if (!($form->isSubmitted() && $form->isValid())) return false;
 
 		$fields = $this->getGeneratedFilters($map, $action);
@@ -2011,7 +2035,8 @@ class AdminController
 			array_key_exists('page_range', $opt) ? $opt['page_range'] : $this->getPager_PageRange($map, $action)
 		);
 		$pager->setPage(array_key_exists('page', $opt) ? $opt['page'] : $this->getStoredPage($map, $action));
-		$pager->setForm($this->getPagerForm($map, $action, $pager, $opt));
+		if ($this->isSortable($map)) $pager->setLimit(0);
+		else $pager->setForm($this->getPagerForm($map, $action, $pager, $opt));
 		$pager->setIdentifiers($this->getListIdentifiers($map, $list));
 		return $pager;
 	}
@@ -2027,7 +2052,7 @@ class AdminController
 		$page_attr = $pager ? ['max' => $pager->getMaxPages()] : [];
 		$urlOpt = array_key_exists('url_opt', $opt) ? $opt['url_opt'] : [];
 		$formAction = array_key_exists('form_action', $opt) ?
-			$opt['form_action'] : $this->getEntityUrl($map, $action, null, $urlOpt);
+			$opt['form_action'] : $this->getMapUrl($map, $action, null, $urlOpt);
 		return $this->createFormBuilder($values)
 			->setAction($formAction)
 			->add('page', IntegerType::class, [
@@ -2075,7 +2100,7 @@ class AdminController
 
 	public function getPagerForm_OrderByField($map, $action)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $map ? $this->getIdentifier($map) : false);
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $this->getIdentifier($map));
 	}
 
 	public function setPagerForm_OrderByField($map, $action, $value)
@@ -2095,17 +2120,20 @@ class AdminController
 
 	public function setPagerOptions($map, $action, $pager = false, $opt = [])
 	{
+		if ($this->isSortable($map)) return false;
+
 		$form = $this->getPagerForm($map, $action, $pager, $opt);
 		$form->handleRequest($this->request);
-		if ($form->isSubmitted() && $form->isValid()) {
-			$this->setPager_PageLimit($map, $action, $form->get('page_limit')->getData());
-			$this->setPagerForm_OrderByField($map, $action, $form->get('order_by_field')->getData());
-			$this->setPagerForm_OrderBySort($map, $action, $form->get('order_by_sort')->getData());
-			// $page = (int) $form->get('page')->getData();
-			// if (1<$page) $opt['page'] = $page;
-			return true;
-		}
-		return false;
+
+		if (!($form->isSubmitted() && $form->isValid())) return false;
+
+		$this->setPager_PageLimit($map, $action, $form->get('page_limit')->getData());
+		$this->setPagerForm_OrderByField($map, $action, $form->get('order_by_field')->getData());
+		$this->setPagerForm_OrderBySort($map, $action, $form->get('order_by_sort')->getData());
+
+		// $page = (int) $form->get('page')->getData();
+		// if (1<$page) $opt['page'] = $page;
+		return true;
 	}
 
 	/*
@@ -2489,26 +2517,26 @@ class AdminController
 		return ['success' => true];
 	}
 
-	public function addFiltersByParams($data)
-	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('action', $data) || !array_key_exists('filters', $data)) {
-			return ['success' => false, 'error' => 'Bad Request.'];
-		}
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
-		if (is_array($data['filters'])) {
-			foreach($data['filters'] as $el) {
-				$this->addFilter($entity, $data['action'], $el);
-			}
-		}
-		else if ($data['filters'] == 'unsetAll') {
-			$this->unsetAllFilters($entity, $data['action']);
-		}
-		else return ['success' => false, 'error' => 'Bad Filter Value.'];
-		return ['success' => true];
-	}
+	// public function addFiltersByParams($data)
+	// {
+	// 	if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('action', $data) || !array_key_exists('filters', $data)) {
+	// 		return ['success' => false, 'error' => 'Bad Request.'];
+	// 	}
+	// 	$entity = $this->getEntity($data['section'], $data['entity']);
+	// 	if (!$entity) {
+	// 		return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+	// 	}
+	// 	if (is_array($data['filters'])) {
+	// 		foreach($data['filters'] as $el) {
+	// 			$this->addFilter($entity, $data['action'], $el);
+	// 		}
+	// 	}
+	// 	else if ($data['filters'] == 'unsetAll') {
+	// 		$this->unsetAllFilters($entity, $data['action']);
+	// 	}
+	// 	else return ['success' => false, 'error' => 'Bad Filter Value.'];
+	// 	return ['success' => true];
+	// }
 
 	/*
 		------------> Queries
@@ -2584,10 +2612,10 @@ class AdminController
 	public function addOrderByQuery($map, &$query, $opt)
 	{
 		$order = array_key_exists('order', $opt) ? $opt['order'] : [];
-		if (!is_array($order)) return;
+		if (!is_array($order)) $order = [];
 		$field = $opt['use_session'] ? $this->getPagerForm_OrderByField($map, $opt['action']) : false;
 		if (array_key_exists('field', $order)) $field = $order['field'];
-		if (!$field) $field = $this->getFields($map)[0];
+		if (!$field) $field = $this->getIdentifier($map);
 		$sort = $opt['use_session'] ? $this->getPagerForm_OrderBySort($map, $opt['action']) : 'DESC';
 		if (array_key_exists('sort', $order)) $sort = $order['sort'];
 		$query->orderBy($query->getRootAlias() . '.' . $field, $sort);
@@ -2660,25 +2688,20 @@ class AdminController
 		return true;
 	}
 
+	public function setFiltersFromRequest($entity, $action)
+	{
+		return $this->handleFiltersForm($entity, $action,
+			$this->generateFiltersForm($entity, $action)
+		);
+	}
+
 	public function setSessionFromRequest($entity, $action)
 	{
 		return $this->setPagerOptions($entity, $action) ||
 			$this->setStoredSearchQueryFromRequest($entity, $action) ||
-			$this->setStoredPageFromRequest($entity, $action);
+			$this->setStoredPageFromRequest($entity, $action) ||
+			$this->setFiltersFromRequest($entity, $action);
 	}
-
-	// public function mcmFiltersForm()
-	// {
-	// 	$entity = $this->mcm->getCurrentEntity();
-	// 	if (!$entity) return false;
-
-	// 	$action = $this->mcm->getCurrentAction();
-	// 	$form = $this->mcm->generateFiltersForm($entity, $action);
-	// 	$form->handleRequest($this->request);
-	// 	$this->mcm->handleFiltersForm($entity, $action, $form);
-
-	// 	return $this->mcm->getDefaultEntityRedirectParams($entity, $action);
-	// }
 
 	/*
 		------------> Session Parameters for Filters

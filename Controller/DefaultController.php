@@ -99,13 +99,12 @@ class DefaultController extends AbstractController
 		if ($this->mcm->setSessionFromRequest($entity, $action))
 			return $this->mcm->getCurrentRedirectParams();
 
-		$list = $this->mcm->getList($entity, ['trash' => $trash]);
+		$list = $this->mcm->getList($entity, ['action' => $action, 'trash' => $trash]);
 		$pager = $this->mcm->getPager($entity, $action, $list);
 		if (!$pager) return false;
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
-			'pager' => $pager,
-			'entity_search' => true
+			'pager' => $pager
 		]);
 	}
 
@@ -399,9 +398,6 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 		$params['pager'] = $pager;
-		$params['relation_search'] = true;
-
-		if ($this->mcm->isSortable($relation)) $pager->setLimit(0);
 
 		return $params;
 	}
