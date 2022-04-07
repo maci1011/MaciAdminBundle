@@ -2652,8 +2652,6 @@ class AdminController
 
 	public function getStoredSearchQuery($map, $action)
 	{
-		var_dump($this->getSessionIdentifier($map, $action));
-		var_dump($this->session->get($this->getStoredSearchQueryLabel($map, $action), ''));die();
 		return $this->session->get($this->getStoredSearchQueryLabel($map, $action), '');
 	}
 
