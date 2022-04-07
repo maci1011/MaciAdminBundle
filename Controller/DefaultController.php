@@ -495,7 +495,11 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 		$params['pager'] = $pager;
-		$params['relation_search'] = true;
+		$params['form_filters'] = $this->mcm->generateFiltersForm($relation, $relAction)->createView();
+		$params['has_filters'] = $this->mcm->hasFilters($relation, $relAction);
+		$params['filters_list'] = $this->mcm->getGeneratedFilters($relation, $relAction);
+		$params['form_search'] = true;
+		$params['search_query'] = $this->mcm->getStoredSearchQuery($relation, $relAction);
 
 		return $params;
 	}
@@ -537,6 +541,11 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
 		$params['pager'] = $pager;
+		$params['form_filters'] = $this->mcm->generateFiltersForm($bridge, $relAction)->createView();
+		$params['has_filters'] = $this->mcm->hasFilters($bridge, $relAction);
+		$params['filters_list'] = $this->mcm->getGeneratedFilters($bridge, $relAction);
+		$params['form_search'] = true;
+		$params['search_query'] = $this->mcm->getStoredSearchQuery($bridge, $relAction);
 
 		return $params;
 	}
