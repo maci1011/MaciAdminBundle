@@ -116,12 +116,11 @@ class DefaultController extends AbstractController
 		$item = $this->mcm->getCurrentItem();
 		if (!$item) return false;
 
-		if ($this->request->isXmlHttpRequest()) {
+		if ($this->request->isXmlHttpRequest())
 			return [
 				'item' => $this->mcm->getItemData($entity, $item),
 				'success' => true
 			];
-		}
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'identifier' => $this->mcm->getIdentifierValue($entity, $item),
@@ -135,10 +134,10 @@ class DefaultController extends AbstractController
 		if (!$entity) return false;
 
 		$item = null;
-
 		// $clone = $this->request->get('clone', false);
 
-		if ($this->request->get('id', 0)) {
+		if ($this->request->get('id', 0))
+		{
 			$item = $this->mcm->getCurrentItem();
 			if (!$item) return false;
 			// if ($clone) {
@@ -146,9 +145,8 @@ class DefaultController extends AbstractController
 			// } else {
 			//     $item = $item;
 			// }
-		} else {
-			$item = $this->mcm->getNewItem($entity);
 		}
+		else $item = $this->mcm->getNewItem($entity);
 
 		$form = $this->mcm->getForm($entity, $item);
 		$form->handleRequest($this->request);
@@ -156,10 +154,7 @@ class DefaultController extends AbstractController
 		if ($form->isSubmitted() && $form->isValid()) {
 
 			$isNew = (bool) ( $this->mcm->getIdentifierValue($entity, $item) === null );
-
-			if ($isNew) {
-				$this->om->persist($item);
-			}
+			if ($isNew) $this->om->persist($item);
 
 			// if ($clone) {
 			//     $this->cloneItemChildren($entity, $item, $item);
@@ -167,23 +162,15 @@ class DefaultController extends AbstractController
 
 			$this->om->flush();
 
-			if ($isNew) {
-				$this->session->getFlashBag()->add('success', 'Item Added.');
-			} else {
-				$this->session->getFlashBag()->add('success', 'Item Edited.');
-			}
+			if ($isNew) $this->session->getFlashBag()->add('success', 'Item Added.');
+			else $this->session->getFlashBag()->add('success', 'Item Edited.');
 
-			if ($this->request->isXmlHttpRequest())
-				return array('success' => true);
-			else {
-				if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
-					return $this->mcm->getDefaultEntityRedirectParams($entity, 'new');
-				else if ($form->has('save_and_list') && $form->get('save_and_list')->isClicked())
-					return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
-				else
-					return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $this->mcm->getIdentifierValue($entity, $item));
-			}
-
+			if ($this->request->isXmlHttpRequest()) return array('success' => true);
+			if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
+				return $this->mcm->getDefaultEntityRedirectParams($entity, 'new');
+			if ($form->has('save_and_list') && $form->get('save_and_list')->isClicked())
+				return $this->mcm->getDefaultEntityRedirectParams($entity, 'list');
+			return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $this->mcm->getIdentifierValue($entity, $item));
 		}
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), array(
@@ -199,41 +186,34 @@ class DefaultController extends AbstractController
 		if (!$entity) return false;
 
 		$list = $this->mcm->getList($entity, ['trash' => null]);
-
 		$item = $this->mcm->getCurrentItem();
 
-		if ( $this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST') {
-			if ($item) {
+		if ($this->request->isXmlHttpRequest() && $this->request->getMethod() === 'POST')
+		{
+			if ($item)
+			{
 				if ($trash) $this->mcm->trashItems($entity, [$item]);
 				else $this->mcm->removeItems($entity, [$item]);
-			} else {
+			}
+			else
+			{
 				if ($trash) $this->mcm->trashItemsFromRequestIds($entity, $list);
 				else $this->mcm->removeItemsFromRequestIds($entity, $list);
 			}
 			return ['success' => true];
 		}
 
-		if (!$item) {
-			return false;
-		}
-
-		if (!in_array($item, $list)) {
-			return false;
-		}
+		if (!$item || !in_array($item, $list)) return false;
 
 		$form = $this->mcm->getRemoveForm($entity, $item, $trash);
-
 		$form->handleRequest($this->request);
-
 		$params = $this->mcm->getDefaultEntityParams($entity);
 
-		if ($form->isSubmitted() && $form->isValid()) {
-
+		if ($form->isSubmitted() && $form->isValid())
+		{
 			if ($trash) $this->mcm->trashItems($entity, [$item]);
 			else $this->mcm->removeItems($entity, [$item]);
-
 			return $this->mcm->getDefaultEntityRedirectParams($entity);
-
 		}
 
 		$params['identifier'] = $this->mcm->getIdentifierValue($entity, $item);
@@ -253,20 +233,17 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultEntityParams($entity);
 
-		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST')
 			return $params;
-		}
 
-		if (!count($this->request->files)) {
+		if (!count($this->request->files))
 			return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
-		}
 
 		$name = $this->request->files->keys()[0];
 		$file = $this->request->files->get($name);
 
-		if(!$file->isValid()) {
+		if(!$file->isValid())
 			return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
-		}
 
 		// if ($id) {
 		//     $item = $this->mcm->getRepository($entity)->findOneById($id);
@@ -277,13 +254,10 @@ class DefaultController extends AbstractController
 		// } else {}
 
 		$item = $this->mcm->getNewItem($entity);
-
 		if (method_exists($item, 'setLocale')) $item->setLocale($this->request->getLocale());
-
 		$item->setFile($file);
 
 		$this->om->persist($item);
-
 		$this->om->flush();
 
 		return array('success' => true);
@@ -291,15 +265,13 @@ class DefaultController extends AbstractController
 
 	public function mcmReorder()
 	{
-		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST')
 			return false;
-		}
 
 		$ids = $this->request->get('ids', array());
 
-		if (count($ids)<2) {
+		if (count($ids)<2)
 			return array('success' => false, 'error' => 'Reorder: No ids.');
-		}
 
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
@@ -307,23 +279,21 @@ class DefaultController extends AbstractController
 		$item = $this->mcm->getCurrentItem();
 		if (!$item) return false;
 
-		if ( !$this->mcm->isSortable($entity) ) {
+		if (!$this->mcm->isSortable($entity))
 			return array('success' => false, 'error' => 'Reorder: Entity [' . $entity['label'] . '] is not Sortable.');
-		}
 
 		$id_method = $this->mcm->getGetterMethod($this->mcm->getNewItem($entity), $this->mcm->getIdentifier($entity));
-		if ( !$id_method ) {
+		if (!$id_method)
 			return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
-		}
 
 		$sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($entity), $this->mcm->getConfigKey($entity, 'sort_field'));
-		if ( !$sort_method ) {
+		if (!$sort_method)
 			return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
-		}
 
 		$list = $this->mcm->getList($entity);
 
-		foreach ($list as $el) {
+		foreach ($list as $el)
+		{
 			$id = call_user_func_array(array($el, $id_method), array());
 			if (in_array($id, $ids)) {
 				call_user_func_array(array($el, $sort_method), array(array_search($id, $ids)));
@@ -412,51 +382,40 @@ class DefaultController extends AbstractController
 		if (!$relation) return false;
 
 		$rel = null;
-
-		if ($this->request->get('relId', 0)) {
+		if ($this->request->get('relId', 0))
+		{
 			$rel = $this->mcm->getCurrentRelatedItem();
 			if (!$rel) return false;
-		} else {
-			$rel = $this->mcm->getNewItem($relation);
 		}
+		else $rel = $this->mcm->getNewItem($relation);
 
 		$form = $this->mcm->getForm($relation, $rel);
 		$form->handleRequest($this->request);
 
-		if ($form->isSubmitted() && $form->isValid()) {
-
+		if ($form->isSubmitted() && $form->isValid())
+		{
 			$isNew = ($this->mcm->getIdentifierValue($relation, $rel) === null);
-
-			if ($isNew) {
-				$this->om->persist($rel);
-			}
+			if ($isNew) $this->om->persist($rel);
 
 			$this->mcm->addRelationItems($entity, $relation, $item, [$rel]);
-
 			$this->om->flush();
 
-			if ($isNew) {
+			if ($isNew)
 				$this->session->getFlashBag()->add('success', 'Item Added.');
-			} else {
+			else
 				$this->session->getFlashBag()->add('success', 'Item Edited.');
-			}
 
-			if ($this->request->isXmlHttpRequest())
-				return array('success' => true);
-			else {
-				if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
-					return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'new');
-				else
-					return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
-			}
-
+			if ($this->request->isXmlHttpRequest()) return array('success' => true);
+			if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
+				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'new');
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
 		}
 
-		return array_merge($this->mcm->getDefaultRelationParams($entity, $relation, $item), array(
+		return array_merge($this->mcm->getDefaultRelationParams($entity, $relation, $item), [
 			'identifier' => $this->mcm->getIdentifierValue($relation, $rel),
 			'item' => $rel,
 			'form' => $form->createView()
-		));
+		]);
 
 		return $params;
 	}
@@ -478,15 +437,11 @@ class DefaultController extends AbstractController
 
 		$list = $this->mcm->getListForRelation($entity, $relation, $item, false, ['action' => $relAction]);
 
-		if ($this->request->getMethod() === 'POST') {
-
+		if ($this->request->getMethod() === 'POST')
+		{
 			$this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
-
-			if ($this->request->isXmlHttpRequest())
-				return array('success' => true);
-			else
-				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
-
+			if ($this->request->isXmlHttpRequest()) return array('success' => true);
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 		}
 
 		$pager = $this->mcm->getPager($relation, $relAction, $list, [
@@ -524,15 +479,11 @@ class DefaultController extends AbstractController
 
 		$list = $this->mcm->getListForRelation($entity, $relation, $item, $bridge, ['action' => $relAction]);
 
-		if ($this->request->getMethod() === 'POST') {
-
+		if ($this->request->getMethod() === 'POST')
+		{
 			$this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
-
-			if ($this->request->isXmlHttpRequest())
-				return array('success' => true);
-			else
-				return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge);
-
+			if ($this->request->isXmlHttpRequest()) return ['success' => true];
+			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge);
 		}
 
 		$pager = $this->mcm->getPager($bridge, $relAction, $list, [
@@ -558,20 +509,17 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 
-		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST')
 			return $params;
-		}
 
-		if (!count($this->request->files)) {
+		if (!count($this->request->files))
 			return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
-		}
 
 		$name = $this->request->files->keys()[0];
 		$file = $this->request->files->get($name);
 
-		if(!$file->isValid()) {
+		if(!$file->isValid())
 			return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
-		}
 
 		$new = $this->mcm->getNewItem($relation);
 		$new->setFile($file);
@@ -597,27 +545,23 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
 
-		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST')
 			return $params;
-		}
 
-		if (!count($this->request->files)) {
+		if (!count($this->request->files))
 			return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
-		}
 
 		$name = $this->request->files->keys()[0];
 		$file = $this->request->files->get($name);
 
-		if(!$file->isValid()) {
+		if(!$file->isValid())
 			return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
-		}
 
 		$new = $this->mcm->getNewItem($bridge);
 		$new->setFile($file);
+
 		$this->om->persist($new);
-
 		$this->mcm->addBridgeItems($entity, $relation, $bridge, $item, array($new));
-
 		$this->om->flush();
 
 		return array('success' => true);
@@ -645,16 +589,14 @@ class DefaultController extends AbstractController
 		}
 
 		if (!$relItem) {
-			if ($this->request->getMethod() === 'POST' && $this->request->get('ids', false)) {
-				if ($this->request->get('rm', '') === 'item') {
+			if ($this->request->getMethod() === 'POST' && $this->request->get('ids', false))
+			{
+				if ($this->request->get('rm', '') === 'item')
 					$this->mcm->removeItemsFromRequestIds($relation, $list);
-				} else {
-					$this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
-				}
-				if ($this->request->isXmlHttpRequest())
-					return array('success' => true);
 				else
-					return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+					$this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
+				if ($this->request->isXmlHttpRequest()) return array('success' => true);
+				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 			}
 			return false;
 		}
@@ -666,19 +608,12 @@ class DefaultController extends AbstractController
 
 		$form->handleRequest($this->request);
 
-		if ($form->isSubmitted() && $form->isValid()) {
-
-			if ($this->request->get('rm', '') === 'item') {
-				$this->mcm->removeItems($relation, array($relItem));
-			} else {
-				$this->mcm->removeRelationItems($entity, $relation, $item, array($relItem));
-			}
-
-			if ($this->request->isXmlHttpRequest())
-				return array('success' => true);
-			else
-				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
-
+		if ($form->isSubmitted() && $form->isValid())
+		{
+			if ($this->request->get('rm', '') === 'item') $this->mcm->removeItems($relation, array($relItem));
+			else $this->mcm->removeRelationItems($entity, $relation, $item, array($relItem));
+			if ($this->request->isXmlHttpRequest()) return array('success' => true);
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 		}
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
@@ -695,15 +630,13 @@ class DefaultController extends AbstractController
 
 	public function mcmRelationsReorder()
 	{
-		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST') {
+		if (!$this->request->isXmlHttpRequest() || $this->request->getMethod() !== 'POST')
 			return false;
-		}
 
 		$ids = $this->request->get('ids', array());
 
-		if (count($ids)<2) {
+		if (count($ids)<2)
 			return array('success' => false, 'error' => 'Reorder: No ids.');
-		}
 
 		$entity = $this->mcm->getCurrentEntity();
 		if (!$entity) return false;
@@ -714,23 +647,21 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
-		if ( !$this->mcm->isSortable($relation) ) {
+		if (!$this->mcm->isSortable($relation))
 			return array('success' => false, 'error' => 'Reorder: Relation [' . $relation['association'] . '] for entity [' . $entity['label'] . '] is not Sortable.');
-		}
 
 		$id_method = $this->mcm->getGetterMethod($this->mcm->getNewItem($relation), $this->mcm->getIdentifier($relation));
-		if ( !$id_method ) {
+		if (!$id_method)
 			return array('success' => false, 'error' => 'Reorder: Identifier Getter Method not found.');
-		}
 
 		$sort_method = $this->mcm->getSetterMethod($this->mcm->getNewItem($relation), $this->mcm->getConfigKey($relation, 'sort_field'));
-		if ( !$sort_method ) {
+		if (!$sort_method)
 			return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
-		}
 
 		$list = $this->mcm->getRelationItems($relation, $item);
 
-		foreach ($list as $el) {
+		foreach ($list as $el)
+		{
 			$id = call_user_func_array(array($el, $id_method), array());
 			if (in_array($id, $ids)) {
 				call_user_func_array(array($el, $sort_method), array(array_search($id, $ids)));

@@ -715,28 +715,27 @@ class AdminController
 	public function getDefaultBridgeParams($map, $relation, $bridge)
 	{
 		$relAction = $this->request->get('relAction');
-		if ($relAction === 'bridge') {
-			$relAction = ( $this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add' );
-		}
-		return array_merge($this->getDefaultRelationParams($map, $relation),array(
+		if ($relAction === 'bridge')
+			$bridgeAction = ($this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add');
+		return array_merge($this->getDefaultRelationParams($map, $relation), [
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
 			'form_filters' => $this->generateFiltersForm($bridge, $relAction)->createView(),
 			'has_filters' => $this->hasFilters($bridge, $relAction),
 			'filters_list' => $this->getGeneratedFilters($bridge, $relAction),
 			'form_search' => true,
-			'search_query' => $this->getStoredSearchQuery($relation, $relAction),
+			'search_query' => $this->getStoredSearchQuery($bridge, $relAction),
 			'list_page' => $this->getStoredPage($relation, $relAction),
-			'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
-			'relation_action' => $relAction,
-			'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
-			'uploader' => ($this->isUploadable($bridge) ? $this->generateUrl('maci_admin_view', array(
+			'relation_action_label' => ($this->generateLabel($bridgeAction) . ' ' . $bridge['label']),
+			'relation_action' => $bridgeAction,
+			'template' => $this->getTemplate($bridge,('relations_'.$bridgeAction)),
+			'uploader' => ($this->isUploadable($bridge) ? $this->generateUrl('maci_admin_view', [
 				'section'=>$map['section'],'entity'=>$map['name'],
 				'action'=>'relations','id'=>$this->request->get('id'),
 				'relation'=>$relation['association'],'relAction'=>'uploader',
 				'bridge'=>$bridge['bridge']
-			)) : false)
-		));
+			]) : false)
+		]);
 	}
 
 	public function getDefaultRedirectParams($opt = [])
@@ -1787,6 +1786,7 @@ class AdminController
 		$repo = $this->getRepository($mainMap);
 		$query = $repo->createQueryBuilder('r');
 		$root = $query->getRootAlias();
+		$this->addDefaultQueries($mainMap, $query, array_merge(['trash' => false], $opt));
 		// todo: add a config option for this (remove clones)
 		$index = 0;
 		foreach ($relation_items as $obj) {
@@ -1802,7 +1802,6 @@ class AdminController
 			$query->andWhere($root . '.' . $inverseField . ' != :pid');
 			$query->setParameter(':pid', call_user_func_array(array($item, ('get'.ucfirst($inverseField))), []));
 		}
-		$this->addDefaultQueries($mainMap, $query, array_merge(['trash' => false], $opt));
 		$query = $query->getQuery();
 		return $query->getResult();
 	}
@@ -1965,6 +1964,7 @@ class AdminController
 				return array($getted);
 			}
 		}
+		// return $this->getList($relation, ['filters' => [$relation['association'] => $this->getIdentifierValue($relation, $object)]]);
 		return [];
 	}
 
@@ -2563,9 +2563,8 @@ class AdminController
 		if (strlen($search))
 		{
 			$stringFields = $this->getFieldsByType($map);
-			foreach ($stringFields as $field) {
+			foreach ($stringFields as $field)
 				$query->orWhere($query->getRootAlias() . '.' . $field . ' LIKE :search');
-			}
 			$query->setParameter('search', "%$search%");
 		}
 	}
@@ -2575,6 +2574,7 @@ class AdminController
 		$filters = $this->getOpt($opt, 'filters', null);
 		if ($filters === false) return;
 		if ($filters == null) $filters = $opt['use_session'] ? $this->getFilters($map, $opt['action']) : [];
+		if (!count($filters)) return;
 		$fields = $this->getFields($map, false);
 		foreach ($filters as $key => $data) {
 			if (!in_array($key, $fields)) {
@@ -2626,145 +2626,147 @@ class AdminController
 		------------> Session Parameters
 	*/
 
-	public function getSessionIdentifier($entity, $action)
+	public function getSessionIdentifier($map, $action)
 	{
-		if (!$entity) return $this->getCurrentSessionIdentifier();
-		if (is_string($entity)) return $entity;
+		if (!$map) return $this->getCurrentSessionIdentifier();
+		if (is_string($map)) return $map;
 		return
-			(array_key_exists('parent_entity', $entity) ? $entity['parent_entity'] . '_r_' : '') .
-			(array_key_exists('parent_relation', $entity) ? $entity['parent_relation'] . '_b_' : '') .
-			$entity['name'] .
+			(array_key_exists('parent_entity', $map) ? $map['parent_entity'] . '_r_' : '') .
+			(array_key_exists('parent_relation', $map) ? $map['parent_relation'] . '_b_' : '') .
+			$map['name'] .
 			($action ? '_a_' . $action : '')
 		;
 	}
 
 	public function getCurrentSessionIdentifier()
 	{
-		$entity = $this->getCurrentEntity();
-		if (!$entity) return null;
+		$map = $this->getCurrentEntity();
+		if (!$map) return null;
 		return $this->getSessionIdentifier($this->getCurrentMap(), $this->getCurrentMapAction());
 	}
 
-	public function getStoredSearchQueryLabel($entity, $action)
+	public function getStoredSearchQueryLabel($map, $action)
 	{
-		return 'mcm_sq_' . $this->getSessionIdentifier($entity, $action);
+		return 'mcm_sq_' . $this->getSessionIdentifier($map, $action);
 	}
 
-	public function getStoredSearchQuery($entity, $action)
+	public function getStoredSearchQuery($map, $action)
 	{
-		return $this->session->get($this->getStoredSearchQueryLabel($entity, $action), false);
+		var_dump($this->getSessionIdentifier($map, $action));
+		var_dump($this->session->get($this->getStoredSearchQueryLabel($map, $action), ''));die();
+		return $this->session->get($this->getStoredSearchQueryLabel($map, $action), '');
 	}
 
-	public function setStoredSearchQuery($entity, $action, $value)
+	public function setStoredSearchQuery($map, $action, $value)
 	{
-		$this->session->set($this->getStoredSearchQueryLabel($entity, $action), $value);
+		$this->session->set($this->getStoredSearchQueryLabel($map, $action), $value);
 	}
 
-	public function setStoredSearchQueryFromRequest($entity, $action)
+	public function setStoredSearchQueryFromRequest($map, $action)
 	{
 		if (!array_key_exists('s', $_GET)) return false;
-		$this->setStoredSearchQuery($entity, $action, $this->request->get('s', false));
+		$this->setStoredSearchQuery($map, $action, $this->request->get('s', ''));
 		return true;
 	}
 
-	public function getStoredPageLabel($entity, $action)
+	public function getStoredPageLabel($map, $action)
 	{
-		return 'mcm_lp_' . $this->getSessionIdentifier($entity, $action);
+		return 'mcm_lp_' . $this->getSessionIdentifier($map, $action);
 	}
 
-	public function getStoredPage($entity, $action)
+	public function getStoredPage($map, $action)
 	{
-		return $this->session->get($this->getStoredPageLabel($entity, $action), 1);
+		return $this->session->get($this->getStoredPageLabel($map, $action), 1);
 	}
 
-	public function setStoredPage($entity, $action, $value)
+	public function setStoredPage($map, $action, $value)
 	{
-		$this->session->set($this->getStoredPageLabel($entity, $action), $value);
+		$this->session->set($this->getStoredPageLabel($map, $action), $value);
 	}
 
-	public function setStoredPageFromRequest($entity, $action)
+	public function setStoredPageFromRequest($map, $action)
 	{
 		if (!array_key_exists('p', $_GET)) return false;
-		$this->setStoredPage($entity, $action, $this->request->get('p', false));
+		$this->setStoredPage($map, $action, $this->request->get('p', false));
 		return true;
 	}
 
-	public function setFiltersFromRequest($entity, $action)
+	public function setFiltersFromRequest($map, $action)
 	{
-		return $this->handleFiltersForm($entity, $action,
-			$this->generateFiltersForm($entity, $action)
+		return $this->handleFiltersForm($map, $action,
+			$this->generateFiltersForm($map, $action)
 		);
 	}
 
-	public function setSessionFromRequest($entity, $action)
+	public function setSessionFromRequest($map, $action)
 	{
-		return $this->setPagerOptions($entity, $action) ||
-			$this->setStoredSearchQueryFromRequest($entity, $action) ||
-			$this->setStoredPageFromRequest($entity, $action) ||
-			$this->setFiltersFromRequest($entity, $action);
+		return $this->setPagerOptions($map, $action) ||
+			$this->setStoredSearchQueryFromRequest($map, $action) ||
+			$this->setStoredPageFromRequest($map, $action) ||
+			$this->setFiltersFromRequest($map, $action);
 	}
 
 	/*
 		------------> Session Parameters for Filters
 	*/
 
-	public function getGeneratedFilters($entity, $action)
+	public function getGeneratedFilters($map, $action)
 	{
-		return $this->session->get('mcm_gf_' . $this->getSessionIdentifier($entity, $action), []);
+		return $this->session->get('mcm_gf_' . $this->getSessionIdentifier($map, $action), []);
 	}
 
-	public function setGeneratedFilters($entity, $action, $filters)
+	public function setGeneratedFilters($map, $action, $filters)
 	{
-		$this->session->set('mcm_gf_' . $this->getSessionIdentifier($entity, $action), $filters);
+		$this->session->set('mcm_gf_' . $this->getSessionIdentifier($map, $action), $filters);
 	}
 
-	public function getFilters($entity, $action)
+	public function getFilters($map, $action)
 	{
-		return $this->session->get('mcm_fd_' . $this->getSessionIdentifier($entity, $action), []);
+		return $this->session->get('mcm_fd_' . $this->getSessionIdentifier($map, $action), []);
 	}
 
-	public function setFilters($entity, $action, $filters)
+	public function setFilters($map, $action, $filters)
 	{
-		$this->session->set('mcm_fd_' . $this->getSessionIdentifier($entity, $action), $filters);
+		$this->session->set('mcm_fd_' . $this->getSessionIdentifier($map, $action), $filters);
 	}
 
-	public function hasFilters($entity, $action)
+	public function hasFilters($map, $action)
 	{
-		return !!count($this->getFilters($entity, $action));
+		return !!count($this->getFilters($map, $action));
 	}
 
-	public function unsetAllFilters($entity, $action)
+	public function unsetAllFilters($map, $action)
 	{
-		$this->setFilters($entity, $action, []);
+		$this->setFilters($map, $action, []);
 	}
 
-	public function addFilter($entity, $action, $filter)
+	public function addFilter($map, $action, $filter)
 	{
 		if (!array_key_exists('field', $filter)) return;
-		if (!in_array($filter['field'], $this->getFields($entity))) return;
+		if (!in_array($filter['field'], $this->getFields($map))) return;
 		if (!array_key_exists('value', $filter)) return;
 		if (!array_key_exists('method', $filter)) $filter['method'] = false;
-		if (array_key_exists('unset', $filter) && $filter['unset']) $this->unsetFilter($entity, $action, $filter);
-		else $this->setFilter($entity, $action, $filter);
+		if (array_key_exists('unset', $filter) && $filter['unset']) $this->unsetFilter($map, $action, $filter);
+		else $this->setFilter($map, $action, $filter);
 		return true;
 	}
 
-	public function setFilter($entity, $action, $filter)
+	public function setFilter($map, $action, $filter)
 	{
-		$filters = $this->getFilters($entity, $action);
+		$filters = $this->getFilters($map, $action);
 		$filters[$filter['field']] = [
 			'method' => $filter['method'],
 			'value' => $filter['value']
 		];
-		$this->setFilters($entity, $action, $filters);
+		$this->setFilters($map, $action, $filters);
 	}
 
-	public function unsetFilter($entity, $action, $filter)
+	public function unsetFilter($map, $action, $filter)
 	{
-		$filters = $this->getFilters($entity, $action);
+		$filters = $this->getFilters($map, $action);
 		if (array_key_exists($filter, $filters)) {
 			unset($filters[$filter]);
-			$this->setFilters($entity, $action, $filters);
+			$this->setFilters($map, $action, $filters);
 		}
 	}
 
