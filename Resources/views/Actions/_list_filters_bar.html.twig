@@ -19,7 +19,11 @@
 		</div>
 	</nav>
 	{% endif %}
+
 </div>
+
+{% if form_filters %}
+{% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}
 {% endif %}
 
-{% include "MaciAdminBundle:Actions:_list_filters.html.twig" %}
+{% endif %}
