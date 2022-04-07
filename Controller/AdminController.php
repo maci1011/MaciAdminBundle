@@ -721,10 +721,11 @@ class AdminController
 		return array_merge($this->getDefaultRelationParams($map, $relation),array(
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
-			'form_filters' => false, // $this->generateFiltersForm($bridge, $relAction)->createView(),
-			'has_filters' => false, // $this->hasFilters($bridge, $relAction),
-			'filters_list' => false, // $this->getGeneratedFilters($bridge, $relAction),
-			'search_query' => false, // $this->getStoredSearchQuery($relation, $relAction),
+			'form_filters' => $this->generateFiltersForm($bridge, $relAction)->createView(),
+			'has_filters' => $this->hasFilters($bridge, $relAction),
+			'filters_list' => $this->getGeneratedFilters($bridge, $relAction),
+			'form_search' => true,
+			'search_query' => $this->getStoredSearchQuery($relation, $relAction),
 			'list_page' => $this->getStoredPage($relation, $relAction),
 			'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
 			'relation_action' => $relAction,
@@ -2556,7 +2557,7 @@ class AdminController
 
 	public function addSearchQuery($map, &$query, $opt)
 	{
-		$search = array_key_exists('search', $opt) ? $opt['search'] : null;
+		$search = $this->getOpt($opt, 'search', null);
 		if ($search === false) return;
 		$search = $opt['use_session'] ? $this->getStoredSearchQuery($map, $opt['action']) : '';
 		if (strlen($search))
@@ -2571,7 +2572,7 @@ class AdminController
 
 	public function addFiltersQuery($map, &$query, $opt)
 	{
-		$filters = array_key_exists('filters', $opt) ? $opt['filters'] : null;
+		$filters = $this->getOpt($opt, 'filters', null);
 		if ($filters === false) return;
 		if ($filters == null) $filters = $opt['use_session'] ? $this->getFilters($map, $opt['action']) : [];
 		$fields = $this->getFields($map, false);
@@ -2597,7 +2598,7 @@ class AdminController
 
 	public function addTrashQuery($map, &$query, $opt)
 	{
-		$trashValue = array_key_exists('trash', $opt) ? $opt['trash'] : null;
+		$trashValue = $this->getOpt($opt, 'trash', null);
 		if ($trashValue !== false && $trashValue !== true) return;
 		if ($this->hasTrash($map)) {
 			$fields = $this->getFields($map);
@@ -2611,7 +2612,7 @@ class AdminController
 
 	public function addOrderByQuery($map, &$query, $opt)
 	{
-		$order = array_key_exists('order', $opt) ? $opt['order'] : [];
+		$order = $this->getOpt($opt, 'order', []);
 		if (!is_array($order)) $order = [];
 		$field = $opt['use_session'] ? $this->getPagerForm_OrderByField($map, $opt['action']) : false;
 		if (array_key_exists('field', $order)) $field = $order['field'];
@@ -2768,27 +2769,36 @@ class AdminController
 	}
 
 	/*
-		------------> Utils
+		------------> Static Utils
 	*/
 
-	public function getArrayWithLabels($array)
+	public static function getArrayWithLabels(array $array)
 	{
 		$list = [];
 		foreach ($array as $item) {
-			$list[$this->generateLabel($item)] = $item;
+			$list[self::generateLabel($item)] = $item;
 		}
 		return $list;
 	}
 
-	public function getCamel($str)
+	public static function getCamel(string $str)
 	{
 		return Container::camelize($str);
 	}
 
-	public function generateLabel($str)
+	public static function generateLabel(string $str)
 	{
 		return ucwords(str_replace('_', ' ', $str));
 	}
+
+	public static function getOpt(array $opt, string $key, $default = false)
+	{
+		return array_key_exists($key, $opt) ? $opt[$key] : $default;
+	}
+
+	/*
+		------------> Dependencies Shorts
+	*/
 
 	public function createForm($type, $data = null, array $opt = [])
 	{
@@ -2804,5 +2814,4 @@ class AdminController
 	{
 		return $this->router->generate($route, $parameters, $referenceType);
 	}
-
 }

@@ -541,11 +541,6 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
 		$params['pager'] = $pager;
-		$params['form_filters'] = $this->mcm->generateFiltersForm($bridge, $relAction)->createView();
-		$params['has_filters'] = $this->mcm->hasFilters($bridge, $relAction);
-		$params['filters_list'] = $this->mcm->getGeneratedFilters($bridge, $relAction);
-		$params['form_search'] = true;
-		$params['search_query'] = $this->mcm->getStoredSearchQuery($bridge, $relAction);
 
 		return $params;
 	}
