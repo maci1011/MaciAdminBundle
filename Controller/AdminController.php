@@ -716,7 +716,7 @@ class AdminController
 	{
 		$relAction = $this->request->get('relAction');
 		if ($relAction === 'bridge')
-			$bridgeAction = ($this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add');
+			$relAction = ($this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add');
 		return array_merge($this->getDefaultRelationParams($map, $relation), [
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
@@ -726,9 +726,9 @@ class AdminController
 			'form_search' => true,
 			'search_query' => $this->getStoredSearchQuery($bridge, $relAction),
 			'list_page' => $this->getStoredPage($relation, $relAction),
-			'relation_action_label' => ($this->generateLabel($bridgeAction) . ' ' . $bridge['label']),
-			'relation_action' => $bridgeAction,
-			'template' => $this->getTemplate($bridge,('relations_'.$bridgeAction)),
+			'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
+			'relation_action' => $relAction,
+			'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
 			'uploader' => ($this->isUploadable($bridge) ? $this->generateUrl('maci_admin_view', [
 				'section'=>$map['section'],'entity'=>$map['name'],
 				'action'=>'relations','id'=>$this->request->get('id'),
