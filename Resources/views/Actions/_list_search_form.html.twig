@@ -2,10 +2,15 @@
 {% if form_search %}
 <form action="{{ path(app.request.get('_route'), app.request.get('_route_params')) }}" class="navbar-form navbar-right" method="GET">
 	<div class="form-group">
-		<input type="text" class="form-control" placeholder="Search" name="s" value="{{ search_query }}" />
+		<input type="text" class="form-control" placeholder="{{ search_query and search_query|length ? search_query : 'Search...' }}" name="s" value="{{ search_query }}" />
 	</div>
 	<button type="submit" class="btn btn-default">
 		<span class="glyphicon glyphicon-search"></span>
 	</button>
+	{% if search_query and search_query|length %}
+	<a class="btn btn-danger" href="{{ path(app.request.get('_route'), app.request.get('_route_params')|merge({'s': ''})) }}">
+		<i class="fas fa-times"></i>
+	</a>
+	{% endif %}
 </form>
 {% endif %}
