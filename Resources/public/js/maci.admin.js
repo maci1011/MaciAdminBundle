@@ -119,7 +119,7 @@ $(document).ready(function(e) {
 			data: {
 				'data': data
 			},
-			url: '/mcm/ajax',
+			url: window.location,
 			success: function(d,s,x) {
 				console.log(d);
 				window.location.reload();
@@ -134,31 +134,32 @@ $(document).ready(function(e) {
 	$('.filters-container').each(function(i,el) {
 		var filtersContainer = $(el), filtersBar = $(el).prev(),
 		filtersNavUL = filtersBar.find('.filters-nav > ul'),
-		fieldList = $(el).attr('data').split(','),
+		filters = JSON.parse($(el).attr('data-content')),
+		fieldList = JSON.parse($(el).attr('data-list')),
 		listWrapper = $('<div/>').addClass('filters-list-wrapper').appendTo(el),
 		select = $('<select/>').addClass('form-control add-filter').appendTo(filtersNavUL),
 		submit = $('<button/>').addClass('btn btn-primary').click(function(e) {
 			e.preventDefault();
-			var data = [];
-			for (var i = 0; i < fieldList.length; i++)
-			{
-				if (fieldList[i].el != false) {
-					// if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
-					data[data.length] = {
-						'field': fieldList[i].field,
-						'value': fieldList[i].el.val(),
-						'method': fieldList[i].type == 'select' ? '=' : fieldList[i].m_el.val()
-					};
-				}
-			}
-			var rel = $(el).attr('rel').split(':');
-			saveFilters({
-				'set_filters': {
-					'section': rel[0],
-					'entity': rel[1],
-					'filters': data.length ? data : 'unsetAll'
-				}
-			});
+			// var data = [];
+			// for (var i = 0; i < fieldList.length; i++)
+			// {
+			// 	if (fieldList[i].el != false) {
+			// 		// if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
+			// 		data[data.length] = {
+			// 			'field': fieldList[i].field,
+			// 			'value': fieldList[i].el.val(),
+			// 			'method': fieldList[i].type == 'select' ? '=' : fieldList[i].m_el.val()
+			// 		};
+			// 	}
+			// }
+			// var rel = $(el).attr('rel').split(':');
+			// saveFilters({
+			// 	'set_filters': {
+			// 		'section': rel[0],
+			// 		'entity': rel[1],
+			// 		'filters': data.length ? data : 'unsetAll'
+			// 	}
+			// });
 		}).appendTo(filtersNavUL);
 
 		select.wrap($('<li/>').addClass('nav-item'));
@@ -230,13 +231,12 @@ $(document).ready(function(e) {
 		});
 
 		for (var i = 0; i < fieldList.length; i++) {
-			fieldList[i] = fieldList[i].split(':');
 			fieldList[i] = {
 				'el': false,
 				'm_el': false,
-				'label': fieldList[i][0],
-				'field': fieldList[i][0].replace(' ', '_').toLowerCase(),
-				'type': fieldList[i][1]
+				'label': fieldList[i]['label'],
+				'field': fieldList[i]['field'],
+				'type': fieldList[i]['type']
 			};
 			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
 			if ($('#form_set_filter_for_' + fieldList[i].field).attr('checked') == "checked") addFilter(i);

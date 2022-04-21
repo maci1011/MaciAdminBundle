@@ -1,4 +1,4 @@
-<div class="filters-container" data="{{ filters_list|length ? filters_list|join(',') : '' }}" rel="{{ section ~ ':' ~ entity }}">
+<div class="filters-container" data-content="{{ filters|json_encode }}" data-list="{{ filters_list|json_encode }}" rel="{{ section ~ ':' ~ entity }}">
 <div style="display: none;">
 {{ form(form_filters) }}
 </div>
