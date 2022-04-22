@@ -140,26 +140,26 @@ $(document).ready(function(e) {
 		select = $('<select/>').addClass('form-control add-filter').appendTo(filtersNavUL),
 		submit = $('<button/>').addClass('btn btn-primary').click(function(e) {
 			e.preventDefault();
-			// var data = [];
-			// for (var i = 0; i < fieldList.length; i++)
-			// {
-			// 	if (fieldList[i].el != false) {
-			// 		// if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
-			// 		data[data.length] = {
-			// 			'field': fieldList[i].field,
-			// 			'value': fieldList[i].el.val(),
-			// 			'method': fieldList[i].type == 'select' ? '=' : fieldList[i].m_el.val()
-			// 		};
-			// 	}
-			// }
-			// var rel = $(el).attr('rel').split(':');
-			// saveFilters({
-			// 	'set_filters': {
-			// 		'section': rel[0],
-			// 		'entity': rel[1],
-			// 		'filters': data.length ? data : 'unsetAll'
-			// 	}
-			// });
+			var data = [];
+			for (var i = 0; i < fieldList.length; i++)
+			{
+				if (fieldList[i].el != false) {
+					// if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
+					data[data.length] = {
+						'field': fieldList[i].field,
+						'value': fieldList[i].el.val(),
+						'method': fieldList[i].type == 'select' ? '=' : fieldList[i].m_el.val()
+					};
+				}
+			}
+			var rel = $(el).attr('rel').split(':');
+			saveFilters({
+				'set_filters': {
+					'section': rel[0],
+					'entity': rel[1],
+					'filters': data.length ? data : 'unsetAll'
+				}
+			});
 		}).appendTo(filtersNavUL);
 
 		select.wrap($('<li/>').addClass('nav-item'));
@@ -169,9 +169,12 @@ $(document).ready(function(e) {
 
 		var addFilter = function(index) {
 			if (index === false || fieldList[index].el != false) return;
-			var row = $('<div/>').addClass('row filter-row');
+			var row = $('<div/>').addClass('filter-row');
 			if (fieldList[index].type == 'text')
 			{
+				var connector = $(el).find('#form_set_connector_for_' + fieldList[index].field).clone().change(function(e) {
+					fieldList[index].connector = connector.val();
+				}).attr('id', ('filter_connector_' + fieldList[index].field)).appendTo(row);
 				$(el).find('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
 					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
 				$(el).find('label[for=form_' + fieldList[index].field + '_method]').clone()
@@ -181,17 +184,23 @@ $(document).ready(function(e) {
 				}).attr('id', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
 				var input = $(el).find('#form_' + fieldList[index].field).clone().change(function(e) {
 					fieldList[index].value = input.val();
-				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
+				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row).val('');
+				input.attr('placeholder', input.attr('placeholder').substr(0, input.attr('placeholder').length - 1));
 				fieldList[index].el = input;
 				fieldList[index].m_el = method;
 			}
 			else if (fieldList[index].type == 'select')
 			{
+				var connector = $(el).find('#form_set_connector_for_' + fieldList[index].field).clone().change(function(e) {
+					fieldList[index].connector = connector.val();
+				}).attr('id', ('filter_connector_' + fieldList[index].field)).appendTo(row);
 				$(el).find('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
 					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
+				var method = $(el).find('#form_' + fieldList[index].field + '_method').clone().change(function(e) {
+					fieldList[index].method = method.val();
+				}).attr('id', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
 				var input = $(el).find('#form_' + fieldList[index].field).clone().change(function(e) {
 					fieldList[index].value = input.val();
-					fieldList[index].method = '=';
 				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
 				fieldList[index].el = input;
 			}

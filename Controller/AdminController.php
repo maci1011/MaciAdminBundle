@@ -1478,21 +1478,21 @@ class AdminController
 					'label_attr' => array(
 						'class' => 'sr-only'
 					),
-					'choices' => ['and' => 'And', 'or' => 'Or'],
+					'choices' => ['And' => 'and', 'Or' => 'or'],
 					'mapped' => false
 				]);
-				$form->add($field . '_method', ChoiceType::class, [
-					'label' => 'Method',
-					'label_attr' => array(
-						'class' => 'sr-only'
-					),
-					'choices' => array('Contains' => 'LIKE', 'Is' => '='),
-					'mapped' => false
-				]);
-				$label = ucwords(str_replace('_', ' ', $field));
+				$label = $this->generateLabel($field);
 				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
 				if ($typesGetter)
 				{
+					$form->add($field . '_method', ChoiceType::class, [
+						'label' => 'Method',
+						'label_attr' => array(
+							'class' => 'sr-only'
+						),
+						'choices' => ['Is' => '=', 'Is Not' => '!='],
+						'mapped' => false
+					]);
 					$list = call_user_func_array([$object, $typesGetter], []);
 					$form->add($field, ChoiceType::class, [
 						'label_attr' => array(
@@ -1508,6 +1508,14 @@ class AdminController
 				}
 				else
 				{
+					$form->add($field . '_method', ChoiceType::class, [
+						'label' => 'Method',
+						'label_attr' => array(
+							'class' => 'sr-only'
+						),
+						'choices' => ['Is' => '=', 'Contains' => 'LIKE', 'Is Not' => '!='],
+						'mapped' => false
+					]);
 					$form->add($field, TextType::class, [
 						'attr' => ['placeholder' => $label],
 						'label_attr' => array(
@@ -1525,13 +1533,18 @@ class AdminController
 		}
 		$this->setGeneratedFilters($map, $action, $filters);
 
-		$form->add('set_filters', SubmitType::class, array(
-			'label'=>'Set Filters',
+		$form->add('add_filters', SubmitType::class, array(
+			'label'=>'Add Filters',
 			'attr'=>array('class'=>'btn btn-primary')
 		));
 
+		$form->add('set_filters', SubmitType::class, array(
+			'label'=>'Set Filters',
+			'attr'=>array('class'=>'btn btn-danger')
+		));
+
 		$form->add('unset_filters', SubmitType::class, array(
-			'label'=>'Unset Filters',
+			'label'=>'Unset All Filters',
 			'attr'=>array('class'=>'btn btn-danger')
 		));
 
@@ -1543,10 +1556,10 @@ class AdminController
 		$form->handleRequest($this->request);
 		if (!($form->isSubmitted() && $form->isValid())) return false;
 
-		if ($form['unset_filters']->isClicked())
+		if ($form['set_filters']->isClicked() || $form['unset_filters']->isClicked())
 		{
 			$this->unsetAllFilters($map, $action);
-			return true;
+			if ($form['unset_filters']->isClicked()) return true;
 		}
 
 		$fields = $this->getFields($map);
@@ -2535,22 +2548,15 @@ class AdminController
 
 	public function addFiltersByParams($data)
 	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('action', $data) || !array_key_exists('filters', $data)) {
+		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('action', $data) || !array_key_exists('filters', $data))
 			return ['success' => false, 'error' => 'Bad Request.'];
-		}
 		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
-			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		if (!$entity) return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		if ($data['filters'] == 'unsetAll') $this->unsetAllFilters($entity, $data['action']);
+		else if (!is_array($data['filters'])) return ['success' => false, 'error' => 'Bad Filter Value.'];
+		foreach($data['filters'] as $el) {
+			$this->addFilter($entity, $data['action'], $el);
 		}
-		if (is_array($data['filters'])) {
-			foreach($data['filters'] as $el) {
-				$this->addFilter($entity, $data['action'], $el);
-			}
-		}
-		else if ($data['filters'] == 'unsetAll') {
-			$this->unsetAllFilters($entity, $data['action']);
-		}
-		else return ['success' => false, 'error' => 'Bad Filter Value.'];
 		return ['success' => true];
 	}
 
@@ -2713,6 +2719,10 @@ class AdminController
 
 	public function setFiltersFromRequest($map, $action)
 	{
+		$data = $this->request->get('data');
+		if ($this->request->isXmlHttpRequest() && is_array($data) &&
+			array_key_exists('set_filters', $data)
+		) return $this->addFiltersByParams($data['set_filters']);
 		return $this->handleFiltersForm($map, $action,
 			$this->generateFiltersForm($map, $action)
 		);
