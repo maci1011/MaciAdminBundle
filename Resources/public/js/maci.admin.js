@@ -132,7 +132,8 @@ $(document).ready(function(e) {
 	};
 
 	$('.filters-container').each(function(i,el) {
-		var filtersContainer = $(el), filtersBar = $(el).prev(),
+		var currentId = 0, list = [],
+		filtersContainer = $(el), filtersBar = $(el).prev(),
 		filtersNavUL = filtersBar.find('.filters-nav > ul'),
 		filters = JSON.parse($(el).attr('data-content')),
 		fieldList = JSON.parse($(el).attr('data-list')),
@@ -141,16 +142,15 @@ $(document).ready(function(e) {
 		submit = $('<button/>').addClass('btn btn-primary').click(function(e) {
 			e.preventDefault();
 			var data = [];
-			for (var i = 0; i < fieldList.length; i++)
+			for (var i = 0; i < list.length; i++)
 			{
-				if (fieldList[i].el != false) {
-					// if (fieldList[i].type == 'text' && fieldList[i].el.val() == '') continue;
-					data[data.length] = {
-						'field': fieldList[i].field,
-						'value': fieldList[i].el.val(),
-						'method': fieldList[i].type == 'select' ? '=' : fieldList[i].m_el.val()
-					};
-				}
+				if (!list[i]) continue;
+				data[data.length] = {
+					'field': list[i].field,
+					'value': list[i].input.val(),
+					'method': list[i].method.val(),
+					'connector': list[i].connector.val()
+				};
 			}
 			var rel = $(el).attr('rel').split(':');
 			saveFilters({
@@ -168,60 +168,43 @@ $(document).ready(function(e) {
 		$('<option/>').attr('value', 'add-filter').text('Add Filter').appendTo(select);
 
 		var addFilter = function(index) {
-			if (index === false || fieldList[index].el != false) return;
+			if (index === false) return;
+			var _id = currentId; currentId++;
+			list[_id] = { 'field': fieldList[index].field };
 			var row = $('<div/>').addClass('filter-row');
+
+			fieldList[index].connector_label.clone().appendTo(row)
+				.attr('for', ('connector_' + fieldList[index].field));
+			list[_id].connector = fieldList[index].connector.clone().appendTo(row)
+				.attr('id', ('connector_' + fieldList[index].field));
+			fieldList[index].input_label.clone().appendTo(row).removeClass('sr-only')
+				.attr('for', ('filter_' + fieldList[index].field))
+				.text(fieldList[index].label);
+			fieldList[index].method_label.clone().appendTo(row)
+				.attr('for', ('method_' + fieldList[index].field));
+			list[_id].method = fieldList[index].method.clone().appendTo(row)
+				.attr('id', ('method_' + fieldList[index].field));
+			list[_id].input = fieldList[index].input.clone().appendTo(row)
+				.attr('id', ('filter_' + fieldList[index].field));
+
 			if (fieldList[index].type == 'text')
-			{
-				var connector = $(el).find('#form_set_connector_for_' + fieldList[index].field).clone().change(function(e) {
-					fieldList[index].connector = connector.val();
-				}).attr('id', ('filter_connector_' + fieldList[index].field)).appendTo(row);
-				$(el).find('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
-					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
-				$(el).find('label[for=form_' + fieldList[index].field + '_method]').clone()
-					.attr('for', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
-				var method = $(el).find('#form_' + fieldList[index].field + '_method').clone().change(function(e) {
-					fieldList[index].method = method.val();
-				}).attr('id', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
-				var input = $(el).find('#form_' + fieldList[index].field).clone().change(function(e) {
-					fieldList[index].value = input.val();
-				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row).val('');
-				input.attr('placeholder', input.attr('placeholder').substr(0, input.attr('placeholder').length - 1));
-				fieldList[index].el = input;
-				fieldList[index].m_el = method;
-			}
-			else if (fieldList[index].type == 'select')
-			{
-				var connector = $(el).find('#form_set_connector_for_' + fieldList[index].field).clone().change(function(e) {
-					fieldList[index].connector = connector.val();
-				}).attr('id', ('filter_connector_' + fieldList[index].field)).appendTo(row);
-				$(el).find('label[for=form_' + fieldList[index].field + ']').clone().removeClass('sr-only')
-					.attr('for', ('filter_' + fieldList[index].field)).appendTo(row);
-				var method = $(el).find('#form_' + fieldList[index].field + '_method').clone().change(function(e) {
-					fieldList[index].method = method.val();
-				}).attr('id', ('filter_' + fieldList[index].field + '_method')).appendTo(row);
-				var input = $(el).find('#form_' + fieldList[index].field).clone().change(function(e) {
-					fieldList[index].value = input.val();
-				}).attr('id', ('filter_' + fieldList[index].field)).appendTo(row);
-				fieldList[index].el = input;
-			}
-			else return;
+				list[_id].input.attr('placeholder', fieldList[index].label).val('');
+
 			row.appendTo(listWrapper);
 			var remove = $('<button/>').addClass('btn btn-danger').click(function(e) {
 				e.preventDefault();
+				list[_id] = false;
 				remove.parent().remove();
-				fieldList[index].el = false;
-				fieldList[index].m_el = false;
-				select.val('add-filter').change();
+				refreshButtonLabel();
 			}).appendTo(row).append($("<i class='fas fa-times'></i>"));
 		}
 
-		select.change(function(e) {
-			addFilter(select.val() == 'add-filter' ? false : parseInt(select.val()));
-			select.val('add-filter');
+		var refreshButtonLabel = function()
+		{
 			var found = false;
-			for (var i = 0; i < fieldList.length; i++)
+			for (var i = 0; i < list.length; i++)
 			{
-				if (fieldList[i].el != false)
+				if (list[i] != false)
 				{
 					found = true;
 					break;
@@ -237,18 +220,28 @@ $(document).ready(function(e) {
 				submit.text('Reset Filters');
 				listWrapper.parent().hide();
 			}
+		}
+
+		select.change(function(e) {
+			addFilter(select.val() == 'add-filter' ? false : parseInt(select.val()));
+			select.val('add-filter');
+			refreshButtonLabel();
 		});
 
-		for (var i = 0; i < fieldList.length; i++) {
+		for (var i = 0; i < fieldList.length; i++)
+		{
 			fieldList[i] = {
-				'el': false,
-				'm_el': false,
-				'label': fieldList[i]['label'],
-				'field': fieldList[i]['field'],
-				'type': fieldList[i]['type']
+				'label': fieldList[i].label,
+				'field': fieldList[i].field,
+				'type': fieldList[i].type,
+				'connector_label': $(el).find('label[for=form_set_connector_for_' + fieldList[i].field + ']'),
+				'connector': $(el).find('#form_set_connector_for_' + fieldList[i].field),
+				'method_label': $(el).find('label[for=form_' + fieldList[i].field + '_method]'),
+				'method': $(el).find('#form_' + fieldList[i].field + '_method'),
+				'input_label': $(el).find('label[for=form_' + fieldList[i].field + ']'),
+				'input': $(el).find('#form_' + fieldList[i].field)
 			};
 			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
-			if ($('#form_set_filter_for_' + fieldList[i].field).attr('checked') == "checked") addFilter(i);
 		}
 
 		select.change();
