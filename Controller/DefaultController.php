@@ -97,7 +97,7 @@ class DefaultController extends AbstractController
 
 		$action = $this->mcm->getCurrentAction();
 		if ($this->mcm->setSessionFromRequest($entity, $action))
-			return $this->mcm->getCurrentRedirectParams();
+			return $this->mcm->getSessionActionResponse();
 
 		$list = $this->mcm->getList($entity, ['action' => $action, 'trash' => $trash]);
 		$pager = $this->mcm->getPager($entity, $action, $list);

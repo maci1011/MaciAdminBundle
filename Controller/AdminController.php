@@ -1521,7 +1521,8 @@ class AdminController
 						'label_attr' => array(
 							'class' => 'sr-only'
 						),
-						'required' => false
+						'required' => false,
+						'data' => ''
 					]);
 					array_push($filters, [
 						'field' => $field,
@@ -2546,16 +2547,39 @@ class AdminController
 		return ['success' => true];
 	}
 
-	public function addFiltersByParams($data)
+	public function addFiltersByParams($data, $map = false, $action = false)
 	{
-		if (!array_key_exists('section', $data) || !array_key_exists('entity', $data) || !array_key_exists('action', $data) || !array_key_exists('filters', $data))
-			return ['success' => false, 'error' => 'Bad Request.'];
-		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		if ($data['filters'] == 'unsetAll') $this->unsetAllFilters($entity, $data['action']);
-		else if (!is_array($data['filters'])) return ['success' => false, 'error' => 'Bad Filter Value.'];
-		foreach($data['filters'] as $el) {
-			$this->addFilter($entity, $data['action'], $el);
+		if (!$map)
+		{
+			if (!array_key_exists('section', $data) ||
+				!array_key_exists('entity', $data) ||
+				!array_key_exists('action', $data)
+			) return ['success' => false, 'error' => 'Bad Request.'];
+			$map = $this->getEntity($data['section'], $data['entity']);
+			if (!$map)
+				return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
+		}
+		if (!array_key_exists('filters', $data) || !is_array($data['filters']))
+			return ['success' => false, 'error' => 'No Filters.'];
+		if (array_key_exists('relation', $data))
+		{
+			$relation = $this->getRelation($map, $data['relation']);
+			if (!$relation)
+				return ['success' => false, 'error' => 'Relation "' . $data['relation'] . '" for entity "' . $data['entity'] . '" not Found.'];
+			if (array_key_exists('bridge', $data))
+			{
+				$bridge = $this->getBridge($relation, $data['bridge']);
+				if (!$bridge)
+					return ['success' => false, 'error' => 'Bridge "' . $data['bridge'] . '" for relation "' . $data['relation'] . '" not Found.'];
+				$map = $bridge;
+			}
+			else $map = $relation;
+		}
+		$action = $action ? $action : $data['action'];
+		foreach($data['filters'] as $filter)
+		{
+			if ($filter == "false") $this->unsetAllFilters($map, $action);
+			else $this->addFilter($map, $action, $filter);
 		}
 		return ['success' => true];
 	}
@@ -2606,7 +2630,7 @@ class AdminController
 			if (is_array($data) && !array_key_exists(0, $data)) {
 				if (!array_key_exists('value', $data)) $value = null;
 				else $value = $data['value'];
-				if (!array_key_exists('method', $data)) $method = 'LIKE';
+				if (!array_key_exists('method', $data)) $method = '=';
 				else $method = $data['method'];
 				if (!array_key_exists('connector', $data)) $connector = 'and';
 				else $connector = $data['connector'];
@@ -2617,10 +2641,9 @@ class AdminController
 				$value = $data;
 				$method = '=';
 			}
-			if ($method == 'IS') $method = '=';
 			$connector = $connector == 'or' ? 'orWhere' : 'andWhere';
 			$query->$connector($query->getRootAlias() . '.' . $field . ' ' . $method . ' :filter_' . $key);
-			$query->setParameter('filter_' . $key, "$value");
+			$query->setParameter('filter_' . $key, $method == 'LIKE' ? "%$value%" : "$value");
 		}
 	}
 
@@ -2722,7 +2745,10 @@ class AdminController
 		$data = $this->request->get('data');
 		if ($this->request->isXmlHttpRequest() && is_array($data) &&
 			array_key_exists('set_filters', $data)
-		) return $this->addFiltersByParams($data['set_filters']);
+		) {
+			$this->session_response = $this->addFiltersByParams($data['set_filters'], $map, $action);
+			return true;
+		}
 		return $this->handleFiltersForm($map, $action,
 			$this->generateFiltersForm($map, $action)
 		);
@@ -2730,10 +2756,19 @@ class AdminController
 
 	public function setSessionFromRequest($map, $action)
 	{
+		$this->session_response = false;
+		$this->setStoredSearchQueryFromRequest($map, $action);
+		$this->setStoredPageFromRequest($map, $action);
 		return $this->setPagerOptions($map, $action) ||
-			$this->setStoredSearchQueryFromRequest($map, $action) ||
-			$this->setStoredPageFromRequest($map, $action) ||
 			$this->setFiltersFromRequest($map, $action);
+	}
+
+	public function getSessionActionResponse()
+	{
+		return !$this->session_response ?
+			$this->getCurrentRedirectParams() :
+			$this->session_response
+		;
 	}
 
 	/*
@@ -2772,13 +2807,13 @@ class AdminController
 
 	public function addFilter($map, $action, $filter)
 	{
-		if (!array_key_exists('field', $filter)) return;
-		if (!in_array($filter['field'], $this->getFields($map))) return;
-		if (!array_key_exists('value', $filter)) return;
+		if (!$filter || !array_key_exists('field', $filter) ||
+			!in_array($filter['field'], $this->getFields($map)) ||
+			!array_key_exists('value', $filter)
+		) return;
 		if (!array_key_exists('method', $filter)) $filter['method'] = false;
 		if (array_key_exists('unset', $filter) && $filter['unset']) $this->unsetFilter($map, $action, $filter);
 		else $this->setFilter($map, $action, $filter);
-		return true;
 	}
 
 	public function setFilter($map, $action, $filter)

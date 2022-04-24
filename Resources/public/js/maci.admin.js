@@ -113,11 +113,15 @@ $(document).ready(function(e) {
 		});
 	});
 
-	var saveFilters = function(data) {
+	var saveFilters = function(filters) {
 		$.ajax({
 			type: 'POST',
 			data: {
-				'data': data
+				'data': {
+					'set_filters': {
+						'filters': filters
+					}
+				}
 			},
 			url: window.location,
 			success: function(d,s,x) {
@@ -141,7 +145,7 @@ $(document).ready(function(e) {
 		select = $('<select/>').addClass('form-control add-filter').appendTo(filtersNavUL),
 		submit = $('<button/>').addClass('btn btn-primary').click(function(e) {
 			e.preventDefault();
-			var data = [];
+			var data = [false];
 			for (var i = 0; i < list.length; i++)
 			{
 				if (!list[i]) continue;
@@ -152,14 +156,7 @@ $(document).ready(function(e) {
 					'connector': list[i].connector.val()
 				};
 			}
-			var rel = $(el).attr('rel').split(':');
-			saveFilters({
-				'set_filters': {
-					'section': rel[0],
-					'entity': rel[1],
-					'filters': data.length ? data : 'unsetAll'
-				}
-			});
+			saveFilters(data);
 		}).appendTo(filtersNavUL);
 
 		select.wrap($('<li/>').addClass('nav-item'));
@@ -188,7 +185,7 @@ $(document).ready(function(e) {
 				.attr('id', ('filter_' + fieldList[index].field));
 
 			if (fieldList[index].type == 'text')
-				list[_id].input.attr('placeholder', fieldList[index].label).val('');
+				list[_id].input.attr('placeholder', fieldList[index].label);
 
 			row.appendTo(listWrapper);
 			var remove = $('<button/>').addClass('btn btn-danger').click(function(e) {
@@ -203,13 +200,11 @@ $(document).ready(function(e) {
 		{
 			var found = false;
 			for (var i = 0; i < list.length; i++)
-			{
 				if (list[i] != false)
 				{
 					found = true;
 					break;
 				}
-			}
 			if (found)
 			{
 				submit.text('Apply Filters');
@@ -223,7 +218,8 @@ $(document).ready(function(e) {
 		}
 
 		select.change(function(e) {
-			addFilter(select.val() == 'add-filter' ? false : parseInt(select.val()));
+			if (select.val() == 'add-filter') return;
+			addFilter(parseInt(select.val()));
 			select.val('add-filter');
 			refreshButtonLabel();
 		});
@@ -244,8 +240,25 @@ $(document).ready(function(e) {
 			$('<option/>').attr('value', i).text(fieldList[i].label).appendTo(select);
 		}
 
-		select.change();
+		for (var i = 0; i < filters.length; i++)
+		{
+			var index = -1;
+			for (var j = fieldList.length - 1; j >= 0; j--) {
+				if (fieldList[j].field == filters[i].field)
+				{
+					index = j;
+					break;
+				}
+			}
+			if (index == -1) continue;
+			id = currentId;
+			addFilter(index);
+			list[id].connector.val(filters[i].connector);
+			list[id].method.val(filters[i].method);
+			list[id].input.val(filters[i].value);
+		}
 
+		refreshButtonLabel();
 	});
 
 });
