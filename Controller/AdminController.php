@@ -1921,13 +1921,13 @@ class AdminController
 		return $relation;
 	}
 
-	public function getRelationList($relation, $association)
+	public function getRelationList($relation, $id)
 	{
 		return $this->getList($relation, [
 			'trash' => false,
 			'filters' => [[
 				'field' => $this->getIdentifier($relation),
-				'value' => $association
+				'value' => $id
 			]]
 		]);
 	}
@@ -2467,23 +2467,21 @@ class AdminController
 			return ['success' => true, 'id' => $this->getIdentifierValue($entity, $this->newItemByParams($entity, $data['params']))];
 		$list = [];
 		$items = [];
-		for ($i=0; $i < count($data['params']); $i++) { 
+		for ($i=0; $i < count($data['params']); $i++)
+		{ 
 			$items[$i] = $this->newItemByParams($entity, $data['params'][$i]);
 			$list[$i] = ['success' => true, 'id' => $this->getIdentifierValue($entity, $items[$i])];
 		}
 		$result = ['success' => true, 'list' => $list];
 		if (!array_key_exists('relations', $data) || count($items) == 0) return $result;
 		$associations = $this->getAssociations($entity);
-		foreach ($data['relations'] as $field => $association)
+		foreach ($data['relations'] as $field => $value)
 		{
 			$setter = $this->getSetterMethod($items[0], $field);
-			if (!$setter) {
-				continue;
-			}
-			if (!in_array($field, $associations)) continue;
+			if (!$setter || !in_array($field, $associations)) continue;
 			$relation = $this->getRelation($entity, $field);
 			if (!$relation) continue;
-			$relList = $this->getRelationList($relation, $association);
+			$relList = $this->getRelationList($relation, $value);
 			for ($i=0; $i < count($items); $i++)
 				$this->addRelationItems($entity, $relation, $items[$i], $relList);
 		}
