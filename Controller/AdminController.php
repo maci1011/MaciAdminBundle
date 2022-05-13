@@ -1925,7 +1925,10 @@ class AdminController
 	{
 		return $this->getList($relation, [
 			'trash' => false,
-			'filters' => [$this->getIdentifier($relation) => $association]
+			'filters' => [[
+				'field' => $this->getIdentifier($relation),
+				'value' => $association
+			]]
 		]);
 	}
 
@@ -2616,7 +2619,7 @@ class AdminController
 
 	public function addFiltersQuery($map, &$query, $opt)
 	{
-		$filters = $this->getOpt($opt, 'filters', null);
+		$filters = $this->getOpt($opt, 'filters');
 		if ($filters === false) return;
 		if ($filters == null) $filters = $opt['use_session'] ? $this->getFilters($map, $opt['action']) : [];
 		if (!count($filters)) return;
