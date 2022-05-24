@@ -753,9 +753,9 @@ class AdminController
 	{
 		$params = $this->getDefaultRedirectParams();
 		if (!$this->isAuthSection($section)) return $params = $this->getDefaultRedirectParams();
-		$params['redirect_params'] = array_merge($params['redirect_params'], array(
+		$params['redirect_params'] = array_merge($params['redirect_params'], [
 			'section' => $section
-		), $opt);
+		], $opt);
 		return $params;
 	}
 
@@ -768,12 +768,15 @@ class AdminController
 			$id = null;
 		}
 		$params = $this->getDefaultRedirectParams();
-		$params['redirect_params'] = array_merge($params['redirect_params'], array(
+		$params['redirect_params'] = array_merge($params['redirect_params'], [
 			'section' => $map['section'],
 			'entity' => $map['name'],
 			'action' => $action,
-			'id' => $id
-		), $opt);
+			'id' => $id,
+			'p' => null,
+			's' => null,
+			'f' => null
+		], $this->getMapUrlOptions($map, $action), $opt);
 		return $params;
 	}
 
@@ -785,10 +788,13 @@ class AdminController
 		}
 		if (!$action) $action = $this->getRelationDefaultAction($map, $relation['association']);
 		$params = $this->getDefaultEntityRedirectParams($map, 'relations', $id);
-		$params['redirect_params'] = array_merge($params['redirect_params'], array(
+		$params['redirect_params'] = array_merge($params['redirect_params'], [
 			'relation' => $relation['association'],
-			'relAction' => $action
-		), $opt);
+			'relAction' => $action,
+			'p' => null,
+			's' => null,
+			'f' => null
+		], $this->getMapUrlOptions($map, $action), $opt);
 		return $params;
 	}
 
@@ -799,10 +805,30 @@ class AdminController
 			return $this->getDefaultEntityRedirectParams($map);
 		}
 		$params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id);
-		$params['redirect_params'] = array_merge($params['redirect_params'], array(
-			'bridge' => $bridge['name']
-		), $opt);
+		$params['redirect_params'] = array_merge($params['redirect_params'], [
+			'bridge' => $bridge['name'],
+			'p' => null,
+			's' => null,
+			'f' => null
+		], $this->getMapUrlOptions($map, $action), $opt);
 		return $params;
+	}
+
+	public function getMapUrlOptions($map, $action)
+	{
+		$page = $this->getStoredPage($map, $action);
+		$query = $this->getStoredSearchQuery($map, $action);
+		return array_merge(
+			(1 < $page ? [
+				'p' => $page
+			] : []),
+			(strlen($query) ? [
+				's' => $query
+			] : []),
+			($this->hasFilters($map, $action) ? [
+				'f' => count($this->getFilters($map, $action))
+			] : [])
+		);
 	}
 
 	public function getCurrentRedirectParams($opt = [])
@@ -2617,9 +2643,10 @@ class AdminController
 
 	public function addFiltersQuery($map, &$query, $opt)
 	{
-		$filters = $this->getOpt($opt, 'filters');
+		$filters = $this->getOpt($opt, 'filters', null);
 		if ($filters === false) return;
-		if ($filters == null) $filters = $opt['use_session'] ? $this->getFilters($map, $opt['action']) : [];
+		if ($filters == null)
+			$filters = $opt['use_session'] ? $this->getFilters($map, $opt['action']) : [];
 		if (!count($filters)) return;
 		$fields = $this->getFields($map, false);
 		foreach ($filters as $key => $data)
@@ -2714,8 +2741,21 @@ class AdminController
 
 	public function setStoredSearchQueryFromRequest($map, $action)
 	{
-		if (!array_key_exists('s', $_GET)) return false;
-		$this->setStoredSearchQuery($map, $action, $this->request->get('s', ''));
+		$get = array_key_exists('s', $_GET) ? $this->request->get('s') : false;
+		$str = $this->getStoredSearchQuery($map, $action);
+
+		if ($get === false)
+		{
+			if (strlen($str))
+				return true;
+
+			return false;
+		}
+
+		if ($get == $str)
+			return false;
+
+		$this->setStoredSearchQuery($map, $action, $get);
 		return true;
 	}
 
@@ -2736,8 +2776,21 @@ class AdminController
 
 	public function setStoredPageFromRequest($map, $action)
 	{
-		if (!array_key_exists('p', $_GET)) return false;
-		$this->setStoredPage($map, $action, $this->request->get('p', false));
+		$get = array_key_exists('p', $_GET) ? $this->request->get('p') : false;
+		$str = $this->getStoredPage($map, $action);
+
+		if ($get === false)
+		{
+			if (1 < $str)
+				return true;
+
+			return false;
+		}
+
+		if ($get == $str)
+			return false;
+
+		$this->setStoredPage($map, $action, $get);
 		return true;
 	}
 
@@ -2758,9 +2811,10 @@ class AdminController
 	public function setSessionFromRequest($map, $action)
 	{
 		$this->session_response = false;
-		$this->setStoredSearchQueryFromRequest($map, $action);
-		$this->setStoredPageFromRequest($map, $action);
-		return $this->setPagerOptions($map, $action) ||
+		return
+			$this->setStoredSearchQueryFromRequest($map, $action) ||
+			$this->setStoredPageFromRequest($map, $action) ||
+			$this->setPagerOptions($map, $action) ||
 			$this->setFiltersFromRequest($map, $action);
 	}
 
