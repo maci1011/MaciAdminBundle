@@ -25,9 +25,9 @@ class DefaultController extends AbstractController
 		$this->mcm = $mcm;
 	}
 
-/*
-	---> Default Actions
-*/
+	/*
+		---> Default Actions
+	*/
 
 	public function dashboardAction()
 	{
@@ -81,9 +81,9 @@ class DefaultController extends AbstractController
 		return $this->mcmRelations();
 	}
 
-/*
-	---> Generic Actions
-*/
+	/*
+		---> Generic Actions
+	*/
 
 	public function mcmDashboard()
 	{
@@ -305,9 +305,9 @@ class DefaultController extends AbstractController
 		return array('success' => true);
 	}
 
-/*
-	---> Generic Relations Actions
-*/
+	/*
+		---> Generic Relations Actions
+	*/
 
 	public function mcmRelations()
 	{
