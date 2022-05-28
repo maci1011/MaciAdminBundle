@@ -237,18 +237,18 @@ class DefaultController extends AbstractController
 			return $params;
 
 		if (!count($this->request->files))
-			return array_merge($params,array('success' => false, 'error' => 'No file(s).'));
+			return array_merge($params, ['success' => false, 'error' => 'No file(s).']);
 
 		$name = $this->request->files->keys()[0];
 		$file = $this->request->files->get($name);
 
 		if(!$file->isValid())
-			return array_merge($params,array('success' => false, 'error' => 'Upload failed.'));
+			return array_merge($params, ['success' => false, 'error' => 'Upload failed.']);
 
 		// if ($id) {
 		//     $item = $this->mcm->getRepository($entity)->findOneById($id);
 		//     if (!$item) {
-		//         return array_merge($params,array('success' => false, 'error' => 'Item not found.'));
+		//         return array_merge($params, ['success' => false, 'error' => 'Item not found.']);
 		//     }
 		//     $item->setFile($file);
 		// } else {}
