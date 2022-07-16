@@ -313,8 +313,6 @@ class DefaultController extends AbstractController
 	{
 		$relAction = $this->request->get('relAction');
 
-		// var_dump($relAction);die();
-
 		if ($relAction === 'list' || $relAction === 'show') {
 			return $this->mcmRelationsList();
 

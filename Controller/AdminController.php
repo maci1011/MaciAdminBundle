@@ -681,12 +681,12 @@ class AdminController
 		return array_merge($this->getDefaultEntityParams($map),array(
 			'fields' => $this->getFields($relation),
 			'list_fields' => $this->getListFields($relation),
-			'form_filters' => $this->generateFiltersForm($relation, $relAction)->createView(),
-			'has_filters' => $this->hasFilters($relation, $relAction),
-			'filters' => $this->getFilters($relation, $relAction),
-			'filters_list' => $this->getGeneratedFilters($relation, $relAction),
-			'form_search' => true,
-			'search_query' => $this->getStoredSearchQuery($map, $relAction, $relation),
+			'form_filters' => false, // $this->generateFiltersForm($relation, $relAction)->createView(),
+			'has_filters' => false, // $this->hasFilters($relation, $relAction),
+			'filters' => false, // $this->getFilters($relation, $relAction),
+			'filters_list' => false, // $this->getGeneratedFilters($relation, $relAction),
+			'form_search' => false,
+			'search_query' => '', // $this->getStoredSearchQuery($map, $relAction, $relation),
 			'relation' => $relation['association'],
 			'association_label' => $this->generateLabel($relation['association']),
 			'relation_label' => $relation['label'],
@@ -1279,11 +1279,12 @@ class AdminController
 	public function getFieldValue($field, $object)
 	{
 		$getter = $this->getGetterMethod($object,$field);
-		if (!$getter) {
+		if (!$getter)
+		{
 			$this->session->getFlashBag()->add('error', 'Getter Method for ' . $field . ' in ' . get_class($object) . ' not found.');
 			return false;
 		}
-		return call_user_func_array(array($object,$getter),[]);
+		return call_user_func_array([$object,$getter], []);
 	}
 
 	public function getListFields($map)
@@ -2014,16 +2015,16 @@ class AdminController
 
 	public function getRelationItems($relation, $object)
 	{
-		$getted = $this->getFieldValue($relation['association'], $object);
-		if (is_object($getted)) {
-			if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection') {
-				return $getted;
-			} else {
-				return array($getted);
-			}
-		}
-		// return $this->getList($relation, ['filters' => [$relation['association'] => $this->getIdentifierValue($relation, $object)]]);
-		return [];
+		// $getted = $this->getFieldValue($relation['association'], $object);
+		// if (is_object($getted))
+		// {
+		// 	if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
+		// 		return $getted;
+		// 	else
+		// 		return [$getted];
+		// }
+		// return [];
+		return $this->getList($relation, ['filters' => [($relation['association']) => $this->getIdentifierValue($relation, $object)]]);
 	}
 
 	public function getRemoveForm($map, $item, $trash = false, $opt = [])
