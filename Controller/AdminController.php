@@ -2015,16 +2015,16 @@ class AdminController
 
 	public function getRelationItems($relation, $object)
 	{
-		// $getted = $this->getFieldValue($relation['association'], $object);
-		// if (is_object($getted))
-		// {
-		// 	if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
-		// 		return $getted;
-		// 	else
-		// 		return [$getted];
-		// }
-		// return [];
-		return $this->getList($relation, ['filters' => [($relation['association']) => $this->getIdentifierValue($relation, $object)]]);
+		$getted = $this->getFieldValue($relation['association'], $object);
+		if (is_object($getted))
+		{
+			if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
+				return $getted;
+			else
+				return [$getted];
+		}
+		return [];
+		// return $this->getList($relation, ['filters' => [($relation['association']) => $this->getIdentifierValue($relation, $object)]]);
 	}
 
 	public function getRemoveForm($map, $item, $trash = false, $opt = [])
