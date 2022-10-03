@@ -175,6 +175,10 @@ ul {
 	margin: 0;
 }
 
+.list-default span {
+	word-break: break-word;
+}
+
 .list-default .list-header .list-title {
 	padding: 0 0 0 5px;
 	text-transform: uppercase;
