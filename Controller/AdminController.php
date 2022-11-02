@@ -1391,10 +1391,10 @@ class AdminController
 
 			if (method_exists($object, $arrMethod))
 			{
-				$form->add($field, ChoiceType::class, array(
+				$form->add($field, ChoiceType::class, [
 					'empty_data' => '',
-					'choices' => call_user_func_array(array($object, $arrMethod), [])
-				));
+					'choices' => call_user_func_array([$object, $arrMethod], [])
+				]);
 			}
 			else if ($isUploadable && $field === $upload_path_field)
 			{
@@ -1642,9 +1642,8 @@ class AdminController
 		}
 		$identifier = $this->getIdentifier($map);
 		$getter = $this->getGetterMethod($item, $identifier);
-		if ($getter) {
+		if ($getter)
 			return call_user_func_array(array($item, $getter), []);
-		}
 		return false;
 	}
 
@@ -1658,31 +1657,37 @@ class AdminController
 		if (!$getters) $getters = $this->getGetters($map);
 		$types = $this->getFieldsWithType($map);
 		$data = [];
-		foreach ($getters as $field => $getter) {
+		foreach ($getters as $field => $getter)
+		{
 			$value = call_user_func_array([$item, $getter], []);
-			if ($value === null) {
+
+			if ($value === null)
 				$data[$field] = null;
-			} elseif (in_array($types[$field], [
+
+			elseif (in_array($types[$field], [
 				'string', 'text', 'integer', 'smallint', 'bigint', 'boolean', 'decimal', 'float', 'json', 'guid'
-			])) {
-				$data[$field] = $value;
-			} elseif ($types[$field] === 'date') {
+			])) $data[$field] = $value;
+
+			elseif ($types[$field] === 'date')
 				$data[$field] = date_format($value, "d-m-Y");
-			} elseif ($types[$field] === 'time') {
+
+			elseif ($types[$field] === 'time')
 				$data[$field] = date_format($value, "H:i:s");
-			} elseif ($types[$field] === 'datetime') {
+
+			elseif ($types[$field] === 'datetime')
 				$data[$field] = date_format($value, "Y/m/d H:i:s");
-			} elseif ($types[$field] === 'datetimetz') {
+
+			elseif ($types[$field] === 'datetimetz')
 				$data[$field] = date_format($value, "c");
-			} elseif ($types[$field] === 'object') {
+
+			elseif ($types[$field] === 'object')
 				$data[$field] = get_class($value);
-			} elseif ($types[$field] === 'simple_array') {
+
+			elseif ($types[$field] === 'simple_array')
 				$data[$field] = implode(', ', $value);
-			} elseif ($types[$field] === 'json') {
+
+			elseif ($types[$field] === 'json')
 				$data[$field] = $value;
-			} else {
-				continue;
-			}
 		}
 		return $data;
 	}
@@ -1692,9 +1697,8 @@ class AdminController
 		$associations = $this->getAssociations($map);
 		foreach ($data as $field => $value) {
 			$setter = $this->getSetterMethod($item, $field);
-			if (!$setter) {
+			if (!$setter)
 				continue;
-			}
 			if (in_array($field, $associations))
 			{
 				$relation = $this->getRelation($map, $field);
@@ -1870,13 +1874,11 @@ class AdminController
 
 	public function getDataFromList($map, $list, $fields = false)
 	{
-		if ($fields == false) {
+		if ($fields == false)
 			$fields = $this->getGetters($map);
-		}
 		$data = [];
-		foreach ($list as $item) {
+		foreach ($list as $item)
 			$data[count($data)] = $this->getItemData($map, $item, $fields);
-		}
 		return $data;
 	}
 
@@ -1892,9 +1894,10 @@ class AdminController
 	{
 		$class = $this->getClass($map);
 		$item = new $class;
-		if (method_exists($item, 'setLocale')) {
+		if (!$item)
+			return false;
+		if (method_exists($item, 'setLocale'))
 			call_user_func_array(array($item, 'setLocale'), array($this->request->getLocale()));
-		}
 		return $item;
 	}
 
@@ -2475,7 +2478,16 @@ class AdminController
 	public function newItemByParams($entity, $params)
 	{
 		$item = $this->getNewItem($entity);
+		if (!$item)
+			return false;
 		$this->setItem($entity, $item, $params);
+		if (array_key_exists('_CHECK_REPOSITORY', $params))
+		{
+			$repo = $this->getRepository($entity);
+			if (!method_exists($repo, $params['_CHECK_REPOSITORY']) || !call_user_func_array([$repo,$params['_CHECK_REPOSITORY']], [$item]))
+				return false;
+			unset($params['_CHECK_REPOSITORY']);
+		}
 		$this->om->persist($item);
 		$this->om->flush();
 		return $item;
@@ -2487,11 +2499,16 @@ class AdminController
 			!array_key_exists('entity', $data) || !array_key_exists('params', $data)
 		) return ['success' => false, 'error' => 'Bad Request.'];
 		$entity = $this->getEntity($data['section'], $data['entity']);
-		if (!$entity) {
+		if (!$entity)
 			return ['success' => false, 'error' => 'Entity "' . $data['entity'] . '" not Found.'];
-		}
 		if (!array_key_exists(0, $data['params']))
-			return ['success' => true, 'id' => $this->getIdentifierValue($entity, $this->newItemByParams($entity, $data['params']))];
+		{
+			$item = $this->newItemByParams($entity, $data['params']);
+			return $item ? [
+				'success' => true,
+				'id' => $this->getIdentifierValue($entity, $item)
+			] : ['success' => false, 'error' => 'Item has not been created.'];
+		}
 		$list = [];
 		$items = [];
 		for ($i=0; $i < count($data['params']); $i++)
