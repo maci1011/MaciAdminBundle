@@ -722,13 +722,13 @@ class AdminController
 		return array_merge($this->getDefaultRelationParams($map, $relation), [
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
-			'form_filters' => $this->generateFiltersForm($bridge, $relAction)->createView(),
-			'has_filters' => $this->hasFilters($bridge, $relAction),
-			'filters' => $this->getFilters($bridge, $relAction),
-			'filters_list' => $this->getGeneratedFilters($bridge, $relAction),
+			'form_filters' => $this->generateFiltersForm($bridge, $bridge['association'])->createView(),
+			'has_filters' => $this->hasFilters($bridge, $bridge['association']),
+			'filters' => $this->getFilters($bridge, $bridge['association']),
+			'filters_list' => $this->getGeneratedFilters($bridge, $bridge['association']),
 			'form_search' => true,
-			'search_query' => $this->getStoredSearchQuery($bridge, $relAction),
-			'list_page' => $this->getStoredPage($relation, $relAction),
+			'search_query' => $this->getStoredSearchQuery($bridge, $bridge['association']),
+			'list_page' => $this->getStoredPage($bridge, $bridge['association']),
 			'relation_action_label' => ($this->generateLabel($relAction) . ' ' . $bridge['label']),
 			'relation_action' => $relAction,
 			'template' => $this->getTemplate($bridge,('relations_'.$relAction)),
@@ -794,7 +794,7 @@ class AdminController
 			'p' => null,
 			's' => null,
 			'f' => null
-		], $this->getMapUrlOptions($map, $action), $opt);
+		], $this->getMapUrlOptions($relation, $action), $opt);
 		return $params;
 	}
 
@@ -806,11 +806,11 @@ class AdminController
 		}
 		$params = $this->getDefaultRelationRedirectParams($map, $relation, $action, $id);
 		$params['redirect_params'] = array_merge($params['redirect_params'], [
-			'bridge' => $bridge['name'],
+			'bridge' => $bridge['association'],
 			'p' => null,
 			's' => null,
 			'f' => null
-		], $this->getMapUrlOptions($map, $action), $opt);
+		], $this->getMapUrlOptions($bridge, $bridge['association']), $opt);
 		return $params;
 	}
 
@@ -2774,6 +2774,7 @@ class AdminController
 			return false;
 
 		$this->setStoredSearchQuery($map, $action, $get);
+
 		return true;
 	}
 

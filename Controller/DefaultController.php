@@ -116,11 +116,10 @@ class DefaultController extends AbstractController
 		$item = $this->mcm->getCurrentItem();
 		if (!$item) return false;
 
-		if ($this->request->isXmlHttpRequest())
-			return [
-				'item' => $this->mcm->getItemData($entity, $item),
-				'success' => true
-			];
+		if ($this->request->isXmlHttpRequest()) return [
+			'item' => $this->mcm->getItemData($entity, $item),
+			'success' => true
+		];
 
 		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'identifier' => $this->mcm->getIdentifierValue($entity, $item),
@@ -165,7 +164,7 @@ class DefaultController extends AbstractController
 			if ($isNew) $this->session->getFlashBag()->add('success', 'Item Added.');
 			else $this->session->getFlashBag()->add('success', 'Item Edited.');
 
-			if ($this->request->isXmlHttpRequest()) return array('success' => true);
+			if ($this->request->isXmlHttpRequest()) return ['success' => true];
 			if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
 				return $this->mcm->getDefaultEntityRedirectParams($entity, 'new');
 			if ($form->has('save_and_list') && $form->get('save_and_list')->isClicked())
@@ -403,7 +402,7 @@ class DefaultController extends AbstractController
 			else
 				$this->session->getFlashBag()->add('success', 'Item Edited.');
 
-			if ($this->request->isXmlHttpRequest()) return array('success' => true);
+			if ($this->request->isXmlHttpRequest()) return ['success' => true];
 			if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
 				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'new');
 			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
@@ -438,8 +437,8 @@ class DefaultController extends AbstractController
 		if ($this->request->getMethod() === 'POST')
 		{
 			$this->mcm->addRelationItemsFromRequestIds($entity, $relation, $item, $list);
-			if ($this->request->isXmlHttpRequest()) return array('success' => true);
-			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
+			if ($this->request->isXmlHttpRequest()) return ['success' => true];
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $relAction);
 		}
 
 		$pager = $this->mcm->getPager($relation, $relAction, $list, [
@@ -471,21 +470,20 @@ class DefaultController extends AbstractController
 		$bridge = $this->mcm->getCurrentBridge();
 		if (!$bridge) return false;
 
-		$relAction = $this->mcm->getCurrentRelationAction();
-		if ($this->mcm->setSessionFromRequest($bridge, $relAction))
+		if ($this->mcm->setSessionFromRequest($bridge, $bridge['association']))
 			return $this->mcm->getCurrentRedirectParams();
 
-		$list = $this->mcm->getListForRelation($entity, $relation, $item, $bridge, ['action' => $relAction]);
+		$list = $this->mcm->getListForRelation($entity, $relation, $item, $bridge, ['action' => $bridge['association']]);
 
 		if ($this->request->getMethod() === 'POST')
 		{
 			$this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 			if ($this->request->isXmlHttpRequest()) return ['success' => true];
-			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge);
+			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $this->mcm->getCurrentRelationAction());
 		}
 
-		$pager = $this->mcm->getPager($bridge, $relAction, $list, [
-			'form_action' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $relAction)
+		$pager = $this->mcm->getPager($bridge, $bridge['association'], $list, [
+			'form_action' => $this->mcm->getBridgeUrl($entity, $relation, $bridge, $bridge['association'])
 		]);
 
 		$params = $this->mcm->getDefaultBridgeParams($entity, $relation, $bridge, $item);
@@ -593,7 +591,7 @@ class DefaultController extends AbstractController
 					$this->mcm->removeItemsFromRequestIds($relation, $list);
 				else
 					$this->mcm->removeRelationItemsFromRequestIds($entity, $relation, $item, $list);
-				if ($this->request->isXmlHttpRequest()) return array('success' => true);
+				if ($this->request->isXmlHttpRequest()) return ['success' => true];
 				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation);
 			}
 			return false;
