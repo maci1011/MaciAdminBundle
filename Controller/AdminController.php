@@ -9,6 +9,9 @@ use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\ResetType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -1447,9 +1450,8 @@ class AdminController
 
 	public function generateFiltersForm($map, $action, $object = false, $opt = [])
 	{
-		if (!$object) {
+		if (!$object)
 			$object = $this->getNewItem($map);
-		}
 
 		$fields = $this->getFields($map);
 		$object = $this->getNewItem($map);
@@ -1463,102 +1465,171 @@ class AdminController
 			$opt['form_action'] : $this->getCurrentUrl(array_key_exists('url_opt', $opt) ? $opt['url_opt'] : [])
 		);
 
-		foreach ($fields as $field) {
+		foreach ($fields as $field)
+		{
+			if (($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) ||
+				($isUploadable && $field == $upload_path_field)
+			) continue;
 
-			if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) {
-				continue;
-			}
-			if (!array_key_exists($field, $fieldMappings)) {
-				$field = str_replace('_', '', $field);
-				if (!array_key_exists($field, $fieldMappings)) {
-					continue;
-				}
-			}
-			if (array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id']) {
-				continue;
-			}
-			if (!array_key_exists('type', $fieldMappings[$field])) {
-				continue;
-			}
-			if (!in_array(
-				$fieldMappings[$field]['type'],
-				['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime']
-			)) {
-				continue;
-			}
-
-			if (in_array($this->getFieldType($map, $field), ['text', 'string']) &&
-				(!$isUploadable || $field != $upload_path_field) &&
-				!in_array($field, ['locale']))
+			if (!array_key_exists($field, $fieldMappings))
 			{
-				$form->add('set_filter_for_' . $field, CheckboxType::class, [
-					'label' => 'Set Filter',
-					'label_attr' => array(
-						'class' => 'sr-only'
-					),
-					'attr' => ['class' => 'setFilterCheckbox'],
-					'required' => false,
-					'mapped' => false
-				]);
-				$form->add('set_connector_for_' . $field, ChoiceType::class, [
-					'label' => 'Set Connector',
-					'label_attr' => array(
-						'class' => 'sr-only'
-					),
-					'choices' => ['And' => 'and', 'Or' => 'or'],
-					'mapped' => false
-				]);
-				$label = $this->generateLabel($field);
-				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
-				if ($typesGetter)
+				$s = lcfirst(ucwords(str_replace('_', ' ', $field)));
+				$s = str_replace(' ', '', $s);
+				if (!array_key_exists($s, $fieldMappings))
 				{
-					$form->add($field . '_method', ChoiceType::class, [
-						'label' => 'Method',
-						'label_attr' => array(
-							'class' => 'sr-only'
-						),
-						'choices' => ['Is' => '=', 'Is Not' => '!='],
-						'mapped' => false
-					]);
-					$list = call_user_func_array([$object, $typesGetter], []);
-					$form->add($field, ChoiceType::class, [
-						'label_attr' => array(
-							'class' => 'sr-only'
-						),
-						'choices' => $list
-					]);
-					array_push($filters, [
-						'field' => $field,
-						'label' => $label,
-						'type' => 'select'
-					]);
+					$field = str_replace('_', '', $field);
+					if (!array_key_exists($field, $fieldMappings))
+						continue;
 				}
-				else
-				{
-					$form->add($field . '_method', ChoiceType::class, [
-						'label' => 'Method',
-						'label_attr' => array(
-							'class' => 'sr-only'
-						),
-						'choices' => ['Is' => '=', 'Contains' => 'LIKE', 'Is Not' => '!='],
-						'mapped' => false
-					]);
-					$form->add($field, TextType::class, [
-						'attr' => ['placeholder' => $label],
-						'label_attr' => array(
-							'class' => 'sr-only'
-						),
-						'required' => false,
-						'data' => ''
-					]);
-					array_push($filters, [
-						'field' => $field,
-						'label' => $label,
-						'type' => 'text'
-					]);
-				}
+				else $field = $s;
 			}
+
+			if ((array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id']) ||
+				!array_key_exists('type', $fieldMappings[$field]) ||
+				!in_array($fieldMappings[$field]['type'],
+					['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime'])
+			) continue;
+
+			$form->add('set_filter_for_' . $field, CheckboxType::class, [
+				'label' => 'Set Filter',
+				'label_attr' => ['class' => 'sr-only'],
+				'attr' => ['class' => 'setFilterCheckbox'],
+				'required' => false,
+				'mapped' => false
+			]);
+
+			$form->add('set_connector_for_' . $field, ChoiceType::class, [
+				'label' => 'Set Connector',
+				'label_attr' => ['class' => 'sr-only'],
+				'choices' => ['And' => 'and', 'Or' => 'or'],
+				'mapped' => false
+			]);
+			$label = $this->generateLabel($field);
+
+			$typesGetter = $this->getGetterMethod($object, $field . 'Array');
+			if ($typesGetter)
+			{
+				$form->add($field . '_method', ChoiceType::class, [
+					'label' => 'Method',
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => ['Is' => '=', 'Is Not' => '!='],
+					'mapped' => false
+				]);
+				$form->add($field, ChoiceType::class, [
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => (call_user_func_array([$object, $typesGetter], []))
+				]);
+				array_push($filters, [
+					'field' => $field,
+					'label' => $label,
+					'type' => 'select'
+				]);
+				continue;
+			}
+
+			if ($fieldMappings[$field]['type'] == 'boolean')
+			{
+				$form->add($field . '_method', ChoiceType::class, [
+					'label' => 'Method',
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => ['Is' => '=', 'Is Not' => '!='],
+					'mapped' => false
+				]);
+				$form->add($field, ChoiceType::class, [
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => ['True' => 1, 'False' => 0]
+				]);
+				array_push($filters, [
+					'field' => $field,
+					'label' => $label,
+					'type' => 'select'
+				]);
+				continue;
+			}
+
+			if ($field == 'locale')
+			{
+				$form->add($field . '_method', ChoiceType::class, [
+					'label' => 'Method',
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => ['Is' => '=', 'Is Not' => '!='],
+					'mapped' => false
+				]);
+				$form->add($field, ChoiceType::class, [
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => $this->getLocales()
+				]);
+				array_push($filters, [
+					'field' => $field,
+					'label' => $label,
+					'type' => 'select'
+				]);
+				continue;
+			}
+
+			if (in_array($fieldMappings[$field]['type'], ['decimal', 'smallint', 'integer', 'bigint']))
+			{
+				$form->add($field . '_method', ChoiceType::class, [
+					'label' => 'Method',
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => ['Is' => '=', 'Is Not' => '!='],
+					'mapped' => false
+				]);
+				$form->add($field, $fieldMappings[$field]['type'] == 'decimal' ? NumberType::class : IntegerType::class, [
+					'attr' => ['placeholder' => $label],
+					'label_attr' => ['class' => 'sr-only'],
+					'required' => false,
+					'data' => 0
+				]);
+				array_push($filters, [
+					'field' => $field,
+					'label' => $label,
+					'type' => 'text'
+				]);
+				continue;
+			}
+
+			if (in_array($fieldMappings[$field]['type'], ['date', 'datetime']))
+			{
+				$form->add($field . '_method', ChoiceType::class, [
+					'label' => 'Method',
+					'label_attr' => ['class' => 'sr-only'],
+					'choices' => ['Before' => '<=', 'After' => '>='],
+					'mapped' => false
+				]);
+				$form->add($field, $fieldMappings[$field]['type'] == 'date' ? DateType::class : DateTimeType::class, [
+					'attr' => ['placeholder' => $label],
+					'label_attr' => ['class' => 'sr-only'],
+					'widget' => 'single_text',
+					'required' => false
+				]);
+				array_push($filters, [
+					'field' => $field,
+					'label' => $label,
+					'type' => $fieldMappings[$field]['type']
+				]);
+				continue;
+			}
+
+			$form->add($field . '_method', ChoiceType::class, [
+				'label' => 'Method',
+				'label_attr' => ['class' => 'sr-only'],
+				'choices' => ['Is' => '=', 'Contains' => 'LIKE', 'Is Not' => '!='],
+				'mapped' => false
+			]);
+			$form->add($field, TextType::class, [
+				'attr' => ['placeholder' => $label],
+				'label_attr' => ['class' => 'sr-only'],
+				'required' => false,
+				'data' => ''
+			]);
+			array_push($filters, [
+				'field' => $field,
+				'label' => $label,
+				'type' => 'text'
+			]);
 		}
+
 		$this->setGeneratedFilters($map, $action, $filters);
 
 		$form->add('add_filters', SubmitType::class, array(
@@ -1596,12 +1667,12 @@ class AdminController
 		$upload_path_field = $this->getConfigKey($map, 'upload_path_field');
 		$filters = [];
 
-		foreach ($fields as $field) {
-
-			if (in_array($this->getFieldType($map, $field), ['text', 'string']) &&
+		foreach ($fields as $field)
+		{
+			if (in_array($this->getFieldType($map, $field),
+					['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime']) &&
 				(!$isUploadable || $field != $upload_path_field) &&
-				!in_array($field, ['locale']) &&
-				$form->has('set_filter_for_type') &&
+				$form->has('set_filter_for_' . $field) &&
 				$form['set_filter_for_' . $field]->getData()
 			){
 				$typesGetter = $this->getGetterMethod($object, $field . 'Array');
@@ -1621,10 +1692,10 @@ class AdminController
 	{
 		$list = array_flip(Locales::getNames());
 		$new = [];
-		foreach ($list as $key => $value) {
-			if (strlen($value) == 2) {
+		foreach ($list as $key => $value)
+		{
+			if (strlen($value) == 2)
 				$new[ucfirst($key)] = $value;
-			}
 		}
 		return $new;
 	}
