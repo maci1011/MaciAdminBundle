@@ -18,11 +18,11 @@ class MaciPager
 
 	private $identifiers;
 
-	public function __construct($result = null, $limit = 10, $range = 5)
+	public function __construct(array $result = null, int $limit = 10, int $range = 5, int $page = 1)
 	{
 		$this->result = $result;
 		$this->limit = $limit;
-		$this->page = 1;
+		$this->page = $page;
 		$this->range = $range;
 	}
 
@@ -38,6 +38,12 @@ class MaciPager
 
 	public function getPage()
 	{
+		if (!is_int($this->page) ||
+			!is_array($this->result) ||
+			$this->page < 1 ||
+			$this->getMaxPages() <= $this->page
+		) return 1;
+
 		return $this->page;
 	}
 
@@ -46,7 +52,7 @@ class MaciPager
 		return $this->page - 1;
 	}
 
-	public function setPage($page)
+	public function setPage(int $page)
 	{
 		$this->page = ($this->getMaxPages() < $page) ? 1 : $page;
 	}
@@ -100,12 +106,12 @@ class MaciPager
 
 	public function getLength()
 	{
-		return count( $this->result );
+		return count($this->result);
 	}
 
 	public function getMaxPages()
 	{
-		return ( 0 < $this->limit ? ceil( $this->getLength() / $this->limit ) : 1 );
+		return (0 < $this->limit ? ceil($this->getLength() / $this->limit) : 1);
 	}
 
 	public function getOffset()
@@ -115,17 +121,17 @@ class MaciPager
 
 	public function requiresPagination()
 	{
-		return ( $this->limit && $this->getLength() > $this->limit );
+		return ($this->limit && $this->getLength() > $this->limit);
 	}
 
 	public function hasPrev()
 	{
-		return ( $this->getPage() > 1 );
+		return ($this->getPage() > 1);
 	}
 
 	public function hasNext()
 	{
-		return ( $this->getMaxPages() > $this->getPage() );
+		return ($this->getMaxPages() > $this->getPage());
 	}
 
 	public function getNext()
@@ -140,14 +146,13 @@ class MaciPager
 
 	public function getPageRange()
 	{
-		$return = array();
+		$return = [];
 
 		$min = max(1, $this->getPage() - $this->range);
 		$max = min($this->getMaxPages(), $this->getPage() + $this->range);
 
-		for ($i = $min; $i <= $max; $i++) {
-			$return []= $i;
-		}
+		for ($i = $min; $i <= $max; $i++)
+			$return[] = $i;
 
 		return $return;
 	}
@@ -164,21 +169,24 @@ class MaciPager
 
 	public function getPageList()
 	{
-		$return = array();
+		$return = [];
 
-		if ( 0 < $this->limit ) {
+		if (0 < $this->limit)
+		{
 			$from = $this->getOffset();
 			$to = $from + $this->limit;
-		} else {
+		}
+		else
+		{
 			$from = 0;
 			$to = count($this->result);
 		}
 
 		$i = 0;
-		foreach ($this->result as $key => $value) {
-			if ( $from <= $i && $i < $to) {
+		foreach ($this->result as $key => $value)
+		{
+			if ($from <= $i && $i < $to)
 				$return[$key] = $value;
-			}
 			$i++;
 		}
 

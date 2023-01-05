@@ -25,9 +25,9 @@
 {% set multipleCheckbox = false %}
 {% endif %}
 
-{% include "MaciAdminBundle:Actions:_list_pagination_form.html.twig" %}
+{% include "@MaciAdmin/Actions/_list_pagination_form.html.twig" %}
 
-{% include "MaciAdminBundle:Actions:_list_pagination.html.twig" %}
+{% include "@MaciAdmin/Actions/_list_pagination.html.twig" %}
 
 <div class="list list-default list-type-{{ type }}{% if multipleCheckbox %} list-multiple{% endif %}"{% if type in ['list','relation'] and sortable and 1 < listLen %} sortable="{{ sortable }}"{% endif %}>
 <table class="table table-striped tablesorter">
