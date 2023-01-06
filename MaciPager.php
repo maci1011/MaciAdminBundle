@@ -41,7 +41,7 @@ class MaciPager
 		if (!is_int($this->page) ||
 			!is_array($this->result) ||
 			$this->page < 1 ||
-			$this->getMaxPages() <= $this->page
+			$this->getMaxPages() < $this->page
 		) return 1;
 
 		return $this->page;
@@ -111,7 +111,7 @@ class MaciPager
 
 	public function getMaxPages()
 	{
-		return (0 < $this->limit ? ceil($this->getLength() / $this->limit) : 1);
+		return (0 < $this->limit ? intval(ceil($this->getLength() / $this->limit)) : 1);
 	}
 
 	public function getOffset()
