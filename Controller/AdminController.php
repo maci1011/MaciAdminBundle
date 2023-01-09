@@ -2164,6 +2164,7 @@ class AdminController
 
 	public function getPager($map, $action, $list, $opt = [])
 	{
+		if (!$list) $list = [];
 		$pager = new MaciPager($list,
 			array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map, $action),
 			array_key_exists('page_range', $opt) ? $opt['page_range'] : $this->getPager_PageRange($map, $action)
