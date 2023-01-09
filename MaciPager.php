@@ -18,7 +18,7 @@ class MaciPager
 
 	private $identifiers;
 
-	public function __construct(array $result = null, int $limit = 10, int $range = 5, int $page = 1)
+	public function __construct($result = null, int $limit = 10, int $range = 5, int $page = 1)
 	{
 		$this->result = $result;
 		$this->limit = $limit;

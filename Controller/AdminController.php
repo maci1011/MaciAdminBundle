@@ -2093,11 +2093,11 @@ class AdminController
 		if (is_object($getted))
 		{
 			if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
-				return $getted;
+				return count($getted) ? $getted : null;
 			else
 				return [$getted];
 		}
-		return [];
+		return null;
 		// return $this->getList($relation, ['filters' => [($relation['association']) => $this->getIdentifierValue($relation, $object)]]);
 	}
 
