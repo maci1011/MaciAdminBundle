@@ -584,7 +584,8 @@ class DefaultController extends AbstractController
 			$relItem = $list[$index];
 		}
 
-		if (!$relItem) {
+		if (!$relItem)
+		{
 			if ($this->request->getMethod() === 'POST' && $this->request->get('ids', false))
 			{
 				if ($this->request->get('rm', '') === 'item')
@@ -656,6 +657,9 @@ class DefaultController extends AbstractController
 
 		$list = $this->mcm->getRelationItems($relation, $item);
 
+		if (!$list)
+			return ['success' => false];
+
 		foreach ($list as $el)
 		{
 			$id = call_user_func_array(array($el, $id_method), array());
@@ -666,7 +670,7 @@ class DefaultController extends AbstractController
 
 		$this->om->flush();
 
-		return array('success' => true);
+		return ['success' => true];
 	}
 
 }

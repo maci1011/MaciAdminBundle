@@ -1900,6 +1900,7 @@ class AdminController
 	public function getListForRelation($map, $relation, $item, $bridge = false, $opt = [])
 	{
 		$relation_items = $this->getRelationItems($relation, $item);
+		if (!$relation_items) $relation_items = [];
 		$inverseField = $this->getRelationInverseField($map, $relation);
 		$mainMap = $relation;
 		if ($bridge) {
@@ -2094,8 +2095,7 @@ class AdminController
 		{
 			if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
 				return count($getted) ? $getted : null;
-			else
-				return [$getted];
+			return [$getted];
 		}
 		return null;
 		// return $this->getList($relation, ['filters' => [($relation['association']) => $this->getIdentifierValue($relation, $object)]]);
