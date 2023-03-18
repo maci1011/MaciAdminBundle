@@ -1337,9 +1337,8 @@ class AdminController
 
 	public function generateForm($map, $object = false)
 	{
-		if (!$object) {
+		if (!$object)
 			$object = $this->getNewItem($map);
-		}
 
 		$fields = $this->getFields($map);
 		$form = $this->createFormBuilder($object);
@@ -1401,14 +1400,24 @@ class AdminController
 			}
 			else if ($isUploadable && $field === $upload_path_field)
 			{
-				$form->add('file', FileType::class, array('required' => false));
+				$form->add('file', FileType::class, ['required' => false]);
 			}
 			else if ($field === 'locale')
 			{
-				$form->add('locale', ChoiceType::class, array(
-					'empty_data' => '',
-					'choices' => $this->getLocales()
-				));
+				if (method_exists($object, 'getLocaleChoices'))
+				{
+					$form->add('locale', ChoiceType::class, [
+						'empty_data' => '',
+						'choices' => $object->getLocaleChoices()
+					]);
+				}
+				else
+				{
+					$form->add('locale', ChoiceType::class, [
+						'empty_data' => '',
+						'choices' => $this->getLocales()
+					]);
+				}
 			}
 			else
 			{
