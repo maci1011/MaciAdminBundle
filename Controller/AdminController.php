@@ -2840,7 +2840,7 @@ class AdminController
 
 	public function setStoredSearchQueryFromRequest($map, $action)
 	{
-		$get = array_key_exists('s', $_GET) ? $this->request->get('s') : false;
+		$get = array_key_exists('s', $_GET) ? trim($this->request->get('s')) : false;
 		$str = $this->getStoredSearchQuery($map, $action);
 
 		if ($get === false)
