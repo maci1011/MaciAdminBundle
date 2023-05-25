@@ -129,10 +129,6 @@ class AdminController
 					'template' => 'MaciAdminBundle:Actions:relations.html.twig',
 					'types' => ['single']
 				],
-
-		// return ['list', 'show', 'new', 'add', 'set', 'bridge', 'uploader', 'remove', 'reorder'];
-
-
 				'relations_list' => [
 					'template' => 'MaciAdminBundle:Actions:relations_list.html.twig',
 					'types' => ['relations']
@@ -161,8 +157,6 @@ class AdminController
 					'template' => 'MaciAdminBundle:Actions:relations_uploader.html.twig',
 					'types' => ['relations']
 				]
-
-
 			],
 			'roles' => [
 				'ROLE_ADMIN'
@@ -206,7 +200,7 @@ class AdminController
 		$this->_auth_sections = [];
 		$this->_sections = [];
 
-		if (array_key_exists('config', $this->config)) $this->_defaults = $this->mergeConfig($this->config);
+		if (array_key_exists('config', $this->config)) $this->_defaults = $this->mergeConfig($this->config['config']);
 
 		// It Needs Sections Config
 		if (!array_key_exists('sections', $this->config)) return;
@@ -226,23 +220,17 @@ class AdminController
 			}
 			// Section Properties
 			$section['name'] = $name;
-			if (!array_key_exists('label', $section)) {
+			if (!array_key_exists('label', $section))
 				$section['label'] = $this->generateLabel($name);
-			}
-			if (!array_key_exists('dashboard', $section)) {
+			if (!array_key_exists('dashboard', $section))
 				$section['dashboard'] = false;
-			}
-			if (!$section['authorized']) {
+			if (!array_key_exists('pages', $section))
 				$section['pages'] = false;
-			}
-			if (!array_key_exists('pages', $section)) {
-				$section['pages'] = false;
-			}
-			if (!array_key_exists('config', $section)) {
+			if (!array_key_exists('config', $section))
 				$section['config'] = false;
-			}
 			// Section Entities
-			if (array_key_exists('entities', $section) && count($section['entities'])) {
+			if (array_key_exists('entities', $section) && count($section['entities']))
+			{
 				$entities = [];
 				foreach ($section['entities'] as $entity_name => $entity)
 				{
@@ -256,20 +244,25 @@ class AdminController
 							break;
 						}
 					}
-					if (!$entity['authorized']) continue;
-					//  entity definitions
+					if (!$entity['authorized'])
+						continue;
+					// Set Entity
 					$entity['section'] = $name;
 					$entity['name'] = $entity_name;
 					$entity['class'] = $this->getClass($entity);
-					if (!array_key_exists('label', $entity)) $entity['label'] = $this->generateLabel($entity_name);
-					if (!array_key_exists('config', $entity)) $entity['config'] = false;
+					if (!array_key_exists('label', $entity))
+						$entity['label'] = $this->generateLabel($entity_name);
+					if (!array_key_exists('config', $entity))
+						$entity['config'] = false;
 					// Add Entity
 					$entities[$entity_name] = $entity;
 				}
 				$section['entities'] = $entities;
-			} else {
-				$section['entities'] = false;
 			}
+			else $section['entities'] = false;
+			// Check Section
+			if (!$section['authorized'] || (!$section['entities'] && !$section['pages']))
+				continue;
 			// Add Section
 			$this->_auth_sections[] = $name;
 			$this->_sections[$name] = $section;
@@ -308,7 +301,7 @@ class AdminController
 		if (!is_array($config) || count($config) == 0) return $defaults;
 		if (array_key_exists('config', $config)) $config = $config['config'];
 		if (array_key_exists('config', $defaults)) $defaults = $defaults['config'];
-		$roles = array_key_exists('roles', $config) && count($config['roles']) ? $config['roles'] : array_key_exists('roles', $defaults) ? $defaults['roles'] : ['ROLE_ADMIN'];
+		$roles = array_key_exists('roles', $config) && count($config['roles']) ? $config['roles'] : (array_key_exists('roles', $defaults) ? $defaults['roles'] : ['ROLE_ADMIN']);
 		$actions = array_key_exists('actions', $config) && count($config['actions']) ? $config['actions'] : array_key_exists('actions', $defaults) ? $defaults['actions'] : $this->defaults['actions'];
 		if (array_key_exists('actions', $config)) {
 			foreach ($config['actions'] as $action => $cnf) {
@@ -378,7 +371,15 @@ class AdminController
 
 	public function getConfigKey($map, $key)
 	{
-		return $this->getConfig($map)[$key];
+		// $config = $this->getConfig($map);
+		if (!array_key_exists('config', $map) || !array_key_exists($key, $map['config']))
+		{
+			if (array_key_exists($key, $map))
+				return $map[$key];
+			// return array_key_exists($key, $this->_defaults) ? $this->_defaults[$key] : false;
+			return false;
+		}
+		return $map['config'][$key];
 	}
 
 	public function getController($map, $action)
@@ -523,7 +524,7 @@ class AdminController
 
 	public function getSectionConfig($section)
 	{
-		return array_key_exists($section, $this->_sections) && $this->_sections[$section]['config'] ? $this->mergeConfig($section['config']) : $this->_defaults;
+		return array_key_exists($section, $this->_sections) && $this->_sections[$section]['config'] ? $this->mergeConfig($this->_sections[$section]['config']) : $this->_defaults;
 	}
 
 	public function getSectionLabel($section)
@@ -1076,17 +1077,15 @@ class AdminController
 
 	public function getMainActions($entity)
 	{
-		$actions = array('list');
+		$actions = ['list'];
 
-		if ($this->hasTrash($entity)) {
+		if ($this->hasTrash($entity))
 			$actions[] = 'trash';
-		}
 
 		$actions[] = 'new';
 
-		if ($this->isUploadable($entity)) {
+		if ($this->isUploadable($entity))
 			$actions[] = 'uploader';
-		}
 
 		return $actions;
 	}
@@ -1137,16 +1136,15 @@ class AdminController
 	public function getAssociations($map)
 	{
 		$metadata = $this->getMetadata($map);
-
 		$associations = [];
 
-		foreach ($metadata->associationMappings as $fieldName => $association) {
+		foreach ($metadata->associationMappings as $fieldName => $association)
+		{
 			// if ($association['type'] !== ClassMetadataInfo::ONE_TO_MANY) {
 			//     $associations[] = $fieldName;
 			// }
-			if ($this->isRelationEnable($map,$fieldName)) {
-				$associations[] = $fieldName;
-			}
+			// if ($this->isRelationEnable($map, $fieldName))
+			$associations[] = $fieldName;
 		}
 
 		return $associations;
@@ -1176,10 +1174,22 @@ class AdminController
 
 	public function getBridges($relation)
 	{
-		if (array_key_exists('bridges', $relation) && is_array($relation['bridges'])) {
+		if (array_key_exists('bridges', $relation) && is_array($relation['bridges']))
 			return $relation['bridges'];
-		}
 		return false;
+	}
+
+	public function getAuthBridges($relation)
+	{
+		$bridges = $this->getBridges($relation);
+		$ab = [];
+		foreach ($bridges as $key => $bridge)
+		{
+			$_bridge = $this->getBridge($relation, $bridge);
+			if ($_bridge)
+				$ab[] = $_bridge['name'];
+		}
+		return $ab;
 	}
 
 	public function getUpladableBridges($relation)
@@ -1238,8 +1248,16 @@ class AdminController
 		$metadata = $this->getMetadata($map);
 		$fields = (array) $metadata->fieldNames;
 		// Remove the primary key field if it's not managed manually
-		if ($removeId && !$metadata->isIdentifierNatural()) {
+		if ($removeId && !$metadata->isIdentifierNatural())
 			$fields = array_diff($fields, $metadata->identifier);
+		$df = $this->getConfigKey($map, 'deny_fields');
+		if ($df)
+		{
+			foreach ($fields as $key => $field)
+			{
+				if (in_array($field, $df))
+					unset($fields[$key]);
+			}
 		}
 		return array_keys($fields);
 	}
@@ -1965,9 +1983,8 @@ class AdminController
 
 	public function getMetadata(&$map)
 	{
-		if(!array_key_exists('OMclassMetadata', $map)) {
+		if(!array_key_exists('OMclassMetadata', $map))
 			$map['OMclassMetadata'] = $this->om->getClassMetadata($this->getClass($map));
-		}
 		return $map['OMclassMetadata'];
 	}
 
@@ -1991,15 +2008,11 @@ class AdminController
 		return $map;
 	}
 
-	public function getRelation($map,$association)
+	public function getRelation($map, $association)
 	{
-		if (!$this->isRelationEnable($map,$association)) {
+		$metadata = $this->getAssociationMetadata($map, $association);
+		if (!$metadata)
 			return false;
-		}
-		$metadata = $this->getAssociationMetadata($map,$association);
-		if (!$metadata) {
-			return false;
-		}
 		$relation = $this->getEntityByClass($metadata['targetEntity'], $map['section']);
 		if (!$relation) {
 			$relation = $this->getNewMap($metadata);
@@ -2023,12 +2036,10 @@ class AdminController
 		$relation['parent_entity'] = $map['name'];
 		$relation['association'] = $association;
 		$this->loadConfig($relation);
-		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations'])) {
+		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations']))
 			$relation = $this->mergeViews($map['relations'][$association], $relation);
-		}
-		if (!$this->isAuthorized($relation)) {
+		if (!$this->isAuthorized($relation))
 			return false;
-		}
 		return $relation;
 	}
 
@@ -2046,12 +2057,10 @@ class AdminController
 	public function getRelationDefaultAction($map, $association)
 	{
 		$relationMetadata = $this->getAssociationMetadata($map, $association);
-		if (!$relationMetadata) {
+		if (!$relationMetadata)
 			return false;
-		}
-		if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY) {
+		if ($relationMetadata['type'] === ClassMetadataInfo::ONE_TO_MANY || $relationMetadata['type'] === ClassMetadataInfo::MANY_TO_MANY)
 			return 'list';
-		}
 		return 'show';
 	}
 
@@ -2060,13 +2069,26 @@ class AdminController
 		return $this->getRelationDefaultAction($map, $association) === 'show' ? 'set' : 'add';
 	}
 
-	public function isRelationEnable($map,$association)
+	public function isRelationEnable($map, $association)
 	{
-		if (array_key_exists('relations', $map) &&
-			array_key_exists($association, $map['relations'])) {
-			return $this->getConfigKey($map['relations'][$association], 'enabled');
+		$relation = $this->getRelation($map, $association);
+		if (!$relation)
+			return false;
+		return $this->getConfigKey($relation, 'enabled');
+	}
+
+	public function getAuthRelations($map)
+	{
+		$associations = $this->getAssociations($map);
+		$ar = [];
+
+		foreach ($associations as $association)
+		{
+			if ($this->isRelationEnable($map, $association))
+				$ar[] = $association;
 		}
-		return $this->getConfigKey($map, 'enabled');
+
+		return $ar;
 	}
 
 	public function getRelationInverseField($map, $relation)
