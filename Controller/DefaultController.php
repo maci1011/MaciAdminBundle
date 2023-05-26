@@ -356,7 +356,7 @@ class DefaultController extends AbstractController
 		if ($this->mcm->setSessionFromRequest($relation, $relAction))
 			return $this->mcm->getCurrentRedirectParams();
 
-		$list = $this->mcm->getRelationItems($relation, $item);
+		$list = $this->mcm->getRelationItems($entity, $relation, $item);
 		$pager = $this->mcm->getPager($relation, $relAction, $list, [
 			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
 		]);
@@ -479,7 +479,7 @@ class DefaultController extends AbstractController
 		{
 			$this->mcm->addRelationBridgedItemsFromRequestIds($entity, $relation, $bridge, $item, $list);
 			if ($this->request->isXmlHttpRequest()) return ['success' => true];
-			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, $this->mcm->getCurrentRelationAction());
+			return $this->mcm->getDefaultBridgeRedirectParams($entity, $relation, $bridge, $this->mcm->getCurrentRelationAction());
 		}
 
 		$pager = $this->mcm->getPager($bridge, $bridge['association'], $list, [
@@ -574,7 +574,7 @@ class DefaultController extends AbstractController
 		$relation = $this->mcm->getCurrentRelation();
 		if (!$relation) return false;
 
-		$list = $this->mcm->getRelationItems($relation, $item);
+		$list = $this->mcm->getRelationItems($entity, $relation, $item);
 
 		$rid = $this->request->get('rid', false);
 		$ids_list = $this->mcm->getListIdentifiers($relation, $list);
@@ -655,7 +655,7 @@ class DefaultController extends AbstractController
 		if (!$sort_method)
 			return array('success' => false, 'error' => 'Reorder: Sort Setter Method not found.');
 
-		$list = $this->mcm->getRelationItems($relation, $item);
+		$list = $this->mcm->getRelationItems($entity, $relation, $item);
 
 		if (!$list)
 			return ['success' => false];

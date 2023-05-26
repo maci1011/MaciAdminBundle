@@ -224,8 +224,6 @@ class AdminController
 				$section['label'] = $this->generateLabel($name);
 			if (!array_key_exists('dashboard', $section))
 				$section['dashboard'] = false;
-			if (!array_key_exists('pages', $section))
-				$section['pages'] = false;
 			if (!array_key_exists('config', $section))
 				$section['config'] = false;
 			// Section Entities
@@ -260,6 +258,29 @@ class AdminController
 				$section['entities'] = $entities;
 			}
 			else $section['entities'] = false;
+			// Section Pages
+			if (array_key_exists('pages', $section) && count($section['pages']))
+			{
+				$pages = [];
+				foreach ($section['pages'] as $page_name => $page)
+				{
+					$page['authorized'] = false;
+					$page_roles = array_key_exists('roles', $page) && count($page['roles']) ? $page['roles'] : $s_config['roles'];
+					foreach ($page_roles as $role) {
+						if ($this->authorizationChecker->isGranted($role))
+						{
+							$section['authorized'] = true;
+							$page['authorized'] = true;
+							break;
+						}
+					}
+					if (!$page['authorized'])
+						continue;
+					$pages[$page_name] = $page;
+				}
+				$section['pages'] = $pages;
+			}
+			else $section['pages'] = false;
 			// Check Section
 			if (!$section['authorized'] || (!$section['entities'] && !$section['pages']))
 				continue;
@@ -432,47 +453,49 @@ class AdminController
 	// --- Check User Auths for the current Route
 	public function checkRoute()
 	{
-		if (!$this->checkAuth()) {
+		if (!$this->checkAuth())
 			return $this->generateUrl('homepage');
-		}
 		$section = $this->getCurrentSection();
-		if (!$section) {
-			return $this->generateUrl('maci_admin_view', array('section'=>$this->_auth_sections[0]));
-		}
-		if (!in_array($section, $this->_auth_sections)) {
+		if (!$section)
+			return $this->generateUrl('maci_admin_view', ['section'=>$this->_auth_sections[0]]);
+		if (!in_array($section, $this->_auth_sections))
+		{
 			$this->request->getSession()->getFlashBag()->add('error', 'Section [' . $section . '] not Found.');
-			return $this->generateUrl('maci_admin_view', array('section'=>$this->_auth_sections[0]));
+			return $this->generateUrl('maci_admin_view', ['section'=>$this->_auth_sections[0]]);
 		}
 		$entity = $this->request->get('entity');
-		if (!$entity || !$this->hasEntity($section, $entity)) {
-			if ($this->hasDashboard($section)) {
+		if (!$entity || !$this->hasEntity($section, $entity))
+		{
+			if ($this->hasDashboard($section))
 				return $this->render($this->getSectionDashboard($section));
-			}
 			$entities = array_keys($this->getEntities($section));
-			return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entities[0],'action'=>'list'));
+			return $this->generateUrl('maci_admin_view', ['section'=>$section,'entity'=>$entities[0],'action'=>'list']);
 		}
 		$_entity = $this->getCurrentEntity();
 		$entity = $_entity['name'];
 		$action = $this->getCurrentAction();
-		if (!$action) {
-			return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list'));
-		}
-		if ($action === 'relations') {
-			if (!$this->getCurrentItem()) {
-				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>'list'));
-			}
+		if (!$action)
+			return $this->generateUrl('maci_admin_view', ['section'=>$section,'entity'=>$entity,'action'=>'list']);
+		if ($action === 'relations')
+		{
+			if (!$this->getCurrentItem())
+				return $this->generateUrl('maci_admin_view', ['section'=>$section,'entity'=>$entity,'action'=>'list']);
 			$relation = $this->request->get('relation');
-			if (!$relation) {
-				$relations = $this->getAssociations($_entity);
+			if (!$relation)
+			{
+				$relations = $this->getAuthRelations($_entity);
+				if (!count($relations))
+					return $this->generateUrl('maci_admin_view', ['section'=>$section,'entity'=>$entity,'action'=>'list']);
 				$relAction = $this->getRelationDefaultAction($_entity, $relation[0]);
-				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relations[0],'relAction'=>$relAction));
+				return $this->generateUrl('maci_admin_view', ['section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relations[0],'relAction'=>$relAction]);
 			}
 			$relAction = $this->request->get('relAction');
 			$_relation = $this->getCurrentRelation();
-			if (!$relAction || !in_array($relAction, $this->getRelationActions($_relation))) {
+			if (!$relAction || !in_array($relAction, $this->getRelationActions($_relation)))
+			{
 				$_entity = $this->getEntity($section, $entity);
 				$relAction = $this->getRelationDefaultAction($_entity, $relation);
-				return $this->generateUrl('maci_admin_view', array('section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relation,'relAction'=>$relAction));
+				return $this->generateUrl('maci_admin_view', ['section'=>$section,'entity'=>$entity,'action'=>$action,'id'=>$this->request->get('id'),'relation'=>$relation,'relAction'=>$relAction]);
 			}
 		}
 		return true;
@@ -553,12 +576,8 @@ class AdminController
 
 	public function getEntities($section)
 	{
-		if (!$this->isAuthSection($section)) {
-			return false;
-		}
-		if (!$this->hasEntities($section)) {
-			return false;
-		}
+		if (!$this->isAuthSection($section) || !$this->hasEntities($section))
+			return [];
 		return $this->_sections[$section]['entities'];
 	}
 
@@ -602,15 +621,14 @@ class AdminController
 
 	public function getPages($section)
 	{
-		if ($this->hasPages($section)) {
-			return $this->_sections[$section]['pages'];
-		}
-		return [];
+		if (!$this->hasPages($section))
+			return [];
+		return $this->_sections[$section]['pages'];
 	}
 
 	public function hasPages($section)
 	{
-		return array_key_exists('pages', $this->_sections[$section]);
+		return array_key_exists('pages', $this->_sections[$section]) && is_array($this->_sections[$section]['pages']);
 	}
 
 	/*
@@ -1046,7 +1064,8 @@ class AdminController
 		$_bridge = $this->request->get('bridge');
 		if (!$_bridge) return false;
 		$bridge = $this->getBridge($relation, $_bridge);
-		if ($bridge) {
+		if ($bridge)
+		{
 			$this->current_bridge = $bridge;
 			return $bridge;
 		}
@@ -1187,7 +1206,7 @@ class AdminController
 		{
 			$_bridge = $this->getBridge($relation, $bridge);
 			if ($_bridge)
-				$ab[] = $_bridge['name'];
+				$ab[] = $_bridge['association'];
 		}
 		return $ab;
 	}
@@ -1793,14 +1812,16 @@ class AdminController
 	public function setItem($map, $item, $data)
 	{
 		$associations = $this->getAssociations($map);
-		foreach ($data as $field => $value) {
+		foreach ($data as $field => $value)
+		{
 			$setter = $this->getSetterMethod($item, $field);
 			if (!$setter)
 				continue;
 			if (in_array($field, $associations))
 			{
 				$relation = $this->getRelation($map, $field);
-				if (!$relation) continue;
+				if (!$relation)
+					continue;
 				$this->addRelationItems($map, $relation, $item, $this->getRelationList($relation, $field));
 				continue;
 			}
@@ -1926,7 +1947,7 @@ class AdminController
 
 	public function getListForRelation($map, $relation, $item, $bridge = false, $opt = [])
 	{
-		$relation_items = $this->getRelationItems($relation, $item);
+		$relation_items = $this->getRelationItems($map, $relation, $item);
 		if (!$relation_items) $relation_items = [];
 		$inverseField = $this->getRelationInverseField($map, $relation);
 		$mainMap = $relation;
@@ -2014,27 +2035,22 @@ class AdminController
 		if (!$metadata)
 			return false;
 		$relation = $this->getEntityByClass($metadata['targetEntity'], $map['section']);
-		if (!$relation) {
+		if (!$relation)
 			$relation = $this->getNewMap($metadata);
-		}
-		if (!$relation['section']) {
+		if (!$relation['section'])
 			$relation['section'] = $map['section'];
-		}
-		if (!array_key_exists('entity', $relation) || !$relation['entity']) {
+		if (!array_key_exists('entity', $relation) || !$relation['entity'])
 			$relation['entity'] = $association;
-		}
-		if ($relation['section'] == null) {
+		if ($relation['section'] == null)
 			$relation['entity_root_section'] = $map['section'];
-		} else {
-			$relation['entity_root_section'] = $relation['section'];
-		}
-		if ($relation['name'] == null) {
+		else $relation['entity_root_section'] = $relation['section'];
+		if ($relation['name'] == null)
 			$relation['entity_root'] = $map['name'];
-		} else {
-			$relation['entity_root'] = $relation['name'];
-		}
+		else $relation['entity_root'] = $relation['name'];
 		$relation['parent_entity'] = $map['name'];
 		$relation['association'] = $association;
+		$relation['association_mappedBy'] = $metadata['mappedBy'];
+		$relation['association_inversedBy'] = $metadata['inversedBy'];
 		$this->loadConfig($relation);
 		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations']))
 			$relation = $this->mergeViews($map['relations'][$association], $relation);
@@ -2119,17 +2135,22 @@ class AdminController
 		return $inverseField;
 	}
 
-	public function getRelationItems($relation, $object)
+	public function getRelationItems($map, $relation, $object)
 	{
-		$getted = $this->getFieldValue($relation['association'], $object);
-		if (is_object($getted))
-		{
-			if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
-				return count($getted) ? $getted : null;
-			return [$getted];
-		}
-		return null;
-		// return $this->getList($relation, ['filters' => [($relation['association']) => $this->getIdentifierValue($relation, $object)]]);
+		// $getted = $this->getFieldValue($relation['association'], $object);
+		// if (is_object($getted))
+		// {
+		// 	if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
+		// 		return count($getted) ? $getted : null;
+		// 	return [$getted];
+		// }
+		// return null;
+		return $this->getList($relation, ['relation_filters' => [
+			[
+				'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $this->getIdentifier($relation)),
+				'value' => ($relation['association_mappedBy'] ? $this->getIdentifierValue($map, $object) : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object)))
+			]
+		]]);
 	}
 
 	public function getRemoveForm($map, $item, $trash = false, $opt = [])
@@ -2621,11 +2642,12 @@ class AdminController
 		}
 		$result = ['success' => true, 'list' => $list];
 		if (!array_key_exists('relations', $data) || count($items) == 0) return $result;
-		$associations = $this->getAssociations($entity);
+		$associations = $this->getAuthRelations($entity);
 		foreach ($data['relations'] as $field => $value)
 		{
+			if (!in_array($field, $associations)) continue;
 			$setter = $this->getSetterMethod($items[0], $field);
-			if (!$setter || !in_array($field, $associations)) continue;
+			if (!$setter) continue;
 			$relation = $this->getRelation($entity, $field);
 			if (!$relation) continue;
 			$relList = $this->getRelationList($relation, $value);
@@ -2764,37 +2786,77 @@ class AdminController
 
 	public function addFiltersQuery($map, &$query, $opt)
 	{
+		if (array_key_exists('section_filters', $opt))
+			$this->addFiltersLoop($map, $query, $opt['section_filters']);
+		if (array_key_exists('relation_filters', $opt))
+			$this->addFiltersLoop($map, $query, $opt['relation_filters']);
 		$filters = $this->getOpt($opt, 'filters', null);
 		if ($filters === false) return;
 		if ($filters == null)
 			$filters = $opt['use_session'] ? $this->getFilters($map, $opt['action']) : [];
 		if (!count($filters)) return;
+		$this->addFiltersLoop($map, $query, $filters);
+	}
+
+	public function addFiltersLoop($map, &$query, $filters)
+	{
 		$fields = $this->getFields($map, false);
+		$associations = $this->getAssociations($map);
+		$q = false;
+		$vals = [];
 		foreach ($filters as $key => $data)
 		{
 			$field = $data['field'];
-			if (!in_array($field, $fields)) {
+			if (!in_array($field, $fields) && !in_array($field, $associations))
 				continue;
-			}
 			if (is_array($data) && !array_key_exists(0, $data)) {
 				if (!array_key_exists('value', $data)) $value = null;
 				else $value = $data['value'];
 				if (!array_key_exists('method', $data)) $method = '=';
 				else $method = $data['method'];
-				if (!array_key_exists('connector', $data)) $connector = 'and';
+				if (!array_key_exists('connector', $data)) $connector = 'AND';
 				else $connector = $data['connector'];
 			}
 			else
 			{
-				$connector = 'and';
+				$connector = 'AND';
 				$value = $data;
 				$method = '=';
 			}
-			$connector = $connector == 'or' ? 'orWhere' : 'andWhere';
-			$query->$connector($query->getRootAlias() . '.' . $field . ' ' . $method . ' :filter_' . $key);
-			$query->setParameter('filter_' . $key, $method == 'LIKE' ? "%$value%" : "$value");
+			$connector = strtoupper($connector);
+			if (!in_array($connector, ['AND', 'OR']))
+				$connector = 'AND';
+			if (!$q)
+			{
+				$q = '(';
+				$connector = '';
+			}
+			$q .= ' ' . $connector . ' ' . $query->getRootAlias() . '.' . $field . ' ' . $method . ' :filter_' . $key;
+			$vals[$key] = $method == 'LIKE' ? "%$value%" : "$value";
 		}
+		if (!$q)
+			return;
+		$q .= ' )';
+		$query->andWhere($q);
+		foreach ($vals as $key => $value)
+			$query->setParameter('filter_' . $key, $value);
 	}
+
+	/**
+	* Custom addition to Doctrine, to allow wrapping a set of OR clauses
+	* in parentheses, so that they can be combined with AND clauses.
+	*
+	* @return Doctrine_Query this object
+	*/
+	/*public function whereParenWrap()
+	{
+		$where = &$this->_dqlParts['where'];
+		if (count($where) > 0) {
+			array_unshift($where, '(');
+			array_push($where, ')');
+		}
+		return $this;
+	}*/
 
 	public function addTrashQuery($map, &$query, $opt)
 	{
