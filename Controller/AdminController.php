@@ -250,6 +250,28 @@ class AdminController
 					$entity['class'] = $this->getClass($entity);
 					if (!array_key_exists('label', $entity))
 						$entity['label'] = $this->generateLabel($entity_name);
+					if (array_key_exists('filters', $entity))
+					{
+						$filters = [];
+						foreach ($entity['filters'] as $field => $filter)
+						{
+							$ex = false;
+							if (array_key_exists('ex_roles', $filter))
+							foreach ($filter as $role)
+							{
+								if ($this->authorizationChecker->isGranted($role))
+								{
+									$ex = true;
+									break;
+								}
+							}
+							if ($ex) continue;
+							$filter['field'] = $field;
+							$filters[] = $filter;
+						}
+						$entity['filters'] = $filters;
+					}
+					else $entity['filters'] = false;
 					if (!array_key_exists('config', $entity))
 						$entity['config'] = false;
 					// Add Entity
@@ -703,12 +725,12 @@ class AdminController
 		return array_merge($this->getDefaultEntityParams($map),array(
 			'fields' => $this->getFields($relation),
 			'list_fields' => $this->getListFields($relation),
-			'form_filters' => false, // $this->generateFiltersForm($relation, $relAction)->createView(),
-			'has_filters' => false, // $this->hasFilters($relation, $relAction),
-			'filters' => false, // $this->getFilters($relation, $relAction),
-			'filters_list' => false, // $this->getGeneratedFilters($relation, $relAction),
-			'form_search' => false,
-			'search_query' => '', // $this->getStoredSearchQuery($map, $relAction, $relation),
+			'form_filters' => $this->generateFiltersForm($relation, $relAction)->createView(),
+			'has_filters' => $this->hasFilters($relation, $relAction),
+			'filters' => $this->getFilters($relation, $relAction),
+			'filters_list' => $this->getGeneratedFilters($relation, $relAction),
+			'form_search' => true,
+			'search_query' => $this->getStoredSearchQuery($map, $relAction, $relation),
 			'relation' => $relation['association'],
 			'association_label' => $this->generateLabel($relation['association']),
 			'relation_label' => $relation['label'],
@@ -1352,19 +1374,18 @@ class AdminController
 	public function getForm($map, $object = false)
 	{
 		$form = $map['name'];
-		if (array_key_exists('form', $map)) {
+		if (array_key_exists('form', $map))
 			return $this->createForm($map['form'], $object);
-		}
-		if (class_exists($form)) {
+		if (class_exists($form))
 			return $this->createForm($form, $object);
-		}
 		$bundleNamespace = $this->getBundleNamespace($map);
-		if($bundleNamespace) {
-			$form = ( $bundleNamespace . "\\Form\\Mcm" . $this->getCamel($map['section']) . "\\" . $this->getCamel($map['name']) . "Type" );
+		if($bundleNamespace)
+		{
+			$form = ($bundleNamespace . "\\Form\\Mcm" . $this->getCamel($map['section']) . "\\" . $this->getCamel($map['name']) . "Type");
 			if (class_exists($form)) {
 				return $this->createForm($form, $object);
 			}
-			$form = ( $bundleNamespace . "\\Form\\Mcm\\" . $this->getCamel($map['name']) . "Type" );
+			$form = ($bundleNamespace . "\\Form\\Mcm\\" . $this->getCamel($map['name']) . "Type");
 			if (class_exists($form)) {
 				return $this->createForm($form, $object);
 			}
@@ -1464,32 +1485,32 @@ class AdminController
 
 		if ($isNew) {
 			if ($this->getCurrentAction() != 'relations') {
-				$form->add('save', SubmitType::class, array(
+				$form->add('save', SubmitType::class, [
 					'label'=>'Save & Edit Item',
-					'attr'=>array('class'=>'btn btn-success')
-				));
+					'attr'=> ['class'=>'btn btn-success']
+				]);
 			}
-			$form->add('save_and_list', SubmitType::class, array(
+			$form->add('save_and_list', SubmitType::class, [
 				'label'=>'Save & Return to List',
-				'attr'=>array('class'=>'btn btn-primary')
-			));
-			$form->add('save_and_add', SubmitType::class, array(
+				'attr'=> ['class'=>'btn btn-primary']
+			]);
+			$form->add('save_and_add', SubmitType::class, [
 				'label'=>'Save & Add a New Item',
-				'attr'=>array('class'=>'btn btn-primary')
-			));
+				'attr'=> ['class'=>'btn btn-primary']
+			]);
 		} else {
-			$form->add('save', SubmitType::class, array(
-				'attr'=>array('class'=>'btn btn-success')
-			));
-			$form->add('save_and_list', SubmitType::class, array(
+			$form->add('save', SubmitType::class, [
+				'attr'=> ['class'=>'btn btn-success']
+			]);
+			$form->add('save_and_list', SubmitType::class, [
 				'label'=>'Save & Return to List',
-				'attr'=>array('class'=>'btn btn-primary')
-			));
+				'attr'=> ['class'=>'btn btn-primary']
+			]);
 		}
 
-		$form->add('reset', ResetType::class, array(
+		$form->add('reset', ResetType::class, [
 			'label'=>'Reset Form'
-		));
+		]);
 
 		return $form->getForm();
 	}
@@ -2135,7 +2156,7 @@ class AdminController
 		return $inverseField;
 	}
 
-	public function getRelationItems($map, $relation, $object)
+	public function getRelationItems($map, $relation, $object, $opt = [])
 	{
 		// $getted = $this->getFieldValue($relation['association'], $object);
 		// if (is_object($getted))
@@ -2145,12 +2166,12 @@ class AdminController
 		// 	return [$getted];
 		// }
 		// return null;
-		return $this->getList($relation, ['relation_filters' => [
+		return $this->getList($relation, array_merge($opt, ['relation_filters' => [
 			[
 				'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $this->getIdentifier($relation)),
 				'value' => ($relation['association_mappedBy'] ? $this->getIdentifierValue($map, $object) : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object)))
 			]
-		]]);
+		]]));
 	}
 
 	public function getRemoveForm($map, $item, $trash = false, $opt = [])
@@ -2786,8 +2807,8 @@ class AdminController
 
 	public function addFiltersQuery($map, &$query, $opt)
 	{
-		if (array_key_exists('section_filters', $opt))
-			$this->addFiltersLoop($map, $query, $opt['section_filters']);
+		if (array_key_exists('filters', $map) && $map['filters'])
+			$this->addFiltersLoop($map, $query, $map['filters']);
 		if (array_key_exists('relation_filters', $opt))
 			$this->addFiltersLoop($map, $query, $opt['relation_filters']);
 		$filters = $this->getOpt($opt, 'filters', null);
@@ -2831,32 +2852,17 @@ class AdminController
 				$q = '(';
 				$connector = '';
 			}
-			$q .= ' ' . $connector . ' ' . $query->getRootAlias() . '.' . $field . ' ' . $method . ' :filter_' . $key;
-			$vals[$key] = $method == 'LIKE' ? "%$value%" : "$value";
+			$uk = 'filter_' . uniqid();
+			$q .= ' ' . $connector . ' ' . $query->getRootAlias() . '.' . $field . ' ' . $method . ' :' . $uk;
+			$vals[$uk] = $method == 'LIKE' ? "%$value%" : "$value";
 		}
 		if (!$q)
 			return;
 		$q .= ' )';
 		$query->andWhere($q);
 		foreach ($vals as $key => $value)
-			$query->setParameter('filter_' . $key, $value);
+			$query->setParameter($key, $value);
 	}
-
-	/**
-	* Custom addition to Doctrine, to allow wrapping a set of OR clauses
-	* in parentheses, so that they can be combined with AND clauses.
-	*
-	* @return Doctrine_Query this object
-	*/
-	/*public function whereParenWrap()
-	{
-		$where = &$this->_dqlParts['where'];
-		if (count($where) > 0) {
-			array_unshift($where, '(');
-			array_push($where, ')');
-		}
-		return $this;
-	}*/
 
 	public function addTrashQuery($map, &$query, $opt)
 	{

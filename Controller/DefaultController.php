@@ -150,9 +150,9 @@ class DefaultController extends AbstractController
 		$form = $this->mcm->getForm($entity, $item);
 		$form->handleRequest($this->request);
 
-		if ($form->isSubmitted() && $form->isValid()) {
-
-			$isNew = (bool) ( $this->mcm->getIdentifierValue($entity, $item) === null );
+		if ($form->isSubmitted() && $form->isValid())
+		{
+			$isNew = (bool)($this->mcm->getIdentifierValue($entity, $item) === null);
 			if ($isNew) $this->om->persist($item);
 
 			// if ($clone) {
@@ -172,11 +172,11 @@ class DefaultController extends AbstractController
 			return $this->mcm->getDefaultEntityRedirectParams($entity, 'edit', $this->mcm->getIdentifierValue($entity, $item));
 		}
 
-		return array_merge($this->mcm->getDefaultEntityParams($entity), array(
+		return array_merge($this->mcm->getDefaultEntityParams($entity), [
 			'identifier' => $this->mcm->getIdentifierValue($entity, $item),
 			'item' => $item,
 			'form' => $form->createView()
-		));
+		]);
 	}
 
 	public function mcmRemove($trash = false)
@@ -356,7 +356,7 @@ class DefaultController extends AbstractController
 		if ($this->mcm->setSessionFromRequest($relation, $relAction))
 			return $this->mcm->getCurrentRedirectParams();
 
-		$list = $this->mcm->getRelationItems($entity, $relation, $item);
+		$list = $this->mcm->getRelationItems($entity, $relation, $item, ['action' => $relAction]);
 		$pager = $this->mcm->getPager($relation, $relAction, $list, [
 			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
 		]);
@@ -447,11 +447,11 @@ class DefaultController extends AbstractController
 
 		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 		$params['pager'] = $pager;
-		$params['form_filters'] = $this->mcm->generateFiltersForm($relation, $relAction)->createView();
-		$params['has_filters'] = $this->mcm->hasFilters($relation, $relAction);
-		$params['filters_list'] = $this->mcm->getGeneratedFilters($relation, $relAction);
-		$params['form_search'] = true;
-		$params['search_query'] = $this->mcm->getStoredSearchQuery($relation, $relAction);
+		// $params['form_filters'] = $this->mcm->generateFiltersForm($relation, $relAction)->createView();
+		// $params['has_filters'] = $this->mcm->hasFilters($relation, $relAction);
+		// $params['filters_list'] = $this->mcm->getGeneratedFilters($relation, $relAction);
+		// $params['form_search'] = true;
+		// $params['search_query'] = $this->mcm->getStoredSearchQuery($relation, $relAction);
 
 		return $params;
 	}
