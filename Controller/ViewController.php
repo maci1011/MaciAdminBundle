@@ -177,16 +177,18 @@ class ViewController extends AbstractController
 		$section = false;
 		$actions = false;
 
-		foreach ($sections as $secname) {
-			if ($admin->hasEntity($secname, $entity)) {
+		foreach ($sections as $secname)
+		{
+			if ($admin->hasEntity($secname, $entity))
+			{
 				$section = $secname;
 				$_entity = $admin->getEntity($section, $entity);
-				if ($item) {
+				if ($item)
+				{
 					$actions = $admin->getArrayWithLabels($admin->getSingleActions($_entity));
 					$id = $item->getId();
-				} else {
+				} else
 					$actions = $admin->getArrayWithLabels($admin->getMainActions($_entity));
-				}
 				break;
 			}
 		}

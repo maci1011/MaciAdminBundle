@@ -415,7 +415,7 @@ class AdminController
 	public function getConfigKey($map, $key)
 	{
 		// $config = $this->getConfig($map);
-		if (!array_key_exists('config', $map) || !array_key_exists($key, $map['config']))
+		if (!array_key_exists('config', $map) || !$map['config'] || !array_key_exists($key, $map['config']))
 		{
 			if (array_key_exists($key, $map))
 				return $map[$key];

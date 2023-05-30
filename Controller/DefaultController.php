@@ -402,7 +402,8 @@ class DefaultController extends AbstractController
 			else
 				$this->session->getFlashBag()->add('success', 'Item Edited.');
 
-			if ($this->request->isXmlHttpRequest()) return ['success' => true];
+			if ($this->request->isXmlHttpRequest())
+				return ['success' => true];
 			if ($form->has('save_and_add') && $form->get('save_and_add')->isClicked())
 				return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'new');
 			return $this->mcm->getDefaultRelationRedirectParams($entity, $relation, 'list');
