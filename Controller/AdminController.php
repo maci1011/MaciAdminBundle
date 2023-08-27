@@ -2072,6 +2072,7 @@ class AdminController
 		$relation['association'] = $association;
 		$relation['association_mappedBy'] = $metadata['mappedBy'];
 		$relation['association_inversedBy'] = $metadata['inversedBy'];
+		$relation['association_orderBy'] = array_key_exists('orderBy', $metadata) ? $metadata['orderBy'] : false;
 		$this->loadConfig($relation);
 		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations']))
 			$relation = $this->mergeViews($map['relations'][$association], $relation);
@@ -2166,12 +2167,19 @@ class AdminController
 		// 	return [$getted];
 		// }
 		// return null;
-		return $this->getList($relation, array_merge($opt, ['relation_filters' => [
+		return $this->getList($relation, array_merge($opt,
 			[
-				'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $this->getIdentifier($relation)),
-				'value' => ($relation['association_mappedBy'] ? $this->getIdentifierValue($map, $object) : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object)))
-			]
-		]]));
+				'is_relation' => true,
+				'relation_filters' => [[
+					'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $this->getIdentifier($relation)),
+					'value' => ($relation['association_mappedBy'] ? $this->getIdentifierValue($map, $object) : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object)))
+				]]
+			],
+			($relation['association_orderBy'] ? ['relation_order' => [
+				'field' => array_keys($relation['association_orderBy'])[0],
+				'sort' => array_values($relation['association_orderBy'])[0]
+			]] : [])
+		));
 	}
 
 	public function getRemoveForm($map, $item, $trash = false, $opt = [])
@@ -2237,6 +2245,8 @@ class AdminController
 
 	public function getPager($map, $action, $list, $opt = [])
 	{
+		if (array_key_exists('entity_root', $map))
+			$action = 'relation' . ($action ? ':' . $action : null);
 		if (!$list) $list = [];
 		$pager = new MaciPager($list,
 			array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map, $action),
@@ -2254,8 +2264,8 @@ class AdminController
 		$values = [
 			'page' => $pager ? $pager->getPage() : $this->getStoredPage($map, $action),
 			'page_limit' => array_key_exists('page_limit', $opt) ? $opt['page_limit'] : $this->getPager_PageLimit($map, $action),
-			'order_by_field' => array_key_exists('sort_field', $opt) ? $opt['sort_field'] : $this->getPagerForm_OrderByField($map, $action),
-			'order_by_sort' => array_key_exists('sort_order', $opt) ? $opt['sort_order'] : $this->getPagerForm_OrderBySort($map, $action)
+			'order_by_field' => array_key_exists('sort_field', $opt) ? $opt['sort_field'] : $this->getPagerForm_OrderByField($map, $action, $this->getIdentifier($map)),
+			'order_by_sort' => array_key_exists('sort_order', $opt) ? $opt['sort_order'] : $this->getPagerForm_OrderBySort($map, $action, 'DESC')
 		];
 		$page_attr = $pager ? ['max' => $pager->getMaxPages()] : [];
 		$urlOpt = array_key_exists('url_opt', $opt) ? $opt['url_opt'] : [];
@@ -2306,9 +2316,9 @@ class AdminController
 		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_page_range'), $value);
 	}
 
-	public function getPagerForm_OrderByField($map, $action)
+	public function getPagerForm_OrderByField($map, $action, $default = false)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $this->getIdentifier($map));
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $default);
 	}
 
 	public function setPagerForm_OrderByField($map, $action, $value)
@@ -2316,9 +2326,9 @@ class AdminController
 		return $this->session->set(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_field'), $value);
 	}
 
-	public function getPagerForm_OrderBySort($map, $action)
+	public function getPagerForm_OrderBySort($map, $action, $default = false)
 	{
-		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_sort'), 'DESC');
+		return $this->session->get(('maci_admin_' . $this->getSessionIdentifier($map, $action) . '_order_by_sort'), $default);
 	}
 
 	public function setPagerForm_OrderBySort($map, $action, $value)
@@ -2785,6 +2795,8 @@ class AdminController
 			$opt['action'] = false;
 		if (!array_key_exists('use_session', $opt))
 			$opt['use_session'] = is_string($opt['action']);
+		if (array_key_exists('is_relation', $opt) && $opt['is_relation'])
+			$opt['action'] = 'relation' . ($opt['action'] ? ':' . $opt['action'] : null);
 		$this->addSearchQuery($map, $query, $opt);
 		$this->addFiltersQuery($map, $query, $opt);
 		$this->addTrashQuery($map, $query, $opt);
@@ -2881,13 +2893,34 @@ class AdminController
 	public function addOrderByQuery($map, &$query, $opt)
 	{
 		$order = $this->getOpt($opt, 'order', []);
-		if (!is_array($order)) $order = [];
+		if (!is_array($order))
+			$order = [];
 		$field = $opt['use_session'] ? $this->getPagerForm_OrderByField($map, $opt['action']) : false;
-		if (array_key_exists('field', $order)) $field = $order['field'];
-		if (!$field) $field = $this->getIdentifier($map);
-		$sort = $opt['use_session'] ? $this->getPagerForm_OrderBySort($map, $opt['action']) : 'DESC';
-		if (array_key_exists('sort', $order)) $sort = $order['sort'];
+		$sort = $opt['use_session'] ? $this->getPagerForm_OrderBySort($map, $opt['action']) : false;
+		// var_dump($field);
+		// var_dump($sort);
+		echo "\r";
+		if (array_key_exists('field', $order))
+			$field = $order['field'];
+		if (!$field)
+		{
+			if (array_key_exists('relation_order', $opt))
+			{
+				$x = $this->getOpt($opt, 'relation_order');
+				$field = $x['field'];
+				$sort = $x['sort'];
+				$this->setPagerForm_OrderByField($map, $opt['action'], $field);
+				$this->setPagerForm_OrderBySort($map, $opt['action'], $sort);
+			}
+			else $field = $this->getIdentifier($map);
+		}
+		if (array_key_exists('sort', $order))
+			$sort = $order['sort'];
+		if (!$sort)
+			$sort = 'DESC';
 		$query->orderBy($query->getRootAlias() . '.' . $field, $sort);
+		// var_dump($field);
+		// var_dump($sort);die();
 	}
 
 	/*
@@ -3001,6 +3034,8 @@ class AdminController
 	public function setSessionFromRequest($map, $action)
 	{
 		$this->session_response = false;
+		if (array_key_exists('entity_root', $map))
+			$action = 'relation' . ($action ? ':' . $action : null);
 		return
 			$this->setStoredSearchQueryFromRequest($map, $action) ||
 			$this->setStoredPageFromRequest($map, $action) ||
