@@ -40,7 +40,7 @@
 	<th class="list-header header-blank">&nbsp;</th>
 	{% endif %}
 
-	{% if 'id' not in list_fields %}
+	{% if item_identifier not in list_fields %}
 	<th class="list-header header-listId">
 		<span class="list-title">#</span>
 	</th>
@@ -48,9 +48,9 @@
 
 	{% for field in list_fields %}
 
-	{% if field == 'id' %}
+	{% if field == item_identifier %}
 	<th class="list-header header-id">
-		<span class="list-title">Id</span>
+		<span class="list-title">{{ item_identifier }}</span>
 	</th>
 	{% elseif field == '_preview' %}
 	<th class="list-header no-sort header-preview">

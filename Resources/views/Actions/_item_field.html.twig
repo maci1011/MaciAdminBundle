@@ -2,7 +2,7 @@
 {% if field == item_identifier %}
 
 
-{% set _identifier = identifier is defined ? identifier : pager is defined ? pager.identifier(listId) : listId %}
+{% set _identifier = identifier is defined ? identifier : (pager is defined ? pager.identifier(listId) : listId) %}
 {% set _id = _identifier matches '/^\\d+$/' ? _identifier : (listId + 1) %}
 
 <input name="id" type="hidden" value="{{ _identifier }}" />

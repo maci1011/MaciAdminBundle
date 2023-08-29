@@ -2073,6 +2073,7 @@ class AdminController
 		$relation['association_mappedBy'] = $metadata['mappedBy'];
 		$relation['association_inversedBy'] = $metadata['inversedBy'];
 		$relation['association_orderBy'] = array_key_exists('orderBy', $metadata) ? $metadata['orderBy'] : false;
+		$relation['association_joinTable'] = array_key_exists('joinTable', $metadata) ? $metadata['joinTable']['joinColumns'] : false;
 		$this->loadConfig($relation);
 		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations']))
 			$relation = $this->mergeViews($map['relations'][$association], $relation);
@@ -2138,7 +2139,8 @@ class AdminController
 		$inverseField = false;
 		if (array_key_exists('joinTable', $relationMetadata)) {
 			$joinTable = $relationMetadata['joinTable'];
-			if (array_key_exists('joinColumns', $joinTable)) {
+			if (array_key_exists('joinColumns', $joinTable))
+			{
 				$joinColumns = $joinTable['joinColumns'];
 				$inverseJoinColumns = $joinTable['inverseJoinColumns'];
 			}
@@ -2171,8 +2173,10 @@ class AdminController
 			[
 				'is_relation' => true,
 				'relation_filters' => [[
-					'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $this->getIdentifier($relation)),
-					'value' => ($relation['association_mappedBy'] ? $this->getIdentifierValue($map, $object) : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object)))
+					'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $relation['association_inversedBy']),
+					'value' => ($this->getIdentifierValue($map, $object)), // : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object))
+					'method' => (is_array($relation['association_joinTable']) ? 'join' : '='),
+					'column' => (is_array($relation['association_joinTable']) ? $relation['association_joinTable'][0]['referencedColumnName'] : false)
 				]]
 			],
 			($relation['association_orderBy'] ? ['relation_order' => [
@@ -2823,6 +2827,7 @@ class AdminController
 			$this->addFiltersLoop($map, $query, $map['filters']);
 		if (array_key_exists('relation_filters', $opt))
 			$this->addFiltersLoop($map, $query, $opt['relation_filters']);
+		// die();
 		$filters = $this->getOpt($opt, 'filters', null);
 		if ($filters === false) return;
 		if ($filters == null)
@@ -2837,18 +2842,22 @@ class AdminController
 		$associations = $this->getAssociations($map);
 		$q = false;
 		$vals = [];
+		$joins = [];
 		foreach ($filters as $key => $data)
 		{
 			$field = $data['field'];
 			if (!in_array($field, $fields) && !in_array($field, $associations))
 				continue;
-			if (is_array($data) && !array_key_exists(0, $data)) {
+			if (is_array($data) && !array_key_exists(0, $data))
+			{
 				if (!array_key_exists('value', $data)) $value = null;
 				else $value = $data['value'];
 				if (!array_key_exists('method', $data)) $method = '=';
 				else $method = $data['method'];
 				if (!array_key_exists('connector', $data)) $connector = 'AND';
 				else $connector = $data['connector'];
+				if (!array_key_exists('column', $data)) $column = false;
+				else $column = $data['column'];
 			}
 			else
 			{
@@ -2864,9 +2873,22 @@ class AdminController
 				$q = '(';
 				$connector = '';
 			}
-			$uk = 'filter_' . uniqid();
-			$q .= ' ' . $connector . ' ' . $query->getRootAlias() . '.' . $field . ' ' . $method . ' :' . $uk;
-			$vals[$uk] = $method == 'LIKE' ? "%$value%" : "$value";
+			if ($method == 'join')
+			{
+				if (!$column) continue;
+				$j = count($joins);
+				array_push($joins, $field);
+				$query->leftJoin($query->getRootAlias() . '.' . $field, 'jn_' . $j);
+				$uk = 'filter_' . uniqid();
+				$q .= ' ' . $connector . ' ' . 'jn_' . $j . '.' . $column . ' = :' . $uk;
+				$vals[$uk] = $value;
+			}
+			else
+			{
+				$uk = 'filter_' . uniqid();
+				$q .= ' ' . $connector . ' ' . $query->getRootAlias() . '.' . $field . ' ' . $method . ' :' . $uk;
+				$vals[$uk] = $method == 'LIKE' ? "%$value%" : "$value";
+			}
 		}
 		if (!$q)
 			return;
@@ -2897,8 +2919,6 @@ class AdminController
 			$order = [];
 		$field = $opt['use_session'] ? $this->getPagerForm_OrderByField($map, $opt['action']) : false;
 		$sort = $opt['use_session'] ? $this->getPagerForm_OrderBySort($map, $opt['action']) : false;
-		// var_dump($field);
-		// var_dump($sort);
 		echo "\r";
 		if (array_key_exists('field', $order))
 			$field = $order['field'];
@@ -2919,8 +2939,6 @@ class AdminController
 		if (!$sort)
 			$sort = 'DESC';
 		$query->orderBy($query->getRootAlias() . '.' . $field, $sort);
-		// var_dump($field);
-		// var_dump($sort);die();
 	}
 
 	/*
