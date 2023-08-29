@@ -1420,40 +1420,42 @@ class AdminController
 
 		$fieldMappings = $this->getMetadata($map)->fieldMappings;
 
-		foreach ($fields as $field) {
+		foreach ($fields as $field)
+		{
+			if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field'))
+				continue;
 
-			if ($this->hasTrash($map) && $field === $this->getConfigKey($map,'trash_field')) {
+			if (in_array($field, array('updated', 'created')))
 				continue;
-			}
-			if (in_array($field, array('updated', 'created'))) {
-				continue;
-			}
-			if (!array_key_exists($field, $fieldMappings)) {
+
+			if (!array_key_exists($field, $fieldMappings))
+			{
 				$field = str_replace('_', '', $field);
-				if (!array_key_exists($field, $fieldMappings)) {
+				if (!array_key_exists($field, $fieldMappings))
 					continue;
-				}
 			}
-			if (array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id']) {
+
+			if (array_key_exists('id', $fieldMappings[$field]) && $fieldMappings[$field]['id'])
 				continue;
-			}
-			if (!array_key_exists('type', $fieldMappings[$field])) {
+
+			if (!array_key_exists('type', $fieldMappings[$field]))
 				continue;
-			}
+
 			if (!in_array(
 				$fieldMappings[$field]['type'],
-				['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime']
-			)) {
-				continue;
-			}
+				['text', 'string', 'decimal', 'smallint', 'integer', 'bigint', 'boolean', 'date', 'datetime', 'array']
+			)) continue;
 
 			$arrMethod = ('get' . ucfirst($field) . 'Array');
 
 			if (method_exists($object, $arrMethod))
 			{
+				$multiple = $fieldMappings[$field]['type'] == 'array';
 				$form->add($field, ChoiceType::class, [
 					'empty_data' => '',
-					'choices' => call_user_func_array([$object, $arrMethod], [])
+					'choices' => call_user_func_array([$object, $arrMethod], []),
+					'multiple' => $multiple,
+					'expanded' => $multiple
 				]);
 			}
 			else if ($isUploadable && $field === $upload_path_field)
@@ -1483,7 +1485,8 @@ class AdminController
 			}
 		}
 
-		if ($isNew) {
+		if ($isNew)
+		{
 			if ($this->getCurrentAction() != 'relations') {
 				$form->add('save', SubmitType::class, [
 					'label'=>'Save & Edit Item',
@@ -1498,7 +1501,9 @@ class AdminController
 				'label'=>'Save & Add a New Item',
 				'attr'=> ['class'=>'btn btn-primary']
 			]);
-		} else {
+		}
+		else
+		{
 			$form->add('save', SubmitType::class, [
 				'attr'=> ['class'=>'btn btn-success']
 			]);
