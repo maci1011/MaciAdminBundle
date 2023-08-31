@@ -357,11 +357,19 @@ class DefaultController extends AbstractController
 			return $this->mcm->getCurrentRedirectParams();
 
 		$list = $this->mcm->getRelationItems($entity, $relation, $item, ['action' => $relAction]);
+		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
+
+		if ($params['association_type'] == 2)
+		{
+			$params['form_search'] = false;
+			$params['form_filters'] = false;
+			$params['list'] = $list;
+			return $params;
+		}
+
 		$pager = $this->mcm->getPager($relation, $relAction, $list, [
 			'form_action' => $this->mcm->getRelationUrl($entity, $relation, $relAction)
 		]);
-
-		$params = $this->mcm->getDefaultRelationParams($entity, $relation, $item);
 		$params['pager'] = $pager;
 
 		return $params;

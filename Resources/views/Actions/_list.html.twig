@@ -1,4 +1,6 @@
 
+{% if pager is defined or list is defined %}
+
 {% set listLen = pager is defined ? pager.pageList|length : list|length %}
 
 {% include "MaciAdminBundle:Actions:_list_filters_bar.html.twig" %}
@@ -92,11 +94,19 @@
 
 <tbody>
 
+{% if pager is defined %}
 {% for item in pager.pageList %}
 
-{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'listId': loop.index0, 'cuttext': 72 } %}
+{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'cuttext': 72 } %}
 
 {% endfor %}
+{% else %}
+{% for item in list %}
+
+{% include "MaciAdminBundle:Actions:_list_item.html.twig" with {'cuttext': 72 } %}
+
+{% endfor %}
+{% endif %}
 
 </tbody>
 
@@ -118,5 +128,7 @@
 <div class="container-fluid">
 	<span class="navbar-text noitems">No Items.</span>
 </div>
+
+{% endif %}
 
 {% endif %}

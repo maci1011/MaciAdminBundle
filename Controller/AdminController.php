@@ -689,7 +689,8 @@ class AdminController
 	public function getDefaultEntityParams($map)
 	{
 		$action = $this->request->get('action');
-		return array_merge($this->getDefaultParams(),array(
+		return array_merge($this->getDefaultParams(), [
+			'map_type' => 'entity',
 			'entity' => $map['name'],
 			'entity_label' => $map['label'],
 			'action' =>  $action,
@@ -716,13 +717,14 @@ class AdminController
 			'uploader' => ($this->isUploadable($map) ? $this->generateUrl('maci_admin_view', array(
 				'section'=>$map['section'],'entity'=>$map['name'],'action'=>'uploader'
 			)) : false)
-		));
+		]);
 	}
 
 	public function getDefaultRelationParams($map, $relation)
 	{
 		$relAction = $this->request->get('relAction');
-		return array_merge($this->getDefaultEntityParams($map),array(
+		return array_merge($this->getDefaultEntityParams($map), [
+			'map_type' => 'relation',
 			'fields' => $this->getFields($relation),
 			'list_fields' => $this->getListFields($relation),
 			'form_filters' => $this->generateFiltersForm($relation, $relAction)->createView(),
@@ -740,6 +742,7 @@ class AdminController
 			'relation_entity_root_section' => $relation['entity_root_section'],
 			'relation_action' => $relAction,
 			'relation_action_label' => $this->generateLabel($relAction),
+			'association_type' => $relation['association_type'],
 			'bridges' => $this->getBridges($relation),
 			'uploadable_bridges' => $this->getUpladableBridges($relation),
 			'is_relation_uploadable' => $this->isUploadable($relation),
@@ -755,7 +758,7 @@ class AdminController
 				'action'=>'relations','id'=>$this->request->get('id'),
 				'relation'=>$relation['association'],'relAction'=>'uploader'
 			)) : false)
-		));
+		]);
 	}
 
 	public function getDefaultBridgeParams($map, $relation, $bridge)
@@ -764,6 +767,7 @@ class AdminController
 		if ($relAction === 'bridge')
 			$relAction = ($this->getRelationDefaultAction($map, $relation['association']) === 'show' ? 'set' : 'add');
 		return array_merge($this->getDefaultRelationParams($map, $relation), [
+			'map_type' => 'bridge',
 			'fields' => $this->getFields($bridge),
 			'list_fields' => $this->getListFields($bridge),
 			'form_filters' => $this->generateFiltersForm($bridge, $bridge['association'])->createView(),
@@ -787,10 +791,10 @@ class AdminController
 
 	public function getDefaultRedirectParams($opt = [])
 	{
-		return array(
+		return [
 			'redirect' => 'maci_admin_view',
 			'redirect_params' => $opt
-		);
+		];
 	}
 
 	public function getDefaultSectionRedirectParams($section, $opt = [])
@@ -1458,11 +1462,14 @@ class AdminController
 					'expanded' => $multiple
 				]);
 			}
-			else if ($isUploadable && $field === $upload_path_field)
-			{
+
+			elseif ($fieldMappings[$field]['type'] == 'array')
+				continue;
+
+			elseif ($isUploadable && $field === $upload_path_field)
 				$form->add('file', FileType::class, ['required' => false]);
-			}
-			else if ($field === 'locale')
+
+			elseif ($field === 'locale')
 			{
 				if (method_exists($object, 'getLocaleChoices'))
 				{
@@ -1479,20 +1486,18 @@ class AdminController
 					]);
 				}
 			}
-			else
-			{
-				$form->add($field);
-			}
+
+			else $form->add($field);
 		}
 
 		if ($isNew)
 		{
-			if ($this->getCurrentAction() != 'relations') {
+			if ($this->getCurrentAction() != 'relations')
 				$form->add('save', SubmitType::class, [
 					'label'=>'Save & Edit Item',
 					'attr'=> ['class'=>'btn btn-success']
 				]);
-			}
+
 			$form->add('save_and_list', SubmitType::class, [
 				'label'=>'Save & Return to List',
 				'attr'=> ['class'=>'btn btn-primary']
@@ -1962,6 +1967,7 @@ class AdminController
 
 	public function getList($map, $opt = [])
 	{
+		// var_dump($opt);die();
 		$repo = $this->getRepository($map);
 		$query = $repo->createQueryBuilder('e');
 		$root = $query->getRootAlias();
@@ -2078,7 +2084,11 @@ class AdminController
 		$relation['association_mappedBy'] = $metadata['mappedBy'];
 		$relation['association_inversedBy'] = $metadata['inversedBy'];
 		$relation['association_orderBy'] = array_key_exists('orderBy', $metadata) ? $metadata['orderBy'] : false;
-		$relation['association_joinTable'] = array_key_exists('joinTable', $metadata) ? $metadata['joinTable']['joinColumns'] : false;
+		$relation['association_joinColumn'] = array_key_exists('joinTable', $metadata) ? $metadata['joinTable']['joinColumns'] : (
+			array_key_exists('joinColumns', $metadata) ? $metadata['joinColumns'] : false
+		);
+		$relation['association_type'] = $metadata['type'];
+		// var_dump($metadata);die();
 		$this->loadConfig($relation);
 		if (array_key_exists('relations', $map) && array_key_exists($association, $map['relations']))
 			$relation = $this->mergeViews($map['relations'][$association], $relation);
@@ -2142,53 +2152,125 @@ class AdminController
 		$joinColumns = false;
 		$inverseJoinColumns = false;
 		$inverseField = false;
-		if (array_key_exists('joinTable', $relationMetadata)) {
+
+		if (array_key_exists('joinTable', $relationMetadata))
+		{
 			$joinTable = $relationMetadata['joinTable'];
 			if (array_key_exists('joinColumns', $joinTable))
 			{
 				$joinColumns = $joinTable['joinColumns'];
 				$inverseJoinColumns = $joinTable['inverseJoinColumns'];
 			}
-		} else if (array_key_exists('joinColumns', $relationMetadata)) {
+		}
+		elseif (array_key_exists('joinColumns', $relationMetadata))
 			$joinColumns = $relationMetadata['joinColumns'];
-		}
-		if ($joinColumns) {
+
+		if ($joinColumns)
 			$sourceField = $joinColumns[0]['referencedColumnName'];
-		}
-		if ($inverseJoinColumns) {
+
+		if ($inverseJoinColumns)
 			$inverseField = $inverseJoinColumns[0]['referencedColumnName'];
-		}
-		if (!$inverseField) {
+
+		if (!$inverseField)
 			$inverseField = $this->getIdentifier($relation);
-		}
+
 		return $inverseField;
+	}
+
+	public function getRelationItemsByObjectMethod($map, $relation, $object, $opt = [])
+	{
+		$getted = $this->getFieldValue($relation['association'], $object);
+		if (is_object($getted))
+		{
+			if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
+				return count($getted) ? $getted : null;
+			return [$getted];
+		}
+		return null;
 	}
 
 	public function getRelationItems($map, $relation, $object, $opt = [])
 	{
-		// $getted = $this->getFieldValue($relation['association'], $object);
-		// if (is_object($getted))
-		// {
-		// 	if (is_array($getted) || get_class($getted) === 'Doctrine\ORM\PersistentCollection')
-		// 		return count($getted) ? $getted : null;
-		// 	return [$getted];
-		// }
-		// return null;
+		// var_dump($relation);die();
+
+		$filters = false;
+
+		if ($relation['association_type'] == 8)
+			$filters = $this->getManyToManyItems($map, $relation, $object, $opt);
+
+		elseif ($relation['association_type'] == 4)
+			$filters = $this->getOneToManyItems($map, $relation, $object, $opt);
+
+		elseif ($relation['association_type'] == 2)
+		{
+			$ao = $this->getFieldValue($relation['association'], $object);
+			if (is_object($ao))
+				return [$ao];
+			return [];
+			// $filters = $this->getManyToOneItems($map, $relation, $object, $opt);
+		}
+
+		else
+		{
+			echo "Not Mapped: \n";
+			var_dump($relation);
+			die();
+		}
+
 		return $this->getList($relation, array_merge($opt,
 			[
 				'is_relation' => true,
-				'relation_filters' => [[
-					'field' => ($relation['association_mappedBy'] ? $relation['association_mappedBy'] : $relation['association_inversedBy']),
-					'value' => ($this->getIdentifierValue($map, $object)), // : $this->getIdentifierValue($relation, $this->getFieldValue($relation['association'], $object))
-					'method' => (is_array($relation['association_joinTable']) ? 'join' : '='),
-					'column' => (is_array($relation['association_joinTable']) ? $relation['association_joinTable'][0]['referencedColumnName'] : false)
-				]]
+				'relation_filters' => $filters
 			],
 			($relation['association_orderBy'] ? ['relation_order' => [
 				'field' => array_keys($relation['association_orderBy'])[0],
 				'sort' => array_values($relation['association_orderBy'])[0]
 			]] : [])
 		));
+	}
+
+	// public function getManyToOneItems($map, $relation, $object, $opt = [])
+	// {
+	// 	return [[
+	// 		'field' => $relation['association_joinColumn'][0]['referencedColumnName'],
+	// 		'value' => $this->getFieldValue($relation['association_joinColumn'][0]['referencedColumnName'], $this->getFieldValue($relation['association'], $object))
+	// 	]];
+	// }
+
+	public function getOneToManyItems($map, $relation, $object, $opt = [])
+	{
+		return [[
+			'field' => $relation['association_mappedBy'],
+			'value' => $this->getIdentifierValue($map, $object)
+		]];
+	}
+
+	public function getManyToManyItems($map, $relation, $object, $opt = [])
+	{
+		if (!$relation['association_joinColumn'])
+			return $this->getManyToManyInverseItems($map, $relation, $object, $opt);
+
+		$joinColumn = $relation['association_joinColumn'][0];
+
+		return [[
+			'field' => $relation['association_inversedBy'],
+			'value' => $this->getFieldValue($joinColumn['referencedColumnName'], $object),
+			'method' => 'join',
+			'column' => $joinColumn['referencedColumnName']
+		]];
+	}
+
+	public function getManyToManyInverseItems($map, $relation, $object, $opt = [])
+	{
+		$invMetadata = $this->getAssociationMetadata($relation, $relation['association_mappedBy']);
+		$joinColumn = $invMetadata['joinTable']['inverseJoinColumns'][0];
+
+		return [[
+			'field' => $relation['association_mappedBy'],
+			'value' => $this->getFieldValue($joinColumn['referencedColumnName'], $object),
+			'method' => 'join',
+			'column' => $joinColumn['referencedColumnName']
+		]];
 	}
 
 	public function getRemoveForm($map, $item, $trash = false, $opt = [])

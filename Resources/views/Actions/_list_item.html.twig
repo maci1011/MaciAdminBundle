@@ -1,6 +1,8 @@
 
 {% if item %}
 
+{% set _list_id = pager is defined ? pager.identifier(loop.index0) : loop.index0 %}
+
 {% if type is not defined %}
 {% set type = 'default' %}
 {% endif %}
@@ -18,7 +20,7 @@
 	{% if multipleCheckbox %}
 	<td class="list-item-checkbox">
 		<div class="list-item-checkbox-wrapper">
-			<input type="checkbox" name="list-item-checkbox[{{ pager.identifier(listId) }}]" />
+			<input type="checkbox" name="list-item-checkbox[{{ _list_id }}]" />
 		</div>
 	</td>
 	{% endif %}
@@ -47,37 +49,37 @@
 	<td class="list-item-actions">
 	{% if trash %}
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'trash', 'id': pager.identifier(listId)}) }}">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'trash', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-list" aria-hidden="true"></span> Restore
 		</a>
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
 		</a>
 
 	{% else %}
 
-		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'show', 'id': pager.identifier(listId)}) }}">
+		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'show', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-eye-open" aria-hidden="true"></span> Show
 		</a>
 
-		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'edit', 'id': pager.identifier(listId)}) }}">
+		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'edit', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
 		</a>
 
 	{% if hasTrash %}
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'trash', 'id': pager.identifier(listId)}) }}">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'trash', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Trash
 		</a>
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
 		</a>
 
 	{% else %}
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': pager.identifier(listId)}) }}">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'action': 'remove', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove
 		</a>
 
@@ -88,15 +90,15 @@
 	{% if relation_entity_root_section != '___unset___' %}
 	<td>
 
-		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': relation_section, 'entity': relation_entity, 'action': 'edit', 'id': pager.identifier(listId)}) }}">
+		<a class="action edit btn btn-sm" href="{{ path('maci_admin_view', {'section': relation_section, 'entity': relation_entity, 'action': 'edit', 'id': _list_id}) }}">
 			<span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit
 		</a>
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': pager.identifier(listId), 'rm': 'item'}) }}" method="post">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': _list_id, 'rm': 'item'}) }}" method="post">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove Item
 		</a>
 
-		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': pager.identifier(listId), 'rm': 'association'}) }}" method="post">
+		<a class="action remove btn btn-sm" href="{{ path('maci_admin_view', {'section': section, 'entity': entity, 'id': id, 'action': 'relations', 'relation': relation, 'relAction': 'remove', 'rid': _list_id, 'rm': 'association'}) }}" method="post">
 			<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove Association
 		</a>
 
@@ -106,7 +108,7 @@
 	<td>
 
 		<form action="#" method="post">
-		<input type="hidden" name="ids" value="{{ pager.identifier(listId) }}">
+		<input type="hidden" name="ids" value="{{ _list_id }}">
 		<button class="action btn btn-sm btn-primary list-item-set">
 			<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Set as {{ relation|capitalize }}
 		</button>
@@ -117,7 +119,7 @@
 	<td>
 
 		<form action="#" method="post">
-		<input type="hidden" name="ids" value="{{ pager.identifier(listId) }}">
+		<input type="hidden" name="ids" value="{{ _list_id }}">
 		<button class="action btn btn-sm btn-primary list-item-add">
 			<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> Add to {{ relation|capitalize }}
 		</button>
